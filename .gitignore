@@ -1,0 +1,10 @@
+.vscode/
+
+__pycache__/
+*.egg-info/
+
+*.py[cod]
+*$py.class
+*.ipynb_checkpoints
+
+examples/wip/
