@@ -2,6 +2,7 @@ from math import gcd
 from collections import namedtuple
 import numpy as np
 import warnings
+import copy
 
 PerturbationParameterSet = namedtuple(
     'PerturbationParameterSet', ['parameters', 'known'])
@@ -15,14 +16,23 @@ PERTURBATION_TYPES = [
 
 class ArrayDesign:
 
-    def __init__(self, locations, name):
+    def __init__(self, locations, name, perturbations={}):
         '''
         Creates an custom array design.
 
+        Implementation notice: array designs should be **immutable**. Because
+        array design objects are passed around when computing steering matrices,
+        weight functions, etc., having a mutable internal state leads to more
+        complexities and potential unexpected results. Although the internal
+        states are generally accessible in Python, please refrain from modifying
+        them.
+
         Args:
             locations (ndarray): m x d matrix, where m is the number of elements
-                and d can be 1, 2, or 3.
-            name (str): Name of the array design.  
+                and d can be 1, 2, or 3. The input ndarray is not copied and
+                should never be changed after creating the array design.
+            name (str): Name of the array design.
+            perturbations (Dict): Array perturbations.
         '''
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
@@ -34,7 +44,9 @@ class ArrayDesign:
             raise ValueError('Array can only be 1D, 2D or 3D.')
         self._locations = locations
         self._name = name
-        self._perturbations = {}
+        # Validate perturbations
+        self._validate_perturbations(perturbations)
+        self._perturbations = perturbations
     
     @property
     def name(self):
@@ -61,13 +73,13 @@ class ArrayDesign:
     @property
     def element_locations(self):
         '''
-        Retrives the nominal element locations. Do NOT modify.
+        Retrives the nominal element locations.
 
         Returns:
             An M x d matrix, where M is the number of elements and d is the
             number of dimensions of the nominal array.
         '''
-        return self._locations
+        return self._locations.copy()
 
     @property
     def is_perturbed(self):
@@ -87,26 +99,6 @@ class ArrayDesign:
         else:
             return self._locations.shape[1]
 
-    def register_perturbation(self, ptype, params, known=False):
-        '''
-        Registers a perturbation.
-
-        Args:
-            ptype: Perturbation type. Supported types include
-                * 'location_errors'
-                * 'gain_errors' (relative, -0.2 means 0.8 * original gain)
-                * 'phase_errors' (in radians)
-                * 'mutual_coupling'
-            params: Perturbation parameters.
-            known: Specifies whether the perturbation parameters are known in
-                prior. This affect how estimators treat these parameters.
-        '''
-        if ptype not in PERTURBATION_TYPES:
-            raise ValueError('Unsupported perturbation type "{0}".'.format(ptype))
-        # Simple validation of the parameters.
-
-        self._perturbations[ptype] = PerturbationParameterSet(params, known)
-    
     def has_perturbation(self, ptype):
         '''
         Check if the array has the given type of perturbation.
@@ -118,7 +110,59 @@ class ArrayDesign:
         '''
         Retrieves the dictionary of all perturbations. Do NOT modify.
         '''
-        return self._perturbations
+        # Here we have a deep copy.
+        return copy.deepcopy(self._perturbations)
+    
+    def _validate_perturbations(self, perturbations):
+        for k, v in perturbations:
+            if k not in PERTURBATION_TYPES:
+                raise ValueError('Unsupported perturbation type "{0}".'.format(k))
+            if not isinstance(v, tuple) and len(v) != 2:
+                raise ValueError('Perturbation details should be specified by a two-element tuple.')
+            # TODO: implement per perturbation type validations
+
+    def get_perturbed_copy(self, perturbations, new_name=None):
+        '''
+        Returns a copy of this array design but with the specified
+        perturbations. The specified perturbations will replace the existing
+        ones.
+
+        Args:
+            perturbations (Dict): A dictionary containing the perturbation
+                parameters. The keys should be among the following:
+                * 'location_errors'
+                * 'gain_errors' (relative, -0.2 means 0.8 * original gain)
+                * 'phase_errors' (in radians)
+                * 'mutual_coupling'
+                The values are two-element tuples where the first element is an
+                ndarray representing the parameters and the second element is
+                a bool specifying whether these parameters are known in prior.
+            new_name (str): An optional new name for the resulting array design.
+                If not provided, the name of the original array design will be
+                used.
+        '''
+        design = self.get_perturbation_free_copy(new_name)
+        # Merge perturbation parameters.
+        new_perturbations = {**design._perturbations, **perturbations}
+        self._validate_perturbations(new_perturbations)
+        design._perturbations = new_perturbations
+        return design
+
+    def get_perturbation_free_copy(self, new_name=None):
+        '''
+        Returns a perturbation-free copy of this array design.
+
+        Args:
+            new_name (str): An optional new name for the resulting array design.
+                If not provided, the name of the original array design will be
+                used.
+        '''
+        if new_name is None:
+            new_name = self._name
+        design = copy.copy(self)
+        design._perturbation = {}
+        design._name = new_name
+        return design
 
     def steering_matrix(self, sources, wavelength, compute_derivatives=False,
                         perturbations='all'):
@@ -243,9 +287,12 @@ class GridBasedArrayDesign(ArrayDesign):
         Args:
             indices (ndarray): m x d matrix denoting the grid indices
                 of each element. e.g., if indices is [1, 2, 3,], then the
-                actual locations will be [d0, 2*d0, 3*d0].
-            d0 (num): Grid size (or base inter-element spacing).
+                actual locations will be [d0, 2*d0, 3*d0]. The input ndarray is
+                not copied and should never be changed after creating this array
+                design.
+            d0 (float): Grid size (or base inter-element spacing).
             name (str): Name of the array design.
+            **kwargs: Other keyword arguments supported by ArrayDesign.
         '''
         super().__init__(indices * d0, name, **kwargs)
         self._element_indices = indices
@@ -258,9 +305,9 @@ class GridBasedArrayDesign(ArrayDesign):
     @property
     def element_indices(self):
         '''
-        Retrives the element indices. Do NOT modify.
+        Retrives the element indices.
         '''
-        return self._element_indices
+        return self._element_indices.copy()
 
 class UniformLinearArray(GridBasedArrayDesign):
 
@@ -268,6 +315,12 @@ class UniformLinearArray(GridBasedArrayDesign):
         '''
         Creates an n-element uniform linear array (ULA) along the x-axis, where
         the first sensor is placed at the origin.
+
+        Args:
+            n (int): Number of elements.
+            d0 (float): Fundamental inter-element spacing (usually smallest).
+            name (str): Name of the array design.
+            **kwargs: Other keyword arguments supported by ArrayDesign.
         '''
         if name is None:
             name = 'ULA ' + str(n)
@@ -277,7 +330,20 @@ class NestedArray(GridBasedArrayDesign):
 
     def __init__(self, n1, n2, d0, name=None, **kwargs):
         '''
-        Creates an 1D nested array. 
+        Creates an 1D nested array.
+
+        Args:
+            n1 (int): Parameter N1.
+            n2 (int): Parameter N2.
+            d0 (float): Fundamental inter-element spacing (usually smallest).
+            name (str): Name of the array design.
+            **kwargs: Other keyword arguments supported by ArrayDesign.
+
+        References:
+        [1] P. Pal and P. P. Vaidyanathan, "Nested arrays: A novel approach to
+            array processing with enhanced degrees of freedom," IEEE
+            Transactions on Signal Processing, vol. 58, no. 8, pp. 4167-4181,
+            Aug. 2010.
         '''
         if name is None:
             name = 'Nested ({0},{1})'.format(n1, n2)
@@ -285,13 +351,42 @@ class NestedArray(GridBasedArrayDesign):
             np.arange(0, n1),
             np.arange(1, n2 + 1) * (n1 + 1) - 1
         ))
+        self._n1 = n1
+        self._n2 = n2
         super().__init__(indices.reshape((-1, 1)), d0, name, **kwargs)
+
+    @property
+    def n1(self):
+        '''
+        Retrieves the parameter, N1, used when creating this nested array.
+        '''
+        return self._n1
+    
+    @property
+    def n2(self):
+        '''
+        Retrieves the parameter, N2, used when creating this nested array.
+        '''
+        return self._n2
 
 class CoPrimeArray(GridBasedArrayDesign):
 
     def __init__(self, m, n, d0, mode='2m', name=None, **kwargs):
         '''
         Creates an 1D co-prime array.
+
+        Args:
+            m (int): The smaller number in the co-prime pair.
+            n (int): The larger number in the co-prime pair.
+            d0 (float): Fundamental inter-element spacing (usually smallest).
+            mode (str): Either 'm' or '2m'.
+            name (str): Name of the array design.
+            **kwargs: Other keyword arguments supported by ArrayDesign.
+        
+        References:
+        [1] P. Pal and P. P. Vaidyanathan, "Coprime sampling and the music
+            algorithm," in 2011 Digital Signal Processing and Signal Processing
+            Education Meeting (DSP/SPE), 2011, pp. 289-294.
         '''
         if name is None:
             name = 'Co-prime ({0},{1})'.format(m, n)
@@ -300,6 +395,7 @@ class CoPrimeArray(GridBasedArrayDesign):
             m, n = n, m
         if gcd(m, n) != 1:
             raise ValueError('{0} and {1} are not co-prime.'.format(m, n))
+        self._coprime_pair = (m, n)
         mode = mode.lower()
         if mode == '2m':
             indices = np.concatenate((
@@ -313,7 +409,22 @@ class CoPrimeArray(GridBasedArrayDesign):
             ))
         else:
             raise ValueError('Unknown mode "{0}"'.format(mode))
+        self._mode = mode
         super().__init__(indices.reshape((-1, 1)), d0, name, **kwargs)
+
+    @property
+    def coprime_pair(self):
+        '''
+        Retrieves the co-prime pair used when creating this co-prime array.
+        '''
+        return self._coprime_pair
+
+    @property
+    def mode(self):
+        '''
+        Retrieves the mode used when creating this co-prime array.
+        '''
+        return self._mode
 
 class UniformCircularArray(ArrayDesign):
 
@@ -323,12 +434,13 @@ class UniformCircularArray(ArrayDesign):
         xy-plane.
 
         Args:
-            n: Number of elements.
-            r: Radius of the circle.
-            name: Name of the array.
+            n (int): Number of elements.
+            r (float): Radius of the circle.
+            name (str): Name of the array design.
+            **kwargs: Other keyword arguments supported by ArrayDesign.
         '''
         if name is None:
-            name = 'UCA ' + name
+            name = 'UCA ' + str(n)
         self._r = r
         theta = np.linspace(0., np.pi * (2.0 - 2.0 / n), n)
         locations = np.vstack((r * np.cos(theta), r * np.sin(theta))).T
@@ -336,4 +448,7 @@ class UniformCircularArray(ArrayDesign):
 
     @property
     def radius(self):
+        '''
+        Retrieves the radius of the uniform circular array.
+        '''
         return self._r

@@ -27,6 +27,8 @@ class Test1DArrays(unittest.TestCase):
 
     def test_nested(self):
         design = NestedArray(4, 3, 1.)
+        self.assertEqual(design.n1, 4)
+        self.assertEqual(design.n2, 3)
         self.assertEqual(design.d0, 1.)
         self.assertEqual(design.size, 7)
         self.assertEqual(design.ndim, 1)
@@ -42,6 +44,8 @@ class Test1DArrays(unittest.TestCase):
     def test_coprime(self):
         # M
         design1 = CoPrimeArray(3, 5, 0.5, 'm')
+        self.assertEqual(design1.coprime_pair, (3, 5))
+        self.assertEqual(design1.mode, 'm')
         self.assertEqual(design1.d0, 0.5)
         self.assertEqual(design1.size, 7)
         self.assertEqual(design1.ndim, 1)
@@ -55,6 +59,8 @@ class Test1DArrays(unittest.TestCase):
         )
         # 2M
         design2 = CoPrimeArray(3, 5, 0.5, '2m')
+        self.assertEqual(design2.coprime_pair, (3, 5))
+        self.assertEqual(design2.mode, '2m')
         self.assertEqual(design2.d0, 0.5)
         self.assertEqual(design2.size, 10)
         self.assertEqual(design2.ndim, 1)
