@@ -55,19 +55,40 @@ class TestSourcePlacement(unittest.TestCase):
         npt.assert_array_equal(sources_subset.locations, locations[:5])
 
     def test_far_field_1d_delay(self):
-        sources = FarField1DSourcePlacement(np.linspace(-np.pi/3, np.pi/4, 5))
         # 1D array
         sensor_locations_1 = np.array([0, 1, 2]).reshape((-1, 1))
-        D1, DD1 = sources.phase_delay_matrix(sensor_locations_1, self.wavelength, True)
+        # Unit: 'rad' or 'deg'
+        # Same locations in different units
+        sources_rad = FarField1DSourcePlacement(np.linspace(-np.pi/3, np.pi/4, 5))
+        sources_deg = FarField1DSourcePlacement(np.linspace(-60, 45, 5), 'deg')
+        for sources in [sources_rad, sources_deg]: 
+            # 1D array
+            D1, DD1 = sources.phase_delay_matrix(sensor_locations_1, self.wavelength, True)
+            D1_expected = np.array([
+                [  0.000000,  0.000000,  0.000000, 0.000000, 0.000000],
+                [ -5.441398, -3.490751, -0.820120, 2.019664, 4.442883],
+                [-10.882796, -6.981501, -1.640241, 4.039327, 8.885766]
+            ])
+            DD1_expected = np.array([
+                [0.000000,  0.000000,  0.000000,  0.000000, 0.000000],
+                [3.141593,  5.224278,  6.229432,  5.949737, 4.442883],
+                [6.283185, 10.448555, 12.458864, 11.899475, 8.885766]
+            ])
+            npt.assert_array_almost_equal(D1, D1_expected)
+            npt.assert_array_almost_equal(DD1, DD1_expected)
+        # Unit: 'sin'
+        sources_sin = FarField1DSourcePlacement(np.linspace(-0.4, 0.4, 5), 'sin')
+        # 1D array
+        D1, DD1 = sources_sin.phase_delay_matrix(sensor_locations_1, self.wavelength, True)
         D1_expected = np.array([
-            [  0.000000,  0.000000,  0.000000, 0.000000, 0.000000],
-            [ -5.441398, -3.490751, -0.820120, 2.019664, 4.442883],
-            [-10.882796, -6.981501, -1.640241, 4.039327, 8.885766]
+            [ 0.000000,  0.000000, 0.000000, 0.000000, 0.000000],
+            [-2.513274, -1.256637, 0.000000, 1.256637, 2.513274],
+            [-5.026548, -2.513274, 0.000000, 2.513274, 5.026548]
         ])
         DD1_expected = np.array([
-            [0.000000,  0.000000,  0.000000,  0.000000, 0.000000],
-            [3.141593,  5.224278,  6.229432,  5.949737, 4.442883],
-            [6.283185, 10.448555, 12.458864, 11.899475, 8.885766]
+            [ 0.000000,  0.000000,  0.000000,  0.000000,  0.000000],
+            [ 6.283185,  6.283185,  6.283185,  6.283185,  6.283185],
+            [12.566371, 12.566371, 12.566371, 12.566371, 12.566371]
         ])
         npt.assert_array_almost_equal(D1, D1_expected)
         npt.assert_array_almost_equal(DD1, DD1_expected)

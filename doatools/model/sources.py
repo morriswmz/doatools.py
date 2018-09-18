@@ -91,13 +91,15 @@ class SourcePlacement(ABC):
 class FarField1DSourcePlacement(SourcePlacement):
 
     def __init__(self, locations, unit='rad'):
-        '''
+        r'''
         Creates a far-field 1D source placement.
 
         Args:
             locations: A list or 1D numpy array representing the source
                 locations.
-            unit: Can be 'rad', 'deg' or 'sin'.
+            unit: Can be 'rad', 'deg' or 'sin'. 'sin' is a special unit where
+                sine of the arrival angle is used instead of the arrival angle
+                itself. 
         '''
         if isinstance(locations, list):
             locations = np.array(locations)
@@ -127,16 +129,20 @@ class FarField1DSourcePlacement(SourcePlacement):
         if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
             raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
         
+        if self._unit == 'sin':
+            return self._phase_delay_matrix_sin(sensor_locations, wavelength, derivatives)
+        else:
+            return self._phase_delay_matrix_rad(sensor_locations, wavelength, derivatives)
+        
+    def _phase_delay_matrix_rad(self, sensor_locations, wavelength, derivatives=False):
+        # Unit can only be 'rad' or 'deg'.
         # Unify to radians.
         if self._unit == 'deg':
             locations = np.deg2rad(self._locations)
-        elif self._unit == 'sin':
-            locations = np.arcsin(self._locations)
         else:
             locations = self._locations
         # Locations is an 1D vector, convert it to a one-row matrix.
         locations = locations[np.newaxis]
-
         s = 2 * np.pi / wavelength
         if sensor_locations.shape[1] == 1:
             D = s * sensor_locations * np.sin(locations)
@@ -150,11 +156,33 @@ class FarField1DSourcePlacement(SourcePlacement):
             if derivatives:
                 DD = s * (sensor_locations[:, 0] * np.cos(locations) -
                             sensor_locations[:, 1] * np.sin(locations))
-        
-        if derivatives:
-            return D, DD
+        return (D, DD) if derivatives else D
+
+    def _phase_delay_matrix_sin(self, sensor_locations, wavelength, derivatives=False):
+        # Locations is an 1D vector, convert it to a one-row matrix.
+        sin_vals = self._locations[np.newaxis]
+        s = 2 * np.pi / wavelength
+        if sensor_locations.shape[1] == 1:
+            D = s * sensor_locations * sin_vals
+            if derivatives:
+                # Note that if x = \sin\theta then
+                # \frac{\partial cx}{\partial x} = cx
+                # This is difference from the derivative w.r.t. \theta:
+                # \frac{\partial cx}{\partial \theta} = c\cos\theta
+                DD = np.tile(s * sensor_locations, (1, self._locations.size))
         else:
-            return D
+            # The sources are assumed to be within the xy-plane. The offset
+            # along the z-axis of the sensors does not affect the delays.
+            cos_vals = np.sqrt(1.0 - sin_vals * sin_vals)
+            D = s * (sensor_locations[:, 0] * sin_vals +
+                        sensor_locations[:, 1] * cos_vals)
+            if derivatives:
+                # If x = \sin\theta, \theta \in (-\pi/2, \pi/2)
+                # a \sin\theta + b \cos\theta = ax + b\sqrt{1-x^2}
+                DD = s * (sensor_locations[:, 0] -
+                            sensor_locations[:, 1] * sin_vals / cos_vals)
+        return (D, DD) if derivatives else D
+
 
 class FarField2DSourcePlacement(SourcePlacement):
 
