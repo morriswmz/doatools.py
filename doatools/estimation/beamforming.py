@@ -72,10 +72,11 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
                 `spectrum` will be None.
             estimates (SourcePlacement): A SourcePlacement instance of the same
                 type as the one used in the search grid, represeting the
-                estimated DOAs.
-            spectrum (ndarray | None): A numpy array of the same shape of the
+                estimated DOAs. Will be `None` if resolved is False.
+            spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` is resolved is False.
+                grid points. Will be `None` if resolved is False. Only present
+                if `output_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
         return self._estimate(lambda A: f_bartlett(A, R), k, output_spectrum)
@@ -116,10 +117,11 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
                 `spectrum` will be None.
             estimates (SourcePlacement): A SourcePlacement instance of the same
                 type as the one used in the search grid, represeting the
-                estimated DOAs.
-            spectrum (ndarray | None): A numpy array of the same shape of the
+                estimated DOAs. Will be `None` if resolved is False.
+            spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` is resolved is False.
+                grid points. Will be `None` if resolved is False. Only present
+                if `output_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
         return self._estimate(lambda A: f_mvdr(A, R), k, output_spectrum)

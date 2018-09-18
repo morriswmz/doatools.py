@@ -40,6 +40,14 @@ class SearchGrid(ABC):
 
     @property
     @abstractmethod
+    def size(self):
+        '''
+        Retrieves the number of elements on this search grid.
+        '''
+        pass
+
+    @property
+    @abstractmethod
     def shape(self):
         '''
         Retrives the shape of this search grid.
@@ -128,18 +136,22 @@ class FarField1DSearchGrid(SearchGrid):
             grid: A search grid for 1D far-field source localization.
         '''
         if np.isscalar(start):
-            self._sources = FarField1DSourcePlacement(np.linspace(start, stop, size), unit)
+            locations = np.linspace(start, stop, size)
         else:
             n_points = sum(size)
             locations = np.zeros((n_points, 1))
             offset = 0
             for k in range(len(start)):
                 locations[offset:offset+size[k], 0] = np.linspace(start[k], stop[k], size[k])
-            self._sources = FarField1DSourcePlacement(locations, unit)
+        self._sources = FarField1DSourcePlacement(locations, unit)
 
     @property
     def ndim(self):
         return 1
+
+    @property
+    def size(self):
+        return self._sources.n_sources
 
     @property
     def shape(self):
@@ -155,7 +167,7 @@ class FarField1DSearchGrid(SearchGrid):
 
     @property
     def axes(self):
-        return self._sources.locations.flatten(),
+        return self._sources.locations,
 
     def create_refined_grid_at(self, *indices, **kwargs):
         '''

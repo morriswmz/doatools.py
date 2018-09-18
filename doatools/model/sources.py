@@ -35,14 +35,15 @@ class SourcePlacement(ABC):
         '''
         if np.isscalar(key):
             return self._locations[key]
-        elif isinstance(key, list) or isinstance(key, slice):
-            return type(self)(self._locations[key], self._unit)
+        if isinstance(key, list) or isinstance(key, slice):
+            locations = self._locations[key]
         elif isinstance(key, np.ndarray):
             if key.ndim != 1:
                 raise ValueError('1D array expected.')
-            return type(self)(self._locations[key], self._unit)
+            locations = self._locations[key]
         else:
             raise KeyError('Unsupported index.')
+        return type(self)(locations, self._unit)
 
     @property
     def n_sources(self):
@@ -98,7 +99,7 @@ class FarField1DSourcePlacement(SourcePlacement):
                 locations.
             unit: Can be 'rad', 'deg' or 'sin'.
         '''
-        if not isinstance(locations, np.ndarray):
+        if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim > 1:
             raise ValueError('1D numpy array expected.')
@@ -162,11 +163,12 @@ class FarField2DSourcePlacement(SourcePlacement):
         Creates a far-field 2D source placement.
 
         Args:
-            locations: An N x 2 list or numpy array representing the source
-                locations, where N is the number of sources.
+            locations: An K x 2  numpy array representing the source locations,
+                where K is the number of sources. Should never be modified after
+                creation.
             unit: Can be 'rad' or 'deg'.
         '''
-        if not isinstance(locations, np.ndarray):
+        if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
             raise ValueError('Expecting an N x 2 numpy array.')
