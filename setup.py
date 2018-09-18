@@ -13,7 +13,8 @@ setup(
     install_requires=[
         'numpy>=1.14.0',
         'scipy>=1.1.0',
-        'matplotlib>=2.1.0'
+        'matplotlib>=2.1.0',
+        'cvxpy>=1.0.8'
     ],
     zip_safe=False
 )
