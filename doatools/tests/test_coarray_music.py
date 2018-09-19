@@ -24,7 +24,7 @@ class TestCoarrayMUSIC(unittest.TestCase):
             Ra, vula = ss_transform(R, method)
             # Estimate the DOAs using root-MUSIC.
             rmusic = RootMUSIC1D(vula, self.wavelength)
-            resolved, estimates = rmusic.estimate(Ra, sources.n_sources)
+            resolved, estimates = rmusic.estimate(Ra, sources.size)
             self.assertTrue(resolved)
             npt.assert_array_almost_equal(estimates.locations, sources.locations)
 

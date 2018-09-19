@@ -1,5 +1,6 @@
 from enum import Enum
 from abc import ABC, abstractmethod
+import warnings
 import numpy as np
 import scipy
 
@@ -46,7 +47,7 @@ class SourcePlacement(ABC):
         return type(self)(locations, self._unit)
 
     @property
-    def n_sources(self):
+    def size(self):
         '''
         Retrieves the number of sources.
         '''
@@ -156,6 +157,8 @@ class FarField1DSourcePlacement(SourcePlacement):
             if derivatives:
                 DD = s * (sensor_locations[:, 0] * np.cos(locations) -
                             sensor_locations[:, 1] * np.sin(locations))
+        if self._unit == 'deg' and derivatives:
+            DD *= np.pi / 180.0 # Do not forget the scaling when unit is 'deg'.
         return (D, DD) if derivatives else D
 
     def _phase_delay_matrix_sin(self, sensor_locations, wavelength, derivatives=False):

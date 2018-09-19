@@ -74,6 +74,8 @@ class TestSourcePlacement(unittest.TestCase):
                 [3.141593,  5.224278,  6.229432,  5.949737, 4.442883],
                 [6.283185, 10.448555, 12.458864, 11.899475, 8.885766]
             ])
+            if sources.unit == 'deg':
+                DD1_expected *= np.pi / 180.0
             npt.assert_array_almost_equal(D1, D1_expected)
             npt.assert_array_almost_equal(DD1, DD1_expected)
         # Unit: 'sin'

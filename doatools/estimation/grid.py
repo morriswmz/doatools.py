@@ -151,11 +151,11 @@ class FarField1DSearchGrid(SearchGrid):
 
     @property
     def size(self):
-        return self._sources.n_sources
+        return self._sources.size
 
     @property
     def shape(self):
-        return self._sources.n_sources,
+        return self._sources.size,
 
     @property
     def source_placement(self):
@@ -196,7 +196,7 @@ class FarField1DSearchGrid(SearchGrid):
         span = kwargs['span'] if 'span' in kwargs else 1
         # Compute the intervals to be refined.
         intervals = []
-        max_index = self._sources.n_sources - 1
+        max_index = self._sources.size - 1
         for ind in indices[0]:
             l = max(0, ind - span)
             r = min(max_index, ind + span)

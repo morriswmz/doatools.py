@@ -255,7 +255,7 @@ class ArrayDesign:
         else:
             return A
 
-    def get_measurements(self, wavelength, source_placement, n_snapshots,
+    def get_measurements(self, sources, wavelength, n_snapshots,
                          source_signal=None, noise_signal=None,
                          compute_covariance=False):
         '''
@@ -266,7 +266,7 @@ class ArrayDesign:
         where A is the steering matrix, S consists of source signals and E
         consists of noise signals.
         '''
-        A = self.steering_matrix(source_placement, wavelength)
+        A = self.steering_matrix(sources, wavelength)
         S = source_signal.emit(n_snapshots)
         N = noise_signal.emit(n_snapshots)
         Y = A @ S + N

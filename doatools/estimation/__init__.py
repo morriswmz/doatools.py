@@ -1,5 +1,6 @@
 from .music import MUSIC, RootMUSIC1D
 from .beamforming import BartlettBeamformer, MVDRBeamformer
+from .sparse import SparseBPDN
 from .grid import FarField1DSearchGrid
 from .covariance import ACMTransformer1D
 from .preprocessing import spatial_smooth
