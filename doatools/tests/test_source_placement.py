@@ -42,17 +42,25 @@ class TestSourcePlacement(unittest.TestCase):
         n_sources = 10
         locations = np.linspace(-60, 60, n_sources)
         sources = FarField1DSourcePlacement(locations, 'deg')
-        self.assertEqual(sources.n_sources, n_sources)
+        self.assertEqual(sources.size, n_sources)
         self.assertEqual(sources.unit, 'deg')
         npt.assert_array_equal(sources.locations, locations)
         # Test indexing
-        for i in range(sources.n_sources):
+        for i in range(sources.size):
             self.assertEqual(sources[i], locations[i])
         # Test slicing
         sources_subset = sources[:5]
-        self.assertEqual(sources_subset.n_sources, 5)
+        self.assertEqual(sources_subset.size, 5)
         self.assertEqual(sources_subset.unit, 'deg')
         npt.assert_array_equal(sources_subset.locations, locations[:5])
+        # Slicing should return a copy
+        locations_copy = locations.copy()
+        sources_subset = sources[:5]
+        sources_subset.locations[0] = -70
+        npt.assert_array_equal(sources.locations, locations_copy)
+        sources_subset = sources[[0, 1, 2]]
+        sources_subset.locations[0] = -70
+        npt.assert_array_equal(sources.locations, locations_copy)
 
     def test_far_field_1d_delay(self):
         # 1D array
@@ -100,15 +108,15 @@ class TestSourcePlacement(unittest.TestCase):
             [0, 30], [0, 50], [135, 35], [150, 70], [240, 60]
         ])
         sources = FarField2DSourcePlacement(locations, 'deg')
-        self.assertEqual(sources.n_sources, len(locations))
+        self.assertEqual(sources.size, len(locations))
         self.assertEqual(sources.unit, 'deg')
         npt.assert_array_equal(sources.locations, locations)
         # Test indexing
-        for i in range(sources.n_sources):
+        for i in range(sources.size):
             npt.assert_array_equal(sources[i], locations[i])
         # Test slicing
         sources_subset = sources[-2:]
-        self.assertEqual(sources_subset.n_sources, 2)
+        self.assertEqual(sources_subset.size, 2)
         self.assertEqual(sources_subset.unit, 'deg')
         npt.assert_array_equal(sources_subset.locations, locations[-2:])
 

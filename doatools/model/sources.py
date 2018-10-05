@@ -36,7 +36,10 @@ class SourcePlacement(ABC):
         '''
         if np.isscalar(key):
             return self._locations[key]
-        if isinstance(key, list) or isinstance(key, slice):
+        if isinstance(key, slice):
+            # Slicing results a view.
+            locations = self._locations[key].copy()
+        elif isinstance(key, list):
             locations = self._locations[key]
         elif isinstance(key, np.ndarray):
             if key.ndim != 1:
