@@ -26,7 +26,7 @@ class TestCoarrayMUSIC(unittest.TestCase):
             rmusic = RootMUSIC1D(vula, self.wavelength)
             resolved, estimates = rmusic.estimate(Ra, sources.size)
             self.assertTrue(resolved)
-            npt.assert_array_almost_equal(estimates.locations, sources.locations)
+            npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)
 
 if __name__ == '__main__':
     unittest.main()

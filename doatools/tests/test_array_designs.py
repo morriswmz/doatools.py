@@ -53,7 +53,7 @@ class Test1DArrays(unittest.TestCase):
             design1.element_indices,
             np.array([0, 3, 6, 9, 12, 5, 10]).reshape((-1, 1))
         )
-        npt.assert_array_almost_equal(
+        npt.assert_allclose(
             design1.element_locations,
             np.array([0., 1.5, 3., 4.5, 6., 2.5, 5.]).reshape((-1, 1))
         )
@@ -68,7 +68,7 @@ class Test1DArrays(unittest.TestCase):
             design2.element_indices,
             np.array([0, 3, 6, 9, 12, 5, 10, 15, 20, 25]).reshape((-1, 1))
         )
-        npt.assert_array_almost_equal(
+        npt.assert_allclose(
             design2.element_locations,
             np.array([0., 1.5, 3., 4.5, 6., 2.5, 5., 7.5, 10., 12.5]).reshape((-1, 1))
         )
@@ -85,7 +85,7 @@ class Test1DArrays(unittest.TestCase):
         locations_expected = np.array([
             [2., 0.], [0., 2.], [-2., 0.], [0., -2.]
         ])
-        npt.assert_array_almost_equal(uca.element_locations, locations_expected)
+        npt.assert_allclose(uca.element_locations, locations_expected, atol=1e-8)
 
     def test_steering_matrix_without_perturbations(self):
         design = CoPrimeArray(2, 3, self.wavelength / 2)
@@ -107,8 +107,8 @@ class Test1DArrays(unittest.TestCase):
             [-5.447178- 7.691209j, 0.000000+18.849556j,  5.447178- 7.691209j],
             [-8.515612+11.284673j, 0.000000+28.274334j,  8.515612+11.284673j]
         ])
-        npt.assert_array_almost_equal(A, A_expected)
-        npt.assert_array_almost_equal(DA, DA_expected)
+        npt.assert_allclose(A, A_expected, rtol=1e-6)
+        npt.assert_allclose(DA, DA_expected, rtol=1e-6)
 
     def test_steering_matrix_with_perturbations(self):
         pass

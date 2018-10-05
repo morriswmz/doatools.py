@@ -25,12 +25,12 @@ class TestMUSIC(unittest.TestCase):
         music = MUSIC(ula, self.wavelength, FarField1DSearchGrid())
         resolved, estimates = music.estimate(R, n_sources)
         self.assertTrue(resolved)
-        npt.assert_array_almost_equal(sources.locations, estimates.locations)
+        npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)
         # root-MUSIC
         rmusic = RootMUSIC1D(ula, self.wavelength)
         resolved, estimates = rmusic.estimate(R, n_sources)
         self.assertTrue(resolved)
-        npt.assert_array_almost_equal(sources.locations, estimates.locations)
+        npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,8 +14,8 @@ class TestPreprocessing(unittest.TestCase):
             [1., 1., 2., 3., 5.]
         ])
         # l = 1 special case
-        npt.assert_array_almost_equal(spatial_smooth(R, 1), R)
-        npt.assert_array_almost_equal(spatial_smooth(R, 1, True), 0.5 * (R + np.flip(R)))
+        npt.assert_allclose(spatial_smooth(R, 1), R, rtol=1e-6)
+        npt.assert_allclose(spatial_smooth(R, 1, True), 0.5 * (R + np.flip(R)), rtol=1e-6)
         # l > 1
         l = 3
         Rf_expected = np.array([
@@ -28,8 +28,8 @@ class TestPreprocessing(unittest.TestCase):
             [2.500000, 4.333333, 2.500000],
             [1.666667, 2.500000, 4.333333]
         ])
-        npt.assert_array_almost_equal(spatial_smooth(R, l), Rf_expected)
-        npt.assert_array_almost_equal(spatial_smooth(R, l, True), Rfb_expected)
+        npt.assert_allclose(spatial_smooth(R, l), Rf_expected, rtol=1e-6)
+        npt.assert_allclose(spatial_smooth(R, l, True), Rfb_expected, rtol=1e-6)
 
     def test_spatial_smoothing_complex(self):
         R = np.array([
@@ -40,8 +40,8 @@ class TestPreprocessing(unittest.TestCase):
             [1.-1.j, 1.-1.j, 2.-2.j, 3.-3.j, 5.    ]
         ])
         # l = 1 special case
-        npt.assert_array_almost_equal(spatial_smooth(R, 1), R)
-        npt.assert_array_almost_equal(spatial_smooth(R, 1, True), 0.5 * (R + np.flip(R).conj()))
+        npt.assert_allclose(spatial_smooth(R, 1), R, rtol=1e-6)
+        npt.assert_allclose(spatial_smooth(R, 1, True), 0.5 * (R + np.flip(R).conj()), rtol=1e-6)
         # l > 1
         l = 3
         Rf_expected = np.array([
@@ -54,8 +54,8 @@ class TestPreprocessing(unittest.TestCase):
             [2.500000-2.500000j, 4.333333+0.000000j, 2.500000+2.500000j],
             [1.666667-1.666667j, 2.500000-2.500000j, 4.333333+0.000000j]
         ])
-        npt.assert_array_almost_equal(spatial_smooth(R, l), Rf_expected)
-        npt.assert_array_almost_equal(spatial_smooth(R, l, True), Rfb_expected)
+        npt.assert_allclose(spatial_smooth(R, l), Rf_expected, rtol=1e-6)
+        npt.assert_allclose(spatial_smooth(R, l, True), Rfb_expected, rtol=1e-6)
 
 if __name__ == '__main__':
     unittest.main()

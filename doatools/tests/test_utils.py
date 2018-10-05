@@ -19,7 +19,7 @@ class TestMath(unittest.TestCase):
             [-1.5, 0.5], [-3.75, 1.25], [-7.5, 2.5],
             [-3.0, 2.0], [-7.5, 5.0], [-15.0, 10.0]
         ])
-        npt.assert_array_almost_equal(actual, expected)
+        npt.assert_allclose(actual, expected)
 
     def test_cartesian(self):
         ax1 = np.array([1, 2])

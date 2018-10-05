@@ -24,12 +24,12 @@ class TestBeamforming(unittest.TestCase):
         mvdr = MVDRBeamformer(ula, self.wavelength, grid)
         resolved, estimates = mvdr.estimate(R, n_sources)
         self.assertTrue(resolved)
-        npt.assert_array_almost_equal(sources.locations, estimates.locations)
+        npt.assert_allclose(sources.locations, estimates.locations, rtol=1e-2)
         # Bartlett
         bartlett = BartlettBeamformer(ula, self.wavelength, grid)
         resolved, estimates = bartlett.estimate(R, n_sources)
         self.assertTrue(resolved)
-        npt.assert_array_almost_equal(sources.locations, estimates.locations, decimal=3)
+        npt.assert_allclose(sources.locations, estimates.locations, rtol=1e-2)
 
 if __name__ == '__main__':
     unittest.main()

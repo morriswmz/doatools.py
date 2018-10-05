@@ -11,7 +11,7 @@ class TestSourcePlacement(unittest.TestCase):
     # def test_far_field_stochastic_creation(self):
     #     sources = FarField1DSourcePlacement.generate(-np.pi/3, np.pi/3, 6)
     #     self.assertEqual(sources.n_sources, 6)
-    #     npt.assert_array_almost_equal(
+    #     npt.assert_allclose(
     #         sources.locations,
     #         np.linspace(-np.pi/3, np.pi/3, 6).reshape((-1, 1))
     #     )
@@ -33,7 +33,7 @@ class TestSourcePlacement(unittest.TestCase):
     #         [1.5, 0.],
     #         [1.5, 1.],
     #     ])
-    #     npt.assert_array_almost_equal(
+    #     npt.assert_allclose(
     #         sources.locations,
     #         locations_expected
     #     )
@@ -84,8 +84,8 @@ class TestSourcePlacement(unittest.TestCase):
             ])
             if sources.unit == 'deg':
                 DD1_expected *= np.pi / 180.0
-            npt.assert_array_almost_equal(D1, D1_expected)
-            npt.assert_array_almost_equal(DD1, DD1_expected)
+            npt.assert_allclose(D1, D1_expected, rtol=1e-6)
+            npt.assert_allclose(DD1, DD1_expected, rtol=1e-6)
         # Unit: 'sin'
         sources_sin = FarField1DSourcePlacement(np.linspace(-0.4, 0.4, 5), 'sin')
         # 1D array
@@ -100,8 +100,8 @@ class TestSourcePlacement(unittest.TestCase):
             [ 6.283185,  6.283185,  6.283185,  6.283185,  6.283185],
             [12.566371, 12.566371, 12.566371, 12.566371, 12.566371]
         ])
-        npt.assert_array_almost_equal(D1, D1_expected)
-        npt.assert_array_almost_equal(DD1, DD1_expected)
+        npt.assert_allclose(D1, D1_expected, rtol=1e-6)
+        npt.assert_allclose(DD1, DD1_expected, rtol=1e-6)
 
     def test_far_field_2d(self):
         locations = np.array([
