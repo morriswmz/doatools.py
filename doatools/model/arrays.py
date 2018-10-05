@@ -1,11 +1,7 @@
 from math import gcd
-from collections import namedtuple
 import numpy as np
 import warnings
 import copy
-
-PerturbationParameterSet = namedtuple(
-    'PerturbationParameterSet', ['parameters', 'known'])
 
 PERTURBATION_TYPES = [
     'location_errors',
@@ -80,6 +76,37 @@ class ArrayDesign:
             number of dimensions of the nominal array.
         '''
         return self._locations.copy()
+    
+    @property
+    def actual_element_locations(self):
+        '''
+        Retrieves the actual element locations, considering location errors.
+
+        Returns:
+            An M x d matrix, where M is the number of elements and d is the
+            maximum of the following two:
+            1. number of dimensions of the nominal array;
+            2. number of dimensions of the sensor location errors.
+        '''
+        if 'location_errors' in self._perturbations:
+            return self._compute_actual_locations(self._perturbations['location_errors'][0])
+        else:
+            return self.element_locations
+    
+    def _compute_actual_locations(self, location_errors):
+        actual_ndim = self.ndim
+        loc_err_dim = location_errors.shape[1]
+        if loc_err_dim <= actual_ndim:
+            # It is possible that the location errors only exist along the
+            # first one or two axis.
+            actual_locations = self._locations.copy()
+            actual_locations[:, :loc_err_dim] += location_errors
+        else:
+            # Actual dimension is higher. This happens if a linear array,
+            # which is 1D, has location errors along both x- and y-axis.
+            actual_locations = location_errors.copy()
+            actual_locations[:, :actual_ndim] += self._locations
+        return actual_locations
 
     @property
     def is_perturbed(self):
@@ -202,29 +229,13 @@ class ArrayDesign:
         if perturbations == 'all':
             perturb_dict = self._perturbations
         elif perturbations == 'known':
-            perturb_dict = {k: v for k, v in self._perturbations.items() if v.known}
+            perturb_dict = {k: v for k, v in self._perturbations.items() if v[1]}
         elif perturbations == 'none':
             perturb_dict = {}
         else:
             raise ValueError('Perturbation can only be "all", "known", or "none".')
         
-        actual_ndim = self.ndim
-        # Apply the location errors if exist.
-        if 'location_errors' in perturb_dict:
-            pos_err_dim = perturb_dict['location_errors'].parameters.shape[1]
-            if pos_err_dim <= actual_ndim:
-                # It is possible that the location errors only exist along the
-                # first one or two axis.
-                actual_locations = self._locations.copy()
-                actual_locations[:, :pos_err_dim] += perturb_dict['location_errors'].parameters
-            else:
-                # Actual dimension is higher. This happens if a linear array,
-                # which is 1D, has location errors along both x- and y-axis.
-                actual_locations = perturb_dict['location_errors'].parameters.copy()
-                actual_locations[:, :actual_ndim] += self._locations
-                actual_ndim = pos_err_dim
-        else:
-            actual_locations = self._locations
+        actual_locations = self._compute_actual_locations(perturb_dict['location_errors'][0])
 
         # Compute the steering matrix
         T = sources.phase_delay_matrix(actual_locations, wavelength, compute_derivatives)
@@ -236,19 +247,19 @@ class ArrayDesign:
         
         # Apply other perturbations
         if 'gain_errors' in perturb_dict:
-            gain_coeff = 1. + perturb_dict['gain_errors'].parameters
+            gain_coeff = 1. + perturb_dict['gain_errors'][0]
             A = gain_coeff * A
             if compute_derivatives:
                 DA = [gain_coeff * X for X in DA]
         if 'phase_errors' in perturb_dict:
-            phase_coeff = np.exp(1j * perturb_dict['phase_errors'].parameters)
+            phase_coeff = np.exp(1j * perturb_dict['phase_errors'][0])
             A = phase_coeff * A
             if compute_derivatives:
                 DA = [phase_coeff * X for X in DA]
         if 'mutual_coupling' in perturb_dict:
-            A = perturb_dict['mutual_coupling'].parameters @ A
+            A = perturb_dict['mutual_coupling'][0] @ A
             if compute_derivatives:
-                DA = [perturb_dict['mutual_coupling'].parameters @ X for X in DA]
+                DA = [perturb_dict['mutual_coupling'][0] @ X for X in DA]
 
         if compute_derivatives:
             return (A,) + tuple(DA)
