@@ -235,7 +235,10 @@ class ArrayDesign:
         else:
             raise ValueError('Perturbation can only be "all", "known", or "none".')
         
-        actual_locations = self._compute_actual_locations(perturb_dict['location_errors'][0])
+        if 'location_errors' in perturb_dict:
+            actual_locations = self._compute_actual_locations(perturb_dict['location_errors'][0])
+        else:
+            actual_locations = self._locations
 
         # Compute the steering matrix
         T = sources.phase_delay_matrix(actual_locations, wavelength, compute_derivatives)
