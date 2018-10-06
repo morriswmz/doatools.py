@@ -145,48 +145,54 @@ class FarField1DSourcePlacement(SourcePlacement):
             locations = np.deg2rad(self._locations)
         else:
             locations = self._locations
-        # Locations is an 1D vector, convert it to a one-row matrix.
+        
         locations = locations[np.newaxis]
         s = 2 * np.pi / wavelength
         if sensor_locations.shape[1] == 1:
-            D = s * sensor_locations * np.sin(locations)
+            # D[i,k] = sensor_location[i] * sin(doa[k])
+            D = s * np.outer(sensor_locations, np.sin(locations))
             if derivatives:
-                DD = s * sensor_locations * np.cos(locations)
+                DD = s * np.outer(sensor_locations, np.cos(locations))
         else:
             # The sources are assumed to be within the xy-plane. The offset
             # along the z-axis of the sensors does not affect the delays.
-            D = s * (sensor_locations[:, 0] * np.sin(locations) +
-                        sensor_locations[:, 1] * np.cos(locations))
+            # D[i,k] = sensor_location_x[i] * sin(doa[k])
+            #          + sensor_location_y[i] * cos(doa[k])
+            D = s * (np.outer(sensor_locations[:, 0], np.sin(locations)) +
+                     np.outer(sensor_locations[:, 1], np.cos(locations)))
             if derivatives:
-                DD = s * (sensor_locations[:, 0] * np.cos(locations) -
-                            sensor_locations[:, 1] * np.sin(locations))
+                DD = s * (np.outer(sensor_locations[:, 0], np.cos(locations)) -
+                          np.outer(sensor_locations[:, 1], np.sin(locations)))
         if self._unit == 'deg' and derivatives:
             DD *= np.pi / 180.0 # Do not forget the scaling when unit is 'deg'.
         return (D, DD) if derivatives else D
 
     def _phase_delay_matrix_sin(self, sensor_locations, wavelength, derivatives=False):
-        # Locations is an 1D vector, convert it to a one-row matrix.
-        sin_vals = self._locations[np.newaxis]
+        sin_vals = self._locations
         s = 2 * np.pi / wavelength
         if sensor_locations.shape[1] == 1:
-            D = s * sensor_locations * sin_vals
+            # D[i,k] = sensor_location[i] * sin_val[k]
+            D = s * np.outer(sensor_locations, sin_vals)
             if derivatives:
                 # Note that if x = \sin\theta then
-                # \frac{\partial cx}{\partial x} = cx
-                # This is difference from the derivative w.r.t. \theta:
+                # \frac{\partial cx}{\partial x} = c
+                # This is different from the derivative w.r.t. \theta:
                 # \frac{\partial cx}{\partial \theta} = c\cos\theta
-                DD = np.tile(s * sensor_locations, (1, self._locations.size))
+                DD = np.tile(s * sensor_locations, (self._locations.size, 1)).T
         else:
             # The sources are assumed to be within the xy-plane. The offset
             # along the z-axis of the sensors does not affect the delays.
             cos_vals = np.sqrt(1.0 - sin_vals * sin_vals)
-            D = s * (sensor_locations[:, 0] * sin_vals +
-                        sensor_locations[:, 1] * cos_vals)
+            D = s * (np.outer(sensor_locations[:, 0], sin_vals) +
+                     np.outer(sensor_locations[:, 1], cos_vals))
             if derivatives:
                 # If x = \sin\theta, \theta \in (-\pi/2, \pi/2)
                 # a \sin\theta + b \cos\theta = ax + b\sqrt{1-x^2}
-                DD = s * (sensor_locations[:, 0] -
-                            sensor_locations[:, 1] * sin_vals / cos_vals)
+                # d/dx(ax + b\sqrt{1-x^2}) = a - bx/\sqrt{1-x^2}
+                # sensor_locations[:, 0, np.newaxis] will be a column
+                # vector and broadcasting will be utilized.
+                DD = s * (sensor_locations[:, 0, np.newaxis] -
+                          np.outer(sensor_locations[:, 1], sin_vals / cos_vals))
         return (D, DD) if derivatives else D
 
 
@@ -239,19 +245,20 @@ class FarField2DSourcePlacement(SourcePlacement):
             locations = self._locations
         
         s = 2 * np.pi / wavelength
-        cos_el = np.cos(locations[:, 1]).T
+        cos_el = np.cos(locations[:, 1])
         if sensor_locations.shape[1] == 1:
             # Linear arrays are assumed to be placed along the x-axis
-            D = s * sensor_locations * (cos_el * np.cos(locations[:, 0]).T)
+            # Need to convert azimuth-elevation pairs to broadside angles.
+            D = s * np.outer(sensor_locations, cos_el * np.cos(locations[:, 0]))
         else:
-            cc = cos_el * np.cos(locations[:, 0]).T
-            cs = cos_el * np.sin(locations[:, 1]).T
+            cc = cos_el * np.cos(locations[:, 0])
+            cs = cos_el * np.sin(locations[:, 0])
             if sensor_locations.shape[1] == 2:
-                D = s * (sensor_locations[:, 0] * cc +
-                            sensor_locations[:, 1] * cs)
+                D = s * (np.outer(sensor_locations[:, 0], cc) +
+                         np.outer(sensor_locations[:, 1], cs))
             else:
-                D = s * (sensor_locations[:, 0] * cc +
-                            sensor_locations[:, 1] * cs +
-                            sensor_locations[:, 2] * np.sin(locations[:, 1]).T)
+                D = s * (np.outer(sensor_locations[:, 0], cc) +
+                         np.outer(sensor_locations[:, 1], cs) +
+                         np.outer(sensor_locations[:, 2], np.sin(locations[:, 1])))
         
         return D
