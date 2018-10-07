@@ -13,8 +13,7 @@ PERTURBATION_TYPES = [
 class ArrayDesign:
 
     def __init__(self, locations, name, perturbations={}):
-        '''
-        Creates an custom array design.
+        '''Creates an custom array design.
 
         Implementation notice: array designs should be **immutable**. Because
         array design objects are passed around when computing steering matrices,
@@ -28,7 +27,16 @@ class ArrayDesign:
                 and d can be 1, 2, or 3. The input ndarray is not copied and
                 should never be changed after creating the array design.
             name (str): Name of the array design.
-            perturbations (Dict): Array perturbations.
+            perturbations (Dict): A dictionary containing the perturbation
+                parameters. The keys should be among the following:
+                * 'location_errors'
+                * 'gain_errors' (relative, -0.2 means 0.8 * original gain)
+                * 'phase_errors' (in radians)
+                * 'mutual_coupling'
+                The values are two-element tuples where the first element is an
+                ndarray representing the parameters and the second element is
+                a bool specifying whether these parameters are known in prior.
+            new_name (str): An optional new name for the resulting array design.
         '''
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
@@ -46,30 +54,23 @@ class ArrayDesign:
     
     @property
     def name(self):
-        '''
-        Retrieves the name of this array.
-        '''
+        '''Retrieves the name of this array.'''
         return self._name
     
     @property
     def element_count(self):
-        '''
-        (Deprecated) Retrieves the number of elements in the array.
-        '''
+        '''(Deprecated) Retrieves the number of elements in the array.'''
         warnings.warn('Use size instead of element_count in the future.', DeprecationWarning)
         return self.size
 
     @property
     def size(self):
-        '''
-        Retrieves the number of elements in the array.
-        '''
+        '''Retrieves the number of elements in the array.'''
         return self._locations.shape[0]
     
     @property
     def element_locations(self):
-        '''
-        Retrives the nominal element locations.
+        '''Retrives the nominal element locations.
 
         Returns:
             An M x d matrix, where M is the number of elements and d is the
@@ -79,8 +80,7 @@ class ArrayDesign:
     
     @property
     def actual_element_locations(self):
-        '''
-        Retrieves the actual element locations, considering location errors.
+        '''Retrieves the actual element locations, considering location errors.
 
         Returns:
             An M x d matrix, where M is the number of elements and d is the
@@ -110,15 +110,13 @@ class ArrayDesign:
 
     @property
     def is_perturbed(self):
-        '''
-        Returns if the array contains perturbations.
-        '''
+        '''Returns if the array contains perturbations.'''
         return len(self._perturbations) > 0
 
     @property
     def ndim(self):
-        '''
-        Retrieves the number of dimensions of the nominal array.
+        '''Retrieves the number of dimensions of the nominal array.
+
         Perturbations do not affect this value.
         '''
         if self._locations.ndim == 1:
@@ -127,21 +125,25 @@ class ArrayDesign:
             return self._locations.shape[1]
 
     def has_perturbation(self, ptype):
-        '''
-        Check if the array has the given type of perturbation.
-        '''
+        '''Check if the array has the given type of perturbation.'''
         return ptype in self._perturbations
+    
+    def is_perturbation_known(self, ptype):
+        '''Checks if the specified perturbation is known in prior.'''
+        return self._perturbations[ptype][1]
+    
+    def get_perturbation_params(self, ptype):
+        '''Retrieves the parameters for the specified perturbation type.'''
+        return self._perturbations[ptype][0]
     
     @property
     def perturbations(self):
-        '''
-        Retrieves the dictionary of all perturbations. Do NOT modify.
-        '''
+        '''Retrieves a copy of the dictionary of all perturbations.'''
         # Here we have a deep copy.
         return copy.deepcopy(self._perturbations)
     
     def _validate_perturbations(self, perturbations):
-        for k, v in perturbations:
+        for k, v in perturbations.items():
             if k not in PERTURBATION_TYPES:
                 raise ValueError('Unsupported perturbation type "{0}".'.format(k))
             if not isinstance(v, tuple) and len(v) != 2:
@@ -149,10 +151,10 @@ class ArrayDesign:
             # TODO: implement per perturbation type validations
 
     def get_perturbed_copy(self, perturbations, new_name=None):
-        '''
-        Returns a copy of this array design but with the specified
-        perturbations. The specified perturbations will replace the existing
-        ones.
+        '''Returns a copy of this array design but with the specified
+        perturbations.
+        
+        The specified perturbations will replace the existing ones.
 
         Args:
             perturbations (Dict): A dictionary containing the perturbation
@@ -176,8 +178,7 @@ class ArrayDesign:
         return design
 
     def get_perturbation_free_copy(self, new_name=None):
-        '''
-        Returns a perturbation-free copy of this array design.
+        '''Returns a perturbation-free copy of this array design.
 
         Args:
             new_name (str): An optional new name for the resulting array design.
@@ -193,8 +194,7 @@ class ArrayDesign:
 
     def steering_matrix(self, sources, wavelength, compute_derivatives=False,
                         perturbations='all'):
-        '''
-        Creates the steering matrix for the given DOAs.
+        '''Creates the steering matrix for the given DOAs.
 
         Note: the steering matrix calculation is bound to array designs.
         This is a generic implementation, which can be overridden for special
@@ -272,8 +272,7 @@ class ArrayDesign:
     def get_measurements(self, sources, wavelength, n_snapshots,
                          source_signal=None, noise_signal=None,
                          compute_covariance=False):
-        '''
-        Gets an M x N matrix Y of measurement vectors using the following model:
+        '''Retrieves the measurement vectors Y using the following model:
 
         Y = AS + E,
 
@@ -294,8 +293,7 @@ class ArrayDesign:
 class GridBasedArrayDesign(ArrayDesign):
 
     def __init__(self, indices, d0, name, **kwargs):
-        '''
-        Creates an array design where each elements is placed on a predefined
+        '''Creates an array design where each elements is placed on a predefined
         grid with grid size d0.
 
         Args:
@@ -314,21 +312,21 @@ class GridBasedArrayDesign(ArrayDesign):
 
     @property
     def d0(self):
+        '''Retrieves the base inter-element spacing.'''
         return self._d0
 
     @property
     def element_indices(self):
-        '''
-        Retrives the element indices.
-        '''
+        '''Retrives the element indices.'''
         return self._element_indices.copy()
 
 class UniformLinearArray(GridBasedArrayDesign):
 
     def __init__(self, n, d0, name=None, **kwargs):
-        '''
-        Creates an n-element uniform linear array (ULA) along the x-axis, where
-        the first sensor is placed at the origin.
+        '''Creates an n-element uniform linear array (ULA).
+        
+        The ULA is placed along the x-axis, whose the first sensor is placed at
+        the origin.
 
         Args:
             n (int): Number of elements.
@@ -343,8 +341,7 @@ class UniformLinearArray(GridBasedArrayDesign):
 class NestedArray(GridBasedArrayDesign):
 
     def __init__(self, n1, n2, d0, name=None, **kwargs):
-        '''
-        Creates an 1D nested array.
+        '''Creates an 1D nested array.
 
         Args:
             n1 (int): Parameter N1.
@@ -371,23 +368,18 @@ class NestedArray(GridBasedArrayDesign):
 
     @property
     def n1(self):
-        '''
-        Retrieves the parameter, N1, used when creating this nested array.
-        '''
+        '''Retrieves the parameter, N1, used when creating this nested array.'''
         return self._n1
     
     @property
     def n2(self):
-        '''
-        Retrieves the parameter, N2, used when creating this nested array.
-        '''
+        '''Retrieves the parameter, N2, used when creating this nested array.'''
         return self._n2
 
 class CoPrimeArray(GridBasedArrayDesign):
 
     def __init__(self, m, n, d0, mode='2m', name=None, **kwargs):
-        '''
-        Creates an 1D co-prime array.
+        '''Creates an 1D co-prime array.
 
         Args:
             m (int): The smaller number in the co-prime pair.
@@ -428,24 +420,20 @@ class CoPrimeArray(GridBasedArrayDesign):
 
     @property
     def coprime_pair(self):
-        '''
-        Retrieves the co-prime pair used when creating this co-prime array.
-        '''
+        '''Retrieves the co-prime pair used when creating this co-prime array.'''
         return self._coprime_pair
 
     @property
     def mode(self):
-        '''
-        Retrieves the mode used when creating this co-prime array.
-        '''
+        '''Retrieves the mode used when creating this co-prime array.'''
         return self._mode
 
 class UniformCircularArray(ArrayDesign):
 
     def __init__(self, n, r, name=None, **kwargs):
-        '''
-        Creates a uniform circular array centered at the origin, in the
-        xy-plane.
+        '''Creates a uniform circular array (UCA).
+        
+        The UCA is centered at the origin, in the xy-plane.
 
         Args:
             n (int): Number of elements.
@@ -462,7 +450,5 @@ class UniformCircularArray(ArrayDesign):
 
     @property
     def radius(self):
-        '''
-        Retrieves the radius of the uniform circular array.
-        '''
+        '''Retrieves the radius of the uniform circular array.'''
         return self._r
