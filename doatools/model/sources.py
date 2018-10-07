@@ -172,13 +172,13 @@ class FarField1DSourcePlacement(SourcePlacement):
         s = 2 * np.pi / wavelength
         if sensor_locations.shape[1] == 1:
             # D[i,k] = sensor_location[i] * sin_val[k]
-            D = s * np.outer(sensor_locations, sin_vals)
+            D = s * (sensor_locations * sin_vals)
             if derivatives:
                 # Note that if x = \sin\theta then
                 # \frac{\partial cx}{\partial x} = c
                 # This is different from the derivative w.r.t. \theta:
                 # \frac{\partial cx}{\partial \theta} = c\cos\theta
-                DD = np.tile(s * sensor_locations, (self._locations.size, 1)).T
+                DD = np.tile(s * sensor_locations, (1, self._locations.size))
         else:
             # The sources are assumed to be within the xy-plane. The offset
             # along the z-axis of the sensors does not affect the delays.
