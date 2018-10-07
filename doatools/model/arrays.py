@@ -77,7 +77,7 @@ class ArrayDesign:
             number of dimensions of the nominal array.
         '''
         return self._locations.copy()
-    
+
     @property
     def actual_element_locations(self):
         '''Retrieves the actual element locations, considering location errors.
@@ -123,6 +123,14 @@ class ArrayDesign:
             return 1
         else:
             return self._locations.shape[1]
+    
+    @property
+    def actual_ndim(self):
+        '''Retrieves the number of dimensions of the array, considering location errors.'''
+        if 'location_errors' in self._perturbations:
+            return max(self._perturbations['location_errors'][0].shape[1], self.ndim)
+        else:
+            return self.ndim
 
     def has_perturbation(self, ptype):
         '''Check if the array has the given type of perturbation.'''

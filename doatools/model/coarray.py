@@ -1,11 +1,13 @@
 import numpy as np
 from .arrays import GridBasedArrayDesign
+from ..utils.math import unique_rows
 
 def compute_location_differences(locations):
-    '''
-    Computes all locations differences. Suppose `locations` is m x d, then
-    the result will be a m^2 x d matrix such that `locations[i] - locations[j]`
-    is stored in the (i + j * m)-th row of the resulting matrix.
+    '''Computes all locations differences, including duplicates.
+    
+    Suppose `locations` is m x d, then the result will be a m^2 x d matrix such
+    that `locations[i] - locations[j]` is stored in the (i + j * m)-th row of
+    the resulting matrix.
 
     For instance, if `locations` is [[0, 1], [1, 3]], then the output will be
 
@@ -18,6 +20,17 @@ def compute_location_differences(locations):
     # Use broadcasting to compute pairwise differences.
     D = locations.reshape((1, m, d)) - locations.reshape((m, 1, d))
     return D.reshape((-1, d))
+
+def compute_unique_location_differences(locations, atol=0.0, rtol=1e-8):
+    '''Computes all unique locations differences.
+
+    Unlike `compute_location_differences`, duplicates within the specified
+    tolerance are removed.
+
+    Args:
+        locations: An m x d array of sensor locations.
+    '''
+    return unique_rows(compute_location_differences(locations), atol, rtol)
 
 class WeightFunction1D:
 
