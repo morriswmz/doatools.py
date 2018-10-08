@@ -1,45 +1,6 @@
 import numpy as np
 from ..model.sources import FarField1DSourcePlacement
-
-def _unify_p_to_matrix(p, k):
-    '''
-    Unifies the source power input into a matrix.
-    
-    Args:
-        p: A scalar, list, or a numpy array.
-        k: Number of sources.
-    '''
-    if np.isscalar(p):
-        P = np.zeros((k, k))
-        np.fill_diagonal(P, p)
-        return P
-    if isinstance(p, list) or p.ndim == 1:
-        if len(p) != k:
-            raise ValueError('The length of the input vector does not match the number of sources.')
-        return np.diag(p)
-    elif p.ndim == 2:
-        return p
-    else:
-        raise ValueError('Expecting a scalar, an 1D vector or a 2D matrix.')
-
-def _unify_p_to_vector(p, k):
-    '''
-    Unifies the source power input into a vector.
-    
-    Args:
-        p: A scalar, list, or a numpy array.
-        k: Number of sources.
-    '''
-    if np.isscalar(p):
-        return np.full((k,), p)
-    if isinstance(p, list) or p.ndim == 1:
-        if len(p) != k:
-            raise ValueError('The length of the input vector does not match the number of sources.')
-        return np.array(p)
-    elif p.ndim == 2:
-        return np.diag(p)
-    else:
-        raise ValueError('Expecting a scalar, an 1D vector or a 2D matrix.')
+from .utils import unify_p_to_matrix, unify_p_to_vector
 
 def crb_sto_farfield_1d(array, wavelength, sources, p, sigma, n_snapshots=1):
     r'''
@@ -83,8 +44,8 @@ def crb_sto_farfield_1d(array, wavelength, sources, p, sigma, n_snapshots=1):
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     k = sources.size
-    P = _unify_p_to_matrix(p, k)
-    A, D = array.steering_matrix(sources, wavelength, True)
+    P = unify_p_to_matrix(p, k)
+    A, D = array.steering_matrix(sources, wavelength, True, 'all')
     A_H = A.T.conj()
     I = np.eye(array.size)
     # Compute the covairance matrix: R = A P A^H + \sigma I
@@ -141,7 +102,7 @@ def crb_det_farfield_1d(array, wavelength, sources, P, sigma, n_snapshots=1):
     m = array.size
     if P.ndim != 2 or P.shape[0] != k or P.shape[1] != k:
         raise ValueError('The sample covariance matrix of the source signals must be a K x K matrix, where K is the number of sources.')
-    A, D = array.steering_matrix(sources, wavelength, True)
+    A, D = array.steering_matrix(sources, wavelength, True, 'all')
     # Compute the projection matrix: A (A^H A)^{-1} A^H
     A_H = A.conj().T
     P_A = A @ np.linalg.solve(A_H @ A, A_H)
@@ -199,10 +160,10 @@ def crb_stouc_farfield_1d(array, wavelength, sources, p, sigma, n_snapshots=1,
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     k = sources.size
-    p = _unify_p_to_vector(p, k)
+    p = unify_p_to_vector(p, k)
     m = array.size
     # We need to compute each submatrix of the FIM.
-    A, DA = array.steering_matrix(sources, wavelength, True)
+    A, DA = array.steering_matrix(sources, wavelength, True, 'all')
     A_H = A.conj().T
     DA_H = DA.conj().T
     R = (A * p) @ A_H + sigma * np.eye(m)
