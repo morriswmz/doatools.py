@@ -1,6 +1,7 @@
 import numpy as np
 from math import ceil
 from scipy.signal import find_peaks
+import warnings
 from ..model.arrays import UniformLinearArray
 from ..model.sources import FarField1DSourcePlacement
 from .core import SpectrumBasedEstimatorBase, get_noise_subspace
@@ -95,6 +96,8 @@ class RootMUSIC1D:
         '''
         if not isinstance(design, UniformLinearArray):
             raise ValueError('Root-MUSIC currently only supports uniform linear arrays.')
+        if design.has_perturbation('location_errors'):
+            warnings.warn('Root-MUSIC does not consider location errors. Result may be inaccurate.')
         self._design = design
         self._wavelength = wavelength
 
