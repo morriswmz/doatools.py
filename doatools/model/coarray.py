@@ -35,8 +35,7 @@ def compute_unique_location_differences(locations, atol=0.0, rtol=1e-8):
 class WeightFunction1D:
 
     def __init__(self, design):
-        '''
-        Creates an 1D weight function.
+        '''Creates an 1D weight function.
 
         Args:
             design: Array design.
@@ -49,44 +48,45 @@ class WeightFunction1D:
         '''
         if design.ndim != 1 or not isinstance(design, GridBasedArrayDesign):
             raise ValueError('Expecting an 1D grid-based array.')
+        self._m = design.size
         self._build_map(design)
 
     def __call__(self, diff):
-        '''
-        Evaluates the weight function at the given difference.
-        '''
-        if diff in self._index_map:
-            return len(self._index_map[diff])
-        else:
-            return 0
+        '''Evaluates the weight function at the given difference.'''
+        return self.weight_of(diff)
 
     def __len__(self):
-        '''
-        Retrieves the number of unique differences.
-        '''
+        '''Retrieves the number of unique differences.'''
         return len(self._index_map)
 
     def differences(self):
-        '''
-        Retrieves a 1D array of unqiue differences, sorted in ascending order.
+        '''Retrieves a 1D array of unqiue differences, sorted in ascending
+        order.
+        
         The ordering of elements returned by `differences()` and the
         ordering of elements returned by `weights()` are the same.
         '''
         return self._differences.copy()
 
     def weights(self):
-        '''
-        Retrieves a 1D array of weights.
+        '''Retrieves a 1D array of weights.
+
         The ordering of elements returned by `differences()` and the
         ordering of elements returned by `weights()` are the same.
         '''
         return np.array([len(self._index_map[x]) for x in self._differences])
 
+    def weight_of(self, diff):
+        '''Evaluates the weight function at the given difference.'''
+        if diff in self._index_map:
+            return len(self._index_map[diff])
+        else:
+            return 0
+
     def indices_of(self, diff):
-        '''
-        Retrieves the list of indices of elements in the vectorized difference
-        matrix that correspond to the given difference. If the given difference
-        does not exist, an empty list will be returned.
+        '''Retrieves the list of indices of elements in the vectorized
+        difference matrix that correspond to the given difference. If the given
+        difference does not exist, an empty list will be returned.
 
         Args:
             diff (int) - Difference.
@@ -96,14 +96,40 @@ class WeightFunction1D:
         else:
             return []
 
-    def central_ula_size(self):
-        '''
-        Gets the size of the central ULA in the difference coarray.
-        '''
+    def get_central_ula_size(self):
+        '''Gets the size of the central ULA in the difference coarray.'''
         mv = 0
         while mv in self._index_map:
             mv += 1
         return mv * 2 - 1
+    
+    def get_coarray_selection_matrix(self, exclude_negative_part=False):
+        '''Gets the coarray selection matrix F such that z = F vec(R).
+
+        Let the central ULA size be 2M_v - 1 and the original array size be M.
+        F is an (2M_v - 1) x M^2 matrix that transforms the vectorized
+        sample covariance matrix, vec(R), to the virtual observation vector of
+        the central ULA, z, via redundancy averaging.
+
+        Args:
+            exclude_negative_part: If set to true, only the nonnegative part
+                of the central ULA (i.e., [0, 1, ..., M_v - 1]) will be
+                considered, and the resulting F will be M_v x M^2.
+        
+        Returns:
+            The coarray selection matrix.
+        '''
+        m_ula = self.get_central_ula_size()
+        m_v = (m_ula + 1) // 2
+        if exclude_negative_part:
+            m_ula = m_v
+            diff_range = range(0, m_v)
+        else:
+            diff_range = range(-m_v + 1, m_v)
+        F = np.zeros((m_ula, self._m**2))
+        for i, diff in enumerate(diff_range):
+            F[i, self.indices_of(diff)] = 1.0 / self.weight_of(diff)
+        return F
     
     def _build_map(self, design):
         # Maps difference -> indices in the vectorized difference matrix 

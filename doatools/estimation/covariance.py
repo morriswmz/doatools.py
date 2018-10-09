@@ -48,7 +48,7 @@ class ACMTransformer1D:
             raise ValueError('The dimension of the covariance matrix does not match the array size.')
         if method not in ['ss', 'da']:
             raise ValueError('Method can only be one of the following: ss, da.')
-        mc = self._w.central_ula_size()
+        mc = self._w.get_central_ula_size()
         mv = (mc + 1) // 2
         z = np.zeros((mc,), dtype=np.complex_)
         r = vec(R)
