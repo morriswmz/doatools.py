@@ -170,6 +170,7 @@ class FarField1DSearchGrid(SearchGrid):
         return self._sources.locations,
 
     def create_refined_grid_at(self, *indices, **kwargs):
+        # TODO: rethink the refining process
         '''
         Creates a new search grid by subdividing a subset of the the current
         search grid into finer ones.

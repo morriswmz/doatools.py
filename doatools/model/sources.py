@@ -5,8 +5,7 @@ import numpy as np
 import scipy
 
 class SourcePlacement(ABC):
-    '''
-    Represents the placement of several sources.
+    '''Represents the placement of several sources.
 
     Subclass notice: the __init__ should take only two parameters: locations and
     unit.
@@ -17,14 +16,11 @@ class SourcePlacement(ABC):
         self._unit = units
 
     def __len__(self):
-        '''
-        Returns the number of sources.
-        '''
+        '''Returns the number of sources.'''
         return self._locations.shape[0]
 
     def __getitem__(self, key):
-        '''
-        Accesses a specific source location or obtains a subset of source
+        '''Accesses a specific source location or obtains a subset of source
         placement via slicing.
 
         Implementation notice: this is a generic implementation. If your
@@ -51,31 +47,26 @@ class SourcePlacement(ABC):
 
     @property
     def size(self):
-        '''
-        Retrieves the number of sources.
-        '''
+        '''Retrieves the number of sources.'''
         return len(self)
 
     @property
     def locations(self):
-        '''
-        Retrives the source locations. Do NOT modify.
-        '''
+        '''Retrives the source locations.'''
         return self._locations
 
     @property
     def unit(self):
-        '''
-        Retrives the unit used.
-        '''
+        '''Retrives the unit used.'''
         return self._unit
 
     @abstractmethod
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''
-        Computes the M x K phase delay matrix D where D[m,k] is the relative
-        phase delay between the m-th sensor and the k-th source (usually using
-        the first sensor as the reference).
+        '''Computes the M x K phase delay matrix.
+
+        The phase delay matrix D is an M x K matrix, where D[m,k] is the
+        relative phase delay between the m-th sensor and the k-th source
+        (usually using the first sensor as the reference).
 
         Notes: the phase delay matrix is used in constructing the steering
         matrix. This method is decoupled from the steering matrix method
@@ -95,8 +86,7 @@ class SourcePlacement(ABC):
 class FarField1DSourcePlacement(SourcePlacement):
 
     def __init__(self, locations, unit='rad'):
-        r'''
-        Creates a far-field 1D source placement.
+        r'''Creates a far-field 1D source placement.
 
         Args:
             locations: A list or 1D numpy array representing the source
@@ -115,10 +105,12 @@ class FarField1DSourcePlacement(SourcePlacement):
         super().__init__(locations, unit)
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''
-        Computes the M x K phase delay matrix D where D[m,k] is the relative
-        phase delay between the m-th sensor and the k-th far-field source
-        (usually using the first sensor as the reference).
+        '''Computes the M x K phase delay matrix for one-dimensional far-field
+        sources.
+        
+        The phase delay matrix D is an M x K matrix, where D[m,k] is the
+        relative phase delay between the m-th sensor and the k-th far-field
+        source (usually using the first sensor as the reference).
 
         Args:
             sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
@@ -199,11 +191,10 @@ class FarField1DSourcePlacement(SourcePlacement):
 class FarField2DSourcePlacement(SourcePlacement):
 
     def __init__(self, locations, unit='rad'):
-        '''
-        Creates a far-field 2D source placement.
+        '''Creates a far-field 2D source placement.
 
         Args:
-            locations: An K x 2  numpy array representing the source locations,
+            locations: An K x 2 numpy array representing the source locations,
                 where K is the number of sources. Should never be modified after
                 creation.
             unit: Can be 'rad' or 'deg'.
@@ -218,10 +209,12 @@ class FarField2DSourcePlacement(SourcePlacement):
         super().__init__(locations, unit)
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''
-        Computes the M x K phase delay matrix D where D[m,k] is the relative
-        phase delay between the m-th sensor and the k-th far-field source
-        (usually using the first sensor as the reference).
+        '''Computes the M x K phase delay matrix for two-dimensional far-field
+        sources.
+        
+        The phase delay matrix D is an M x K matrix, where D[m,k] is the
+        relative phase delay between the m-th sensor and the k-th far-field
+        source (usually using the first sensor as the reference).
 
         Args:
             sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
