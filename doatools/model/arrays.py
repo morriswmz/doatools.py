@@ -131,9 +131,9 @@ class ArrayDesign:
             return max(self._perturbations['location_errors'][0].shape[1], self.ndim)
         else:
             return self.ndim
-
+    
     def has_perturbation(self, ptype):
-        '''Check if the array has the given type of perturbation.'''
+        '''Checks if the array has the given type of perturbation.'''
         return ptype in self._perturbations
     
     def is_perturbation_known(self, ptype):
@@ -278,7 +278,7 @@ class ArrayDesign:
             return A
 
     def get_measurements(self, sources, wavelength, n_snapshots,
-                         source_signal=None, noise_signal=None,
+                         source_signal, noise_signal,
                          compute_covariance=False):
         '''Retrieves the measurement vectors Y using the following model:
 
