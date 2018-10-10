@@ -4,7 +4,7 @@ import numpy.testing as npt
 from doatools.model.arrays import CoPrimeArray
 from doatools.model.sources import FarField1DSourcePlacement
 from doatools.estimation.music import RootMUSIC1D
-from doatools.estimation.covariance import ACMTransformer1D
+from doatools.estimation.coarray import CoarrayACMBuilder1D
 
 
 class TestCoarrayMUSIC(unittest.TestCase):
@@ -19,11 +19,11 @@ class TestCoarrayMUSIC(unittest.TestCase):
         # Compute the ideal covariance matrix at 0dB SNR.
         R = A @ A.T.conj() + np.eye(design.size)
         # Transform to the augmented covariance matrix.
-        ss_transform = ACMTransformer1D(design)
+        ss_transform = CoarrayACMBuilder1D(design)
+        rmusic = RootMUSIC1D(ss_transform.get_virtual_ula(), self.wavelength)
         for method in ['ss', 'da']:
-            Ra, vula = ss_transform(R, method)
+            Ra = ss_transform(R, method)
             # Estimate the DOAs using root-MUSIC.
-            rmusic = RootMUSIC1D(vula, self.wavelength)
             resolved, estimates = rmusic.estimate(Ra, sources.size)
             self.assertTrue(resolved)
             npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)

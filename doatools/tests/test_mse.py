@@ -6,7 +6,7 @@ from doatools.model.sources import FarField1DSourcePlacement
 from doatools.model.signals import ComplexStochasticSignal
 from doatools.performance.mse import ecov_music_1d, ecov_coarray_music_1d
 from doatools.estimation.music import RootMUSIC1D
-from doatools.estimation.covariance import ACMTransformer1D
+from doatools.estimation.coarray import CoarrayACMBuilder1D
 
 class TestMSE(unittest.TestCase):
 
@@ -51,15 +51,15 @@ class TestMSE(unittest.TestCase):
         power_noise = 1.0
         source_signal = ComplexStochasticSignal(power_source, sources.size)
         noise_signal = ComplexStochasticSignal(power_noise, array.size)
-        transform = ACMTransformer1D(array)
+        transform = CoarrayACMBuilder1D(array)
+        estimator = RootMUSIC1D(transform.get_virtual_ula(), self.wavelength)
         # Collect empirical results.
         np.random.seed(42)
         n_repeats = 1000    
         C_emp = np.zeros((sources.size, sources.size))
         for rr in range(n_repeats):
             _, R = array.get_measurements(sources, self.wavelength, n_snapshots, source_signal, noise_signal, True)
-            Rss, virtual_ula = transform(R)
-            estimator = RootMUSIC1D(virtual_ula, self.wavelength)
+            Rss = transform(R)
             _, estimates = estimator.estimate(Rss, sources.size)
             err = estimates.locations - sources
             C_emp += np.outer(err, err)

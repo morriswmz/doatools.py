@@ -49,6 +49,7 @@ class WeightFunction1D:
         if design.ndim != 1 or not isinstance(design, GridBasedArrayDesign):
             raise ValueError('Expecting an 1D grid-based array.')
         self._m = design.size
+        self._mv = None
         self._build_map(design)
 
     def __call__(self, diff):
@@ -96,12 +97,14 @@ class WeightFunction1D:
         else:
             return []
 
-    def get_central_ula_size(self):
+    def get_central_ula_size(self, exclude_negative_part=False):
         '''Gets the size of the central ULA in the difference coarray.'''
-        mv = 0
-        while mv in self._index_map:
-            mv += 1
-        return mv * 2 - 1
+        if self._mv is None:
+            mv = 0
+            while mv in self._index_map:
+                mv += 1
+            self._mv = mv
+        return self._mv if exclude_negative_part else self._mv * 2 - 1 
     
     def get_coarray_selection_matrix(self, exclude_negative_part=False):
         '''Gets the coarray selection matrix F such that z = F vec(R).
@@ -119,12 +122,12 @@ class WeightFunction1D:
         Returns:
             The coarray selection matrix.
         '''
-        m_ula = self.get_central_ula_size()
-        m_v = (m_ula + 1) // 2
+        m_v = self.get_central_ula_size(exclude_negative_part=True)
         if exclude_negative_part:
             m_ula = m_v
             diff_range = range(0, m_v)
         else:
+            m_ula = 2 * m_v - 1
             diff_range = range(-m_v + 1, m_v)
         F = np.zeros((m_ula, self._m**2))
         for i, diff in enumerate(diff_range):

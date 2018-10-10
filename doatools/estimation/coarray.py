@@ -1,25 +1,44 @@
 import numpy as np
-from ..model.arrays import UniformLinearArray
+from ..model.arrays import UniformLinearArray, GridBasedArrayDesign
 from ..model.coarray import WeightFunction1D
 from ..utils.math import vec
 
-class ACMTransformer1D:
+class CoarrayACMBuilder1D:
 
     def __init__(self, design):
-        '''
-        Based on the array design, creates an callable object that transforms
-        covariance matrices obtained from the physical array model into
-        augmented covariance matrices under the difference coarray model.
+        '''Based on the array design, creates an callable object that can
+        transforms covariance matrices obtained from the physical array model
+        into augmented covariance matrices under the difference coarray model.
 
         Args:
-            design - A 1D grid-based array design. 
+            design - A 1D grid-based array design.
         '''
+        if not isinstance(design, GridBasedArrayDesign) or design.ndim > 1:
+            raise ValueError('Expecting an 1D grid-based array.')
         self._design = design
         self._w = WeightFunction1D(design)
-    
+
     def __call__(self, R, method='ss'):
-        '''
-        Transforms the input covariance matrix into the augmented covariance
+        '''An shortcut to `self.transform()`.'''
+        return self.transform(R, method)
+
+    @property
+    def input_size(self):
+        '''Retrives the size of the input covariance matrix.'''
+        return self._design.size
+
+    @property
+    def output_size(self):
+        '''Retrives the size of the output/transformed covariance matrix.'''
+        return self._w.get_central_ula_size(True)
+    
+    def get_virtual_ula(self, name=None):
+        if name is None:
+            name = 'Virtual ULA of ' + self._design.name
+        return UniformLinearArray(self.output_size, self._design.d0, name)
+
+    def transform(self, R, method='ss'):
+        '''Transforms the input covariance matrix into the augmented covariance
         matrix under the difference coarray model.
 
         Args:
@@ -31,9 +50,7 @@ class ACMTransformer1D:
                 results when using beamforming-based estimators.
           
         Returns:
-            Ra: Augmented covariance matrix.
-            vula: The virtual ULA associated with the augmented covariance
-                matrix, to be used together with `Ra` for DOA estimation.
+            Augmented covariance matrix.
 
         References:
         [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
@@ -65,4 +82,4 @@ class ACMTransformer1D:
             # Direct augmentation
             for i in range(mv):
                 Ra[:,-(i+1)] = z[i:i+mv]
-        return Ra, UniformLinearArray(mv, self._design.d0)
+        return Ra
