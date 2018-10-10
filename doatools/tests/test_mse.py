@@ -52,7 +52,7 @@ class TestMSE(unittest.TestCase):
         source_signal = ComplexStochasticSignal(power_source, sources.size)
         noise_signal = ComplexStochasticSignal(power_noise, array.size)
         transform = CoarrayACMBuilder1D(array)
-        estimator = RootMUSIC1D(transform.get_virtual_ula(), self.wavelength)
+        estimator = RootMUSIC1D(self.wavelength)
         # Collect empirical results.
         np.random.seed(42)
         n_repeats = 1000    
@@ -60,7 +60,7 @@ class TestMSE(unittest.TestCase):
         for rr in range(n_repeats):
             _, R = array.get_measurements(sources, self.wavelength, n_snapshots, source_signal, noise_signal, True)
             Rss = transform(R)
-            _, estimates = estimator.estimate(Rss, sources.size)
+            _, estimates = estimator.estimate(Rss, sources.size, array.d0)
             err = estimates.locations - sources
             C_emp += np.outer(err, err)
         C_emp /= n_repeats

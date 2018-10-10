@@ -27,8 +27,8 @@ class TestMUSIC(unittest.TestCase):
         self.assertTrue(resolved)
         npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)
         # root-MUSIC
-        rmusic = RootMUSIC1D(ula, self.wavelength)
-        resolved, estimates = rmusic.estimate(R, n_sources)
+        rmusic = RootMUSIC1D(self.wavelength)
+        resolved, estimates = rmusic.estimate(R, n_sources, ula.d0)
         self.assertTrue(resolved)
         npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)
 

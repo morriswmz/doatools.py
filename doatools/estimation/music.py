@@ -86,33 +86,31 @@ class MUSIC(SpectrumBasedEstimatorBase):
 
 class RootMUSIC1D:
 
-    def __init__(self, design, wavelength):
-        '''
-        Create a root-MUSIC estimator for the given uniform linear array.
+    def __init__(self, wavelength):
+        '''Create a root-MUSIC estimator for uniform linear arrays.
 
         Args:
-            design (ArrayDesign): A uniform linear array design.
             wavelength (float): Wavelength of the carrier wave.
         '''
-        if not isinstance(design, UniformLinearArray):
-            raise ValueError('Root-MUSIC currently only supports uniform linear arrays.')
-        if design.has_perturbation('location_errors'):
-            warnings.warn('Root-MUSIC does not consider location errors. Result may be inaccurate.')
-        self._design = design
         self._wavelength = wavelength
 
-    def estimate(self, R, k):
+    def estimate(self, R, k, d0=None):
         '''
         Estimates the DOAs of 1D far-field sources from the give covariance
         matrix.
 
         Args:
-            R (ndarray): Covariance matrix input. The size of R must match that of the
-                array design used when creating this estimator.
+            R (ndarray): Covariance matrix input. The size of R determines
+                the size of the uniform linear array.
             k (int): Expected number of sources.
+            d0 (float): Inter-element spacing of the uniform linear array.
+                If not specified, it will be set to one half of the wavelength.
         '''
-        _validate_estimation_input(self._design, R, k)
-        m = self._design.size
+        m = R.shape[0]
+        if k >= m:
+            raise ValueError('Too many sources.')
+        if d0 is None:
+            d0 = self._wavelength / 2.0
         En = get_noise_subspace(R, k)
         # Compute the coefficients for the polynomial.
         C = En @ En.T.conj()
@@ -150,7 +148,7 @@ class RootMUSIC1D:
         if len(z) < k:
             return False, None
         else:
-            c = 2 * np.pi * self._design.d0 / self._wavelength
+            c = 2 * np.pi * d0 / self._wavelength
             phases = np.angle(z[sorted_indices[:k]]) / c
             locations = np.arcsin(phases)
             locations.sort()
