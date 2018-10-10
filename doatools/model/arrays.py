@@ -480,7 +480,7 @@ class MinimumRedundancyLinearArray(GridBasedArrayDesign):
             raise ValueError('The MRLA presets only support up to 20 elements.')
         if name is None:
             name = 'MRLA {0}'.format(n)
-        super().__init__(np.array(_MRLA_PRESETS[n])[:, np.newaxis], d0, name, **kwargs)
+        super().__init__(np.array(_MRLA_PRESETS[n - 1])[:, np.newaxis], d0, name, **kwargs)
         
 class UniformCircularArray(ArrayDesign):
 
