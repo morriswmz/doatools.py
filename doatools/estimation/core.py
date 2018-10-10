@@ -23,8 +23,7 @@ def get_noise_subspace(R, k):
     '''
     _, E = np.linalg.eigh(R)
     # Note: eigenvalues are sorted in ascending order.
-    noise_dim = R.shape[0] - k
-    return E[:,:noise_dim]
+    return E[:,:-k]
 
 class SpectrumBasedEstimatorBase:
 
