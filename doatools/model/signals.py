@@ -48,6 +48,19 @@ class ComplexStochasticSignal(SignalGenerator):
     @property
     def dim(self):
         return self._dim
+    
+    @property
+    def covariance(self):
+        '''Retrieves the covariance of the complex Gaussian distribution.'''
+        return self._C
+    
+    @covariance.setter
+    def covariance(self, C):
+        '''Sets the covariance of the complex Gaussian distribution.'''
+        if not np.isscalar(C):
+            if C.ndim > 2 or any(map(lambda x: x != self._dim, C.shape)):
+                raise ValueError('Expecting a scalar, an 1D vector of length {0}, or a matrix of size {0}x{0}'.format(self._dim))
+        self._C = C
 
     def emit(self, n):
         k = self.dim
