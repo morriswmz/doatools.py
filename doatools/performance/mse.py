@@ -4,7 +4,7 @@ from ..model.sources import FarField1DSourcePlacement
 from ..model.coarray import WeightFunction1D
 from .utils import unify_p_to_matrix, unify_p_to_vector
 
-def ecov_music_1d(array, wavelength, sources, P, sigma, n_snapshots=1, perturbations='all'):
+def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbations='all'):
     '''Computes the asymptotic covariance matrix of the estimation errors of
     the classical MUSIC algorithm.
 
@@ -59,7 +59,7 @@ def ecov_music_1d(array, wavelength, sources, P, sigma, n_snapshots=1, perturbat
     C = (sigma / 2.0 / n_snapshots) * ((H * B.T).real * np.outer(h, h))
     return C
 
-def ecov_coarray_music_1d(array, wavelength, sources, p, sigma, n_snapshots=1):
+def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     '''Computes the asymptotic covariance matrix of the estimation errors of the
     coarray-based MUSIC algorithm, SS-MUSIC or DA-MUSIC.
 

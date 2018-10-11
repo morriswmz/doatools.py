@@ -277,27 +277,6 @@ class ArrayDesign:
         else:
             return A
 
-    def get_measurements(self, sources, wavelength, n_snapshots,
-                         source_signal, noise_signal,
-                         compute_covariance=False):
-        '''Retrieves the measurement vectors Y using the following model:
-
-        Y = AS + E,
-
-        where A is the steering matrix, S consists of source signals and E
-        consists of noise signals.
-        '''
-        A = self.steering_matrix(sources, wavelength)
-        S = source_signal.emit(n_snapshots)
-        N = noise_signal.emit(n_snapshots)
-        Y = A @ S + N
-        if compute_covariance:
-            R = (Y @ Y.conj().T) / n_snapshots
-            return Y, R
-        else:
-            return Y
-
-
 class GridBasedArrayDesign(ArrayDesign):
 
     def __init__(self, indices, d0, name, **kwargs):

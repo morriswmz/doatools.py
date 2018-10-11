@@ -2,7 +2,7 @@ import numpy as np
 from ..model.sources import FarField1DSourcePlacement
 from .utils import unify_p_to_matrix, unify_p_to_vector
 
-def crb_sto_farfield_1d(array, wavelength, sources, p, sigma, n_snapshots=1):
+def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     r'''
     Computes the stochastic CRB for 1D farfield sources.
     
@@ -59,7 +59,7 @@ def crb_sto_farfield_1d(array, wavelength, sources, p, sigma, n_snapshots=1):
     CRB = np.linalg.inv(CRB) * (sigma / n_snapshots / 2)
     return 0.5 * (CRB + CRB.T)
 
-def crb_det_farfield_1d(array, wavelength, sources, P, sigma, n_snapshots=1):
+def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
     r'''
     Computes the deterministic CRB for 1D farfield sources.
     
@@ -112,7 +112,7 @@ def crb_det_farfield_1d(array, wavelength, sources, P, sigma, n_snapshots=1):
     CRB = np.linalg.inv((H * P.T).real) * (sigma / n_snapshots / 2)
     return 0.5 * (CRB + CRB.T)
 
-def crb_stouc_farfield_1d(array, wavelength, sources, p, sigma, n_snapshots=1,
+def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
                           output_fim=False):
     r'''
     Computes the stochastic CRB for 1D farfield sources with the assumption

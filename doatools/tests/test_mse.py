@@ -4,6 +4,7 @@ import numpy.testing as npt
 from doatools.model.arrays import UniformLinearArray, NestedArray
 from doatools.model.sources import FarField1DSourcePlacement
 from doatools.model.signals import ComplexStochasticSignal
+from doatools.model.snapshots import get_narrowband_snapshots
 from doatools.performance.mse import ecov_music_1d, ecov_coarray_music_1d
 from doatools.estimation.music import RootMUSIC1D
 from doatools.estimation.coarray import CoarrayACMBuilder1D
@@ -19,7 +20,7 @@ class TestMSE(unittest.TestCase):
         n_snapshots = 100
         power_source = np.array([1.0, 2.0, 3.0, 2.0])
         power_noise = 1.0
-        C = ecov_music_1d(array, self.wavelength, sources, power_source, power_noise, n_snapshots)
+        C = ecov_music_1d(array, sources, self.wavelength, power_source, power_noise, n_snapshots)
         C_expected = np.array([
             [ 1.58491227e-05, -1.29740954e-08, -2.07219245e-09, -2.31572888e-08],
             [-1.29740954e-08,  2.31249079e-06, -1.83104065e-09, -1.28782667e-09],
@@ -34,7 +35,7 @@ class TestMSE(unittest.TestCase):
         n_snapshots = 100
         power_source = np.array([1.0, 2.0, 3.0, 2.0])
         power_noise = 1.0
-        C = ecov_coarray_music_1d(array, self.wavelength, sources, power_source, power_noise, n_snapshots)
+        C = ecov_coarray_music_1d(array, sources, self.wavelength, power_source, power_noise, n_snapshots)
         C_expected = np.array([
             [ 4.411638e-04, -3.959079e-05, -3.204349e-05, -2.384947e-05],
             [-3.959079e-05,  2.354386e-05, -3.359402e-06,  7.594943e-06],
@@ -58,14 +59,15 @@ class TestMSE(unittest.TestCase):
         n_repeats = 1000    
         C_emp = np.zeros((sources.size, sources.size))
         for rr in range(n_repeats):
-            _, R = array.get_measurements(sources, self.wavelength, n_snapshots, source_signal, noise_signal, True)
+            _, R = get_narrowband_snapshots(array, sources, self.wavelength,
+                source_signal, noise_signal, n_snapshots, True)
             Rss = transform(R)
             _, estimates = estimator.estimate(Rss, sources.size, array.d0)
             err = estimates.locations - sources
             C_emp += np.outer(err, err)
         C_emp /= n_repeats
         # Compare with analytical results.
-        C = ecov_coarray_music_1d(array, self.wavelength, sources, power_source, power_noise, n_snapshots)
+        C = ecov_coarray_music_1d(array, sources, self.wavelength, power_source, power_noise, n_snapshots)
         npt.assert_allclose(np.diag(C_emp), np.diag(C), rtol=1e-1)
 
 if __name__ == '__main__':
