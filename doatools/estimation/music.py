@@ -69,8 +69,8 @@ class MUSIC(SpectrumBasedEstimatorBase):
                 visualization. Default value if False.
         
         Returns:
-            resolved (bool): A boolean indicating if the desired number of sources
-                are resolved. If resolved is False, both `estimates` and
+            resolved (bool): A boolean indicating if the desired number of
+                sources are resolved. If resolved is False, both `estimates` and
                 `spectrum` will be None.
             estimates (SourcePlacement): A SourcePlacement instance of the same
                 type as the one used in the search grid, represeting the
@@ -105,6 +105,14 @@ class RootMUSIC1D:
             k (int): Expected number of sources.
             d0 (float): Inter-element spacing of the uniform linear array.
                 If not specified, it will be set to one half of the wavelength.
+        
+        Returns:
+            resolved (bool): A boolean indicating if the desired number of
+                sources are resolved. If resolved is False, `estimates` will be
+                None.
+            estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
+                instance represeting the estimated DOAs. Will be `None` if
+                resolved is False.
         '''
         m = R.shape[0]
         if k >= m:

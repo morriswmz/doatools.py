@@ -1,4 +1,5 @@
 from .music import MUSIC, RootMUSIC1D
+from .esprit import Esprit1D
 from .beamforming import BartlettBeamformer, MVDRBeamformer
 from .sparse import SparseBPDN
 from .grid import FarField1DSearchGrid

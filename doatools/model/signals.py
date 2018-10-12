@@ -56,7 +56,17 @@ class ComplexStochasticSignal(SignalGenerator):
     
     @covariance.setter
     def covariance(self, C):
-        '''Sets the covariance of the complex Gaussian distribution.'''
+        '''Sets the covariance of the complex Gaussian distribution.
+        
+        Args:
+            C: Covariance matrix of the complex Gaussian distribution.
+                Can be specified by
+                1. A full covariance matrix.
+                2. An real vector denoting the diagonals of the covariance
+                   matrix if the covariance matrix is diagonal.
+                3. A scalar if the covariance matrix is diagonal and all
+                   diagonal elements share the same value.
+        '''
         if not np.isscalar(C):
             if C.ndim > 2 or any(map(lambda x: x != self._dim, C.shape)):
                 raise ValueError('Expecting a scalar, an 1D vector of length {0}, or a matrix of size {0}x{0}'.format(self._dim))
