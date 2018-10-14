@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import warnings
-from ..model import ArrayDesign
 from ..model.coarray import compute_unique_location_differences
 
 def _auto_scatter(ax, x, *args, **kwargs):
@@ -72,7 +71,8 @@ def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
     ax.set_ylabel('y')
     if array.actual_ndim < 3:
         ax.set_aspect('equal', adjustable='datalim')
-        ax.grid('on')
+        ax.grid(True)
+        ax.set_axisbelow(True) # Move grid lines behind.
     else:
         ax.set_zlabel('z')
         _fix_3d_aspect(ax)
