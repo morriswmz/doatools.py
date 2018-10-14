@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 
 def _normalize_by_maximum(x):
     max_x = x.max()
@@ -8,7 +9,7 @@ def _normalize_by_maximum(x):
     else:
         return x
 
-def _preprocess_spectrum_input(sp, grid):
+def _build_spectrum_list(sp, grid):
     '''
     Preprocesses the spectrum input and convert it into a list of tuples, where
     the first element in the tuple is the numpy array and the second element is
@@ -26,10 +27,16 @@ def _preprocess_spectrum_input(sp, grid):
         raise ValueError('Expecting at least on spectrum.')
     for t in sp_list:
         if t[0].shape != grid.shape:
-            raise ValueError('The shape of the spectrum does not match the search grid.')
-    return sp_list, sp_list[0][0].ndim
+            raise ValueError('The shape of the spectrum, {0}, does not match the search grid, {1}.'.format(t[0].shape, grid.shape))
+    return sp_list
 
-def _plot_spectrum_1d(sp_list, grid, estimates, ground_truth, use_log_scale, discrete):
+def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
+                     use_log_scale=False, discrete=False):
+    '''Plots an 1D spectrum or multiple 1D spectra.
+
+    '''
+    # Preprocess the sp input
+    sp_list = _build_spectrum_list(sp, grid)
     x = grid.axes[0]
     has_legend = False
     # 'C3' and 'C2' are reserved for estimates and ground truth
@@ -39,15 +46,15 @@ def _plot_spectrum_1d(sp_list, grid, estimates, ground_truth, use_log_scale, dis
     plot_containers = []
     # Plot every spectrum
     if discrete and use_log_scale:
-        plt.yscale('log')
+        ax.set_yscale('log')
     for i, (spectrum, label) in enumerate(sp_list):
         color = color_cycle[i % len(color_cycle)]
         y = _normalize_by_maximum(spectrum)
         if len(label) > 0:
             has_legend = True
         if discrete:
-            container_sp = plt.stem(x, y, '-', markerfmt=' ', basefmt=' ',
-                                    label=label)
+            container_sp = ax.stem(x, y, '-', markerfmt=' ', basefmt=' ',
+                                   label=label)
             plt.setp(container_sp, color=color)
             plot_containers.append(container_sp)
         else:
@@ -56,47 +63,96 @@ def _plot_spectrum_1d(sp_list, grid, estimates, ground_truth, use_log_scale, dis
             else:
                 plot_containers.append(plt.plot(x, y, '-', label=label, color=color))
     # Set up x-axis
-    x_presets = {
-        'rad': ('DOA/rad', -np.pi/2, np.pi/2),
-        'deg': ('DOA/deg', -90, 90),
-        'sin': ('DOA/sin', -1, 1)
-    }
-    x_label, x_min, x_max = x_presets[grid.unit]
-    plt.xlim((x_min, x_max))
-    plt.xlabel(x_label)
+    ax.set_xlabel('{0}/{1}'.format(grid.axis_names[0], grid.units[0]))
     # Set up y-axis
     if not use_log_scale:
-        plt.ylim((0, plt.ylim()[1]))
-    plt.ylabel('Normalized spectrum')
+        ax.set_ylim((0, plt.ylim()[1]))
+    ax.set_ylabel('Normalized spectrum')
     # Plot estimates
     if estimates is not None:
-        if estimates.unit != grid.unit:
+        if estimates.units != grid.units:
             raise ValueError('The unit of estimates does not match that of the search grid.')
         x_est = estimates.locations
         y_est = np.ones(x_est.shape)
-        container_est = plt.stem(x_est, y_est, '--', markerfmt='x',
-                                 basefmt=' ', label='Estimates')
+        container_est = ax.stem(x_est, y_est, '--', markerfmt='x',
+                                basefmt=' ', label='Estimates')
         plt.setp(container_est, color=color_estimates)
         plot_containers.append(container_est)
         has_legend = True
     # Plot ground truth
     if ground_truth is not None:
-        if ground_truth.unit != grid.unit:
+        if ground_truth.units != grid.units:
             raise ValueError('The unit of ground truth does not match that of the search grid.')
         x_truth = ground_truth.locations
         y_truth = np.ones(x_truth.shape)
-        container_truth = plt.stem(x_truth, y_truth, '--', markerfmt='o',
-                                   basefmt=' ', label='Ground truth')
+        container_truth = ax.stem(x_truth, y_truth, '--', markerfmt='o',
+                                  basefmt=' ', label='Ground truth')
         plt.setp(container_truth, color=color_truth)
         plot_containers.append(container_truth)
         has_legend = True
     # Show the legend.
     if has_legend:
-        plt.legend()
+        ax.legend()
     return plot_containers
 
-def plot_spectrum(sp, grid, estimates=None, ground_truth=None,
-                  use_log_scale=False, discrete=False):
+def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
+                     use_log_scale=False, swap_axes=False, color_map='jet'):
+    if sp.shape != grid.shape:
+        raise ValueError('The shape of the spectrum, {0}, does not match the search grid, {1}.'.format(sp.shape, grid.shape))
+    # Note that columns -> x, rows -> y by default
+    if swap_axes:
+        ind_x, ind_y = 0, 1
+        sp = sp.T
+    else:
+        ind_x, ind_y = 1, 0
+    axes = grid.axes
+    axis_names = grid.axis_names
+    units = grid.units
+    has_legend = False
+    x, y = axes[ind_x], axes[ind_y]
+    z = _normalize_by_maximum(sp)
+    x_label = '{0}/{1}'.format(axis_names[ind_x], units[ind_x])
+    y_label = '{0}/{1}'.format(axis_names[ind_y], units[ind_y])
+    plot_args = {
+        'extent': (x.min(), x.max(), y.min(), y.max()),
+        'origin': 'lower',
+        'cmap': color_map,
+        'aspect': 'auto'
+    }
+    containers = []
+    if use_log_scale:
+        plot_args['norm'] = LogNorm()
+    containers.append(ax.imshow(sp, **plot_args))
+    plt.colorbar(containers[0], ax=ax)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    if estimates is not None:
+        if estimates.units != grid.units:
+            raise ValueError('The unit of estimates does not match that of the search grid.')
+        containers.append(ax.scatter(
+            estimates.locations[:, ind_x],
+            estimates.locations[:, ind_y],
+            marker='o',
+            edgecolors='k',
+            facecolors='none',
+            label='Estimates'))
+        has_legend = True
+    if ground_truth is not None:
+        if ground_truth.units != grid.units:
+            raise ValueError('The unit of ground truth does not match that of the search grid.')
+        containers.append(ax.scatter(
+            ground_truth.locations[:, ind_x],
+            ground_truth.locations[:, ind_y],
+            marker='+',
+            c='k',
+            label='Ground truth'))
+        has_legend = True
+    if has_legend:
+        ax.legend()
+    return containers
+
+def plot_spectrum(sp, grid, ax=None, estimates=None, ground_truth=None,
+                  use_log_scale=False, **kwargs):
     '''
     Provides a convenient way to plot the given spectrum.
 
@@ -120,11 +176,23 @@ def plot_spectrum(sp, grid, estimates=None, ground_truth=None,
             Default value is False.
     
     Returns:
-        *containers: A list of plot containers.
+        ax: The axes object containing the plot.
+        containers: A list of plot containers.
     '''
-    sp_list, sp_dim = _preprocess_spectrum_input(sp, grid)
-    if sp_dim == 1:
-        return _plot_spectrum_1d(sp_list, grid, estimates, ground_truth,
-                                 use_log_scale, discrete)
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        new_plot = True
+    else:
+        new_plot = False
+    if grid.ndim == 1:
+        ret = plot_spectrum_1d(sp, grid, ax, estimates, ground_truth,
+                               use_log_scale, **kwargs)
+    elif grid.ndim == 2:
+        ret = plot_spectrum_2d(sp, grid, ax, estimates, ground_truth,
+                               use_log_scale, **kwargs)
     else:
         raise NotImplementedError()
+    if new_plot:
+        plt.show()
+    return ax, ret

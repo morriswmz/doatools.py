@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from ..model.sources import FarField1DSourcePlacement, FarField2DSourcePlacement
+from ..utils.math import cartesian
 
 def merge_intervals(intervals):
     '''
@@ -33,24 +34,19 @@ class SearchGrid(ABC):
     @property
     @abstractmethod
     def ndim(self):
-        '''
-        Retrieves the number of dimensions of this search grid.
-        '''
+        '''Retrieves the number of dimensions of this search grid.'''
         pass
 
     @property
     @abstractmethod
     def size(self):
-        '''
-        Retrieves the number of elements on this search grid.
-        '''
+        '''Retrieves the number of elements on this search grid.'''
         pass
 
     @property
     @abstractmethod
     def shape(self):
-        '''
-        Retrives the shape of this search grid.
+        '''Retrives the shape of this search grid.
 
         Returns:
             shape: A tuple representing the shape.
@@ -68,12 +64,12 @@ class SearchGrid(ABC):
         changes the slowest, the second dimension changes the second slowest,
         and so on. For instance, the elements in the following 2x3 grid
 
-        (1, 3) (1, 4) (1, 5)
-        (2, 3) (2, 4) (2, 5)
+        (1, 1) (1, 2) (1, 3)
+        (2, 1) (2, 2) (2, 3)
 
         will be ordered as
 
-        (1, 3) (1, 4) (1, 5) (2, 3) (2, 4) (2, 5)
+        (1, 1) (1, 2) (1, 3) (2, 1) (2, 2) (2, 3)
 
         Do not modify the returned SourcePlacement instance.
         '''
@@ -81,19 +77,24 @@ class SearchGrid(ABC):
 
     @property
     @abstractmethod
-    def unit(self):
-        '''
-        Retrieves the unit used.
-        '''
+    def units(self):
+        '''Retrieves a tuple of strings representing the unit used for each axis.'''
         pass
 
     @property
     @abstractmethod
     def axes(self):
-        '''
-        Retrieves a tuple of 1D numpy vectors representing the axes.
+        '''Retrieves a tuple of 1D numpy vectors representing the axes such
+        that: source_locations = cartesian(axes[0], axes[1], ...).
+
         Do NOT modify.
         '''
+        pass
+    
+    @property
+    @abstractmethod
+    def axis_names(self):
+        '''Retrieves a tuple of strings representing the axis names.'''
         pass
 
     @abstractmethod
@@ -162,8 +163,12 @@ class FarField1DSearchGrid(SearchGrid):
         return self._sources
 
     @property
-    def unit(self):
-        return self._sources.unit
+    def units(self):
+        return self._sources.units
+
+    @property
+    def axis_names(self):
+        return 'DOA',
 
     @property
     def axes(self):
@@ -208,3 +213,43 @@ class FarField1DSearchGrid(SearchGrid):
         stops = [self._sources[i[1]] for i in intervals]
         sizes = [(i[1] - i[0]) * density + 1 for i in intervals]
         return FarField1DSearchGrid(starts, stops, sizes)
+
+class FarField2DSearchGrid(SearchGrid):
+
+    def __init__(self, start=(0.0, 0.0), stop=(np.pi*2, np.pi/2),
+                 size=(360, 90), unit='rad'):
+        self._azimuth = np.linspace(start[0], stop[0], size[0], False)
+        self._elevation = np.linspace(start[1], stop[1], size[1], False)
+        self._sources = FarField2DSourcePlacement(
+            cartesian(self._azimuth, self._elevation), unit)
+
+    @property
+    def ndim(self):
+        return 2
+
+    @property
+    def size(self):
+        return self._sources.size
+
+    @property
+    def shape(self):
+        return self._azimuth.size, self._elevation.size
+
+    @property
+    def source_placement(self):
+        return self._sources
+
+    @property
+    def units(self):
+        return self._sources.units
+
+    @property
+    def axes(self):
+        return self._azimuth, self._elevation
+    
+    @property
+    def axis_names(self):
+        return 'Azimuth', 'Elevation'
+
+    def create_refined_grid_at(self, *indices, **kwargs):
+        raise NotImplementedError()
