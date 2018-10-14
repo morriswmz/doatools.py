@@ -34,6 +34,30 @@ def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
                      use_log_scale=False, discrete=False):
     '''Plots an 1D spectrum or multiple 1D spectra.
 
+    Args:
+        sp: Can be one of the following:
+            1. A numpy array representing the spectrum. Usually this is the
+               output of a spectrum-based estimator.
+            2. A list or tuple of numpy arrays of the same shape. This will
+               draw multiple spectra in the same plot.
+            3. A dictionary of numpy arrays of the same shape, where the keys
+               represent the labels. This will draw multiple spectra in the same
+               plot with labels.
+        grid: The search grid used to generate the spectrum/spectra. Its shape
+            must match that of the spectrum/spectra.
+        ax: The Axes object that will be used for plotting.
+        estimates: A SourcePlacement instance containing the estimated source
+            locations. Will be plotted if supplied. Default value is None.
+        ground_truth: A SourcePlacement instance containing the true source
+            locations. Will be plotted if supplied. Default value is None.
+        use_log_scale: Sets whether the spectrum should be plotted in log scale.
+            Default value is False.
+        discrete: Sets whether the spectrum should be plotted with `stem`.
+            Default value is False.
+
+    Returns:
+        A list of plot containers in the following order: spectrum plots,
+        estimate plot, ground truth plot.
     '''
     # Preprocess the sp input
     sp_list = _build_spectrum_list(sp, grid)
@@ -97,14 +121,35 @@ def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
 
 def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
                      use_log_scale=False, swap_axes=False, color_map='jet'):
+    '''Plots a 2D spectrum.
+
+    Args:
+        sp: A 2D ndarray representing the spectrum.
+        grid: The search grid used to generate the spectrum. Its shape must
+            match the shape of `sp`.
+        ax: The Axes object that will be used for plotting.
+        estimates: A SourcePlacement instance containing the estimated source
+            locations. Will be plotted if supplied. Default value is None.
+        ground_truth: A SourcePlacement instance containing the true source
+            locations. Will be plotted if supplied. Default value is None.
+        use_log_scale: Sets whether the spectrum should be plotted in log scale.
+            Default value is False.
+        swap_axes: Set to true to swap the x and y axis when plotting. Default
+            value is False.
+        color_map: Specifies the color map. Default value is 'jet'.
+
+    Returns:
+        A list of plot containers in the following order: spectrum plot,
+        estimate plot, ground truth plot.
+    '''
     if sp.shape != grid.shape:
         raise ValueError('The shape of the spectrum, {0}, does not match the search grid, {1}.'.format(sp.shape, grid.shape))
     # Note that columns -> x, rows -> y by default
     if swap_axes:
+        ind_x, ind_y = 1, 0
+    else:
         ind_x, ind_y = 0, 1
         sp = sp.T
-    else:
-        ind_x, ind_y = 1, 0
     axes = grid.axes
     axis_names = grid.axis_names
     units = grid.units
@@ -151,36 +196,33 @@ def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
         ax.legend()
     return containers
 
-def plot_spectrum(sp, grid, ax=None, estimates=None, ground_truth=None,
-                  use_log_scale=False, **kwargs):
-    '''
-    Provides a convenient way to plot the given spectrum.
+def plot_spectrum(sp, grid, ax=None, figsize=None, estimates=None,
+                  ground_truth=None, use_log_scale=False, **kwargs):
+    '''Provides a convenient way to plot the given spectrum. Automatically
+    selects the plot function based on input grid's number of dimensions.
 
     Args:
-        sp: Can be one of the following:
-            1. A numpy array representing the spectrum. Usually this is the
-               output of a spectrum-based estimator.
-            2. A list or tuple of numpy arrays of the same shape. This will
-               draw multiple spectra in the same plot.
-            3. A dictionary of numpy arrays of the same shape, where the keys
-               represent the labels. This will draw multiple spectra in the same
-               plot with labels.
-        grid: The search grid used to generate the spectrum.
+        sp: Compatible spectrum (or spectra collection) input.
+        grid: grid: The search grid used to generate the spectrum/spectra. Its
+            shape must match that of the spectrum/spectra.
+        ax: The Axes object used for plotting. If not specified, a new figure
+            will be created and shown. Default value is None.
+        figsize: If `ax` is None, specifies the new figure's size.
         estimates: A SourcePlacement instance containing the estimated source
             locations. Will be plotted if supplied. Default value is None.
         ground_truth: A SourcePlacement instance containing the true source
             locations. Will be plotted if supplied. Default value is None.
         use_log_scale: Sets whether the spectrum should be plotted in log scale.
             Default value is False.
-        discrete: Sets whether the spectrum should be plotted with `stem`.
-            Default value is False.
+        **kwargs: Other compatible options depending on the number of dimensions
+            of the input grid.
     
     Returns:
         ax: The axes object containing the plot.
         containers: A list of plot containers.
     '''
     if ax is None:
-        fig = plt.figure()
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
         new_plot = True
     else:
