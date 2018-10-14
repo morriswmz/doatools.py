@@ -3,7 +3,11 @@ from abc import ABC, abstractmethod
 import copy
 import warnings
 import numpy as np
-import scipy
+from scipy.spatial.distance import cdist
+
+def _validate_sensor_location_ndim(sensor_locations):
+    if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
+        raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
 
 class SourcePlacement(ABC):
     '''Represents the placement of several sources.'''
@@ -128,9 +132,12 @@ class FarField1DSourcePlacement(SourcePlacement):
             derivatives: If set to true, also outputs the derivative matrix (or
                 matrices) with respect to the source locations. Default value
                 is False.
+
+        Returns:
+            A: The steering matrix.
+            D: The derivative matrix. Only returns when `derivatives` is True.
         '''
-        if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
-            raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
+        _validate_sensor_location_ndim(sensor_locations)
         
         if self._units[0] == 'sin':
             return self._phase_delay_matrix_sin(sensor_locations, wavelength, derivatives)
@@ -204,14 +211,15 @@ class FarField2DSourcePlacement(SourcePlacement):
 
         Args:
             locations: An K x 2 numpy array representing the source locations,
-                where K is the number of sources. Should never be modified after
-                creation.
+                where K is the number of sources, and the k-th row consists of
+                the azimuth and elevation angle of the k-th source. Should never
+                be modified after creation.
             unit: Can be 'rad' or 'deg'.
         '''
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
-            raise ValueError('Expecting an N x 2 numpy array.')
+            raise ValueError('Expecting an K x 2 numpy array.')
         if unit not in FarField2DSourcePlacement.VALID_UNITS:
             raise ValueError(
                 'Unit can only be one of the following: {0}.'
@@ -236,8 +244,7 @@ class FarField2DSourcePlacement(SourcePlacement):
                 matrices) with respect to the source locations. Default value
                 is False.
         '''
-        if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
-            raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
+        _validate_sensor_location_ndim(sensor_locations)
         
         if derivatives:
             raise ValueError('Derivative matrix computation is not supported for far-field 2D DOAs.')
@@ -266,3 +273,60 @@ class FarField2DSourcePlacement(SourcePlacement):
                          np.outer(sensor_locations[:, 2], np.sin(locations[:, 1])))
         
         return D
+
+class NearField2DSourcePlacement(SourcePlacement):
+
+    VALID_UNITS = ('m')
+
+    def __init__(self, locations):
+        '''Creates a near-field 2D source placement.
+
+        Args:
+            locations: An K x 2 numpy array representing the source locations,
+                where K is the number of sources and the k-th row consists of
+                the x and y coordinates of the k-th source. Should never be
+                modified after creation.
+        '''
+        if isinstance(locations, list):
+            locations = np.array(locations)
+        if locations.ndim != 2 or locations.shape[1] != 2:
+            raise ValueError('Expecting an K x 2 numpy array.')
+        super().__init__(locations, ('m', 'm'))
+
+    def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
+        '''Computes the M x K phase delay matrix for two-dimensional near-field
+        sources.
+        
+        The phase delay matrix D is an M x K matrix, where D[m,k] is the
+        relative phase delay between the m-th sensor and the k-th near-field
+        source (usually using the first sensor as the reference).
+
+        Args:
+            sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
+                sensor locations using the Cartesian coordinate system. Linear
+                arrays (1D arrays) are assumed to be placed along the x-axis,
+                and 2D arrays are assumed to be placed in the xy-plane.
+            wavelength: Wavelength of the carrier wave.
+            derivatives: If set to true, also outputs the derivative matrix (or
+                matrices) with respect to the source locations. Default value
+                is False.
+        '''
+        _validate_sensor_location_ndim(sensor_locations)
+        
+        if derivatives:
+            raise ValueError('Derivative matrix computation is not supported for near-field 2D DOAs.')
+
+        # Align the number of dimensions
+        source_locations = self._locations
+        if sensor_locations.shape[1] < 2:
+            # 1D arrays
+            sensor_locations = np.pad(sensor_locations, ((0, 0), (0, 1)), 'constant')
+        elif sensor_locations.shape[1] > 2:
+            # 3D arrays
+            source_locations = np.pad(source_locations, ((0, 0), (0, 1)), 'constant')
+
+        s = 2 * np.pi / wavelength
+        # Compute the pair-wise Euclidean distance.
+        M = cdist(sensor_locations, source_locations, 'euclidean')
+        M -= M[0, :].copy() # Use the first sensor as the reference sensor.
+        return s * M
