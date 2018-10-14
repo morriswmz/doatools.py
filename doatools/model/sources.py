@@ -1,19 +1,16 @@
 from enum import Enum
 from abc import ABC, abstractmethod
+import copy
 import warnings
 import numpy as np
 import scipy
 
 class SourcePlacement(ABC):
-    '''Represents the placement of several sources.
-
-    Subclass notice: the __init__ should take only two parameters: locations and
-    unit.
-    '''
+    '''Represents the placement of several sources.'''
 
     def __init__(self, locations, units):
         self._locations = locations
-        self._unit = units
+        self._units = units
 
     def __len__(self):
         '''Returns the number of sources.'''
@@ -23,9 +20,13 @@ class SourcePlacement(ABC):
         '''Accesses a specific source location or obtains a subset of source
         placement via slicing.
 
-        Implementation notice: this is a generic implementation. If your
-        subclass's __init__ accepts additional arguments other than locations,
-        you should override this default implementation.
+        Implementation notice: this is a generic implementation. When `key` is
+        a scalar, key is treated as an index and normal indexing operation
+        follows. When `key` is not a scalar, we need to return a new instance
+        with source locations specified by `key`. First, a shallow copy is made
+        with `copy.copy()`. Then the shallow copy's `_locations` field is set to
+        the source locations specified by `key`. Finally, the shallow copy is
+        returned.
 
         Args:
             key : An integer, slice, or 1D numpy array of indices/boolean masks.
@@ -43,7 +44,9 @@ class SourcePlacement(ABC):
             locations = self._locations[key]
         else:
             raise KeyError('Unsupported index.')
-        return type(self)(locations, self._unit)
+        new_copy = copy.copy(self)
+        new_copy._locations = locations
+        return new_copy
 
     @property
     def size(self):
@@ -56,9 +59,9 @@ class SourcePlacement(ABC):
         return self._locations
 
     @property
-    def unit(self):
-        '''Retrives the unit used.'''
-        return self._unit
+    def units(self):
+        '''Retrives a tuple consisting of units used for each dimension.'''
+        return self._units
 
     @abstractmethod
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
@@ -85,6 +88,8 @@ class SourcePlacement(ABC):
 
 class FarField1DSourcePlacement(SourcePlacement):
 
+    VALID_UNITS = ('rad', 'deg', 'sin')
+
     def __init__(self, locations, unit='rad'):
         r'''Creates a far-field 1D source placement.
 
@@ -99,10 +104,12 @@ class FarField1DSourcePlacement(SourcePlacement):
             locations = np.array(locations)
         if locations.ndim > 1:
             raise ValueError('1D numpy array expected.')
-        valid_units = ['rad', 'deg', 'sin']
-        if unit not in valid_units:
-            raise ValueError('Unit can only be one of the following: {0}.'.format(', '.join(valid_units)))
-        super().__init__(locations, unit)
+        if unit not in FarField1DSourcePlacement.VALID_UNITS:
+            raise ValueError(
+                'Unit can only be one of the following: {0}.'
+                .format(', '.join(FarField1DSourcePlacement.VALID_UNITS))
+            )
+        super().__init__(locations, (unit,))
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for one-dimensional far-field
@@ -125,7 +132,7 @@ class FarField1DSourcePlacement(SourcePlacement):
         if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
             raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
         
-        if self._unit == 'sin':
+        if self._units[0] == 'sin':
             return self._phase_delay_matrix_sin(sensor_locations, wavelength, derivatives)
         else:
             return self._phase_delay_matrix_rad(sensor_locations, wavelength, derivatives)
@@ -133,7 +140,7 @@ class FarField1DSourcePlacement(SourcePlacement):
     def _phase_delay_matrix_rad(self, sensor_locations, wavelength, derivatives=False):
         # Unit can only be 'rad' or 'deg'.
         # Unify to radians.
-        if self._unit == 'deg':
+        if self._units[0] == 'deg':
             locations = np.deg2rad(self._locations)
         else:
             locations = self._locations
@@ -155,7 +162,7 @@ class FarField1DSourcePlacement(SourcePlacement):
             if derivatives:
                 DD = s * (np.outer(sensor_locations[:, 0], np.cos(locations)) -
                           np.outer(sensor_locations[:, 1], np.sin(locations)))
-        if self._unit == 'deg' and derivatives:
+        if self._units[0] == 'deg' and derivatives:
             DD *= np.pi / 180.0 # Do not forget the scaling when unit is 'deg'.
         return (D, DD) if derivatives else D
 
@@ -190,6 +197,8 @@ class FarField1DSourcePlacement(SourcePlacement):
 
 class FarField2DSourcePlacement(SourcePlacement):
 
+    VALID_UNITS = ('rad', 'deg')
+
     def __init__(self, locations, unit='rad'):
         '''Creates a far-field 2D source placement.
 
@@ -203,10 +212,12 @@ class FarField2DSourcePlacement(SourcePlacement):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
             raise ValueError('Expecting an N x 2 numpy array.')
-        valid_units = ['rad', 'deg']
-        if unit not in valid_units:
-            raise ValueError('Unit can only be one of the following: {0}.'.format(', '.join(valid_units)))
-        super().__init__(locations, unit)
+        if unit not in FarField2DSourcePlacement.VALID_UNITS:
+            raise ValueError(
+                'Unit can only be one of the following: {0}.'
+                .format(', '.join(FarField2DSourcePlacement.VALID_UNITS))
+            )
+        super().__init__(locations, (unit, unit))
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for two-dimensional far-field
@@ -232,7 +243,7 @@ class FarField2DSourcePlacement(SourcePlacement):
             raise ValueError('Derivative matrix computation is not supported for far-field 2D DOAs.')
 
         # Unify to radians.
-        if self._unit == 'deg':
+        if self._units[0] == 'deg':
             locations = np.deg2rad(self._locations)
         else:
             locations = self._locations
