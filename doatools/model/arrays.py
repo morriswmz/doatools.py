@@ -1,4 +1,5 @@
 from math import gcd
+from ..utils.math import cartesian
 import numpy as np
 import warnings
 import copy
@@ -10,22 +11,55 @@ PERTURBATION_TYPES = [
     'mutual_coupling'
 ]
 
+def validate_location_errors(m, params):
+    if params.ndim != 2:
+        raise ValueError('Expecting a 2D array.')
+    if params.shape[1] > 3:
+        raise ValueError('Locations errors cannot be more than 3-dimensional.')
+    if params.shape[0] != m:
+        raise ValueError('The shape of the location errors matrix does not much the array size.')
+
+def validate_gain_and_phase_errors(m, params):
+    if params.ndim != 1:
+        raise ValueError('Expecting an 1D array.')
+    if params.size != m:
+        raise ValueError('The size of the gain/phase errors vector does not much the array size.')
+
+def validate_mutual_coupling(m, params):
+    if params.ndim != 2:
+        raise ValueError('Expecting a 2D array.')
+    if params.shape[0] != m or params.shape[1] != m:
+        raise ValueError('The mutual coupling matrix must be {0}x{0}.'.format(m))
+
+PERTURBATION_VALIDATORS = {
+    'location_errors': validate_location_errors,
+    'gain_errors': validate_gain_and_phase_errors,
+    'phase_errors': validate_gain_and_phase_errors,
+    'mutual_coupling': validate_mutual_coupling
+}
+
 class ArrayDesign:
+    '''Base class for all array designs.
+
+    Implementation notice: array designs should be **immutable**. Because
+    array design objects are passed around when computing steering matrices,
+    weight functions, etc., having a mutable internal state leads to more
+    complexities and potential unexpected results. Although the internal
+    states are generally accessible in Python, please refrain from modifying
+    them.
+    '''
 
     def __init__(self, locations, name, perturbations={}):
         '''Creates an custom array design.
 
-        Implementation notice: array designs should be **immutable**. Because
-        array design objects are passed around when computing steering matrices,
-        weight functions, etc., having a mutable internal state leads to more
-        complexities and potential unexpected results. Although the internal
-        states are generally accessible in Python, please refrain from modifying
-        them.
-
         Args:
-            locations (ndarray): m x d matrix, where m is the number of elements
-                and d can be 1, 2, or 3. The input ndarray is not copied and
-                should never be changed after creating the array design.
+            locations: A list or ndarray specifying the element locations. For
+                1D arrays, `locations` can be either a 1D list/ndarray, or
+                an m x 1 list/ndarray, where m is the number of elements. For 2D
+                or 3D arrays, `locations` must be a 2D list/ndarray of shape
+                m x d, where d is 2 or 3. If the input is an ndarray, it will
+                not be copied and should not be changed after creating the
+                array design.
             name (str): Name of the array design.
             perturbations (Dict): A dictionary containing the perturbation
                 parameters. The keys should be among the following:
@@ -36,7 +70,6 @@ class ArrayDesign:
                 The values are two-element tuples where the first element is an
                 ndarray representing the parameters and the second element is
                 a bool specifying whether these parameters are known in prior.
-            new_name (str): An optional new name for the resulting array design.
         '''
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
@@ -49,8 +82,7 @@ class ArrayDesign:
         self._locations = locations
         self._name = name
         # Validate perturbations
-        self._validate_perturbations(perturbations)
-        self._perturbations = perturbations
+        self._perturbations = self._validate_and_copy_perturbations(perturbations)
     
     @property
     def name(self):
@@ -150,13 +182,19 @@ class ArrayDesign:
         # Here we have a deep copy.
         return copy.deepcopy(self._perturbations)
     
-    def _validate_perturbations(self, perturbations):
+    def _validate_and_copy_perturbations(self, perturbations):
+        p_copy = {}
         for k, v in perturbations.items():
             if k not in PERTURBATION_TYPES:
                 raise ValueError('Unsupported perturbation type "{0}".'.format(k))
             if not isinstance(v, tuple) and len(v) != 2:
                 raise ValueError('Perturbation details should be specified by a two-element tuple.')
-            # TODO: implement per perturbation type validations
+            # Validate and copy
+            PERTURBATION_VALIDATORS[k](self.size, v[0])
+            params_copy = v[0].copy()
+            params_copy.setflags(write=False)
+            p_copy[k] = (params_copy, v[1])
+        return p_copy
 
     def get_perturbed_copy(self, perturbations, new_name=None):
         '''Returns a copy of this array design but with the specified
@@ -180,9 +218,8 @@ class ArrayDesign:
         '''
         design = self.get_perturbation_free_copy(new_name)
         # Merge perturbation parameters.
-        new_perturbations = {**design._perturbations, **perturbations}
-        self._validate_perturbations(new_perturbations)
-        design._perturbations = new_perturbations
+        perturbations = self._validate_and_copy_perturbations(perturbations)
+        design._perturbations = {**design._perturbations, **perturbations}
         return design
 
     def get_perturbation_free_copy(self, new_name=None):
@@ -278,7 +315,8 @@ class ArrayDesign:
             return A
 
 class GridBasedArrayDesign(ArrayDesign):
-
+    '''Base class for all grid-based array designs.'''
+    
     def __init__(self, indices, d0, name, **kwargs):
         '''Creates an array design where each elements is placed on a predefined
         grid with grid size d0.
@@ -289,10 +327,16 @@ class GridBasedArrayDesign(ArrayDesign):
                 actual locations will be [d0, 2*d0, 3*d0]. The input ndarray is
                 not copied and should never be changed after creating this array
                 design.
-            d0 (float): Grid size (or base inter-element spacing).
+            d0 (float): Grid size (or base inter-element spacing). For 2D and 3D
+                arrays, d0 can either be a scalar (if the base inter-element
+                spacing remains the same along all axes), or a list-like object
+                such that d0[i] specifies the base inter-element spacing along
+                the i-th axis.
             name (str): Name of the array design.
             **kwargs: Other keyword arguments supported by ArrayDesign.
         '''
+        if not np.isscalar(d0):
+            d0 = np.array(d0)
         super().__init__(indices * d0, name, **kwargs)
         self._element_indices = indices
         self._d0 = d0
@@ -485,3 +529,24 @@ class UniformCircularArray(ArrayDesign):
     def radius(self):
         '''Retrieves the radius of the uniform circular array.'''
         return self._r
+
+class UniformRectangularArray(GridBasedArrayDesign):
+
+    def __init__(self, m, n, d0, name=None, **kwargs):
+        '''Creates an m x n uniform rectangular array (URA).
+        
+        The URA is placed on the xy-plane, whose the (0,0)-th sensor is placed
+        at the origin.
+
+        Args:
+            m (int): Number of elements along the x-axis.
+            n (int): Number of elements along the y-axis.
+            d0 (float): Fundamental inter-element spacing. Can be either a
+                scalar or a two-element list-like object.
+            name (str): Name of the array design.
+            **kwargs: Other keyword arguments supported by ArrayDesign.
+        '''
+        if name is None:
+            name = 'URA {0}x{1}'.format(m, n)
+        indices = cartesian(np.arange(m), np.arange(n))
+        super().__init__(indices, d0, name, **kwargs)
