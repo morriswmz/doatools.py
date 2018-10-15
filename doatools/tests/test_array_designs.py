@@ -1,7 +1,10 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from doatools.model.arrays import UniformLinearArray, CoPrimeArray, NestedArray, UniformCircularArray
+from scipy.linalg import toeplitz
+from doatools.model.arrays import UniformLinearArray, CoPrimeArray, \
+                                  NestedArray, MinimumRedundancyLinearArray, \
+                                  UniformCircularArray, UniformRectangularArray
 from doatools.model.sources import FarField1DSourcePlacement
 
 class Test1DArrays(unittest.TestCase):
@@ -73,19 +76,21 @@ class Test1DArrays(unittest.TestCase):
             np.array([0., 1.5, 3., 4.5, 6., 2.5, 5., 7.5, 10., 12.5]).reshape((-1, 1))
         )
     
-    def test_uca(self):
-        custom_name = 'TestUCA'
-        n = 4
-        r = 2.0
-        uca = UniformCircularArray(n, r, custom_name)
-        self.assertEqual(uca.size, n)
-        self.assertEqual(uca.ndim, 2)
-        self.assertEqual(uca.name, custom_name)
-        self.assertEqual(uca.radius, r)
-        locations_expected = np.array([
-            [2., 0.], [0., 2.], [-2., 0.], [0., -2.]
-        ])
-        npt.assert_allclose(uca.element_locations, locations_expected, atol=1e-8)
+    def test_mra(self):
+        custom_name = 'TestMRA'
+        d0 = self.wavelength / 2
+        mra = MinimumRedundancyLinearArray(5, d0, custom_name)
+        self.assertEqual(mra.d0, 0.5)
+        self.assertEqual(mra.size, 5)
+        self.assertEqual(mra.ndim, 1)
+        npt.assert_array_equal(
+            mra.element_indices,
+            np.array([0, 1, 4, 7, 9]).reshape((-1, 1))
+        )
+        npt.assert_allclose(
+            mra.element_locations,
+            np.array([0.0, 0.5, 2.0, 3.5, 4.5]).reshape((-1, 1))
+        )
 
     def test_steering_matrix_without_perturbations(self):
         design = CoPrimeArray(2, 3, self.wavelength / 2)
@@ -113,6 +118,130 @@ class Test1DArrays(unittest.TestCase):
     def test_steering_matrix_with_perturbations(self):
         pass
 
+class Test2DArrays(unittest.TestCase):
+
+    def setUp(self):
+        self.wavelength = 1
+
+    def test_uca(self):
+        custom_name = 'TestUCA'
+        n = 4
+        r = 2.0
+        uca = UniformCircularArray(n, r, custom_name)
+        self.assertEqual(uca.size, n)
+        self.assertEqual(uca.ndim, 2)
+        self.assertEqual(uca.name, custom_name)
+        self.assertEqual(uca.radius, r)
+        locations_expected = np.array([
+            [2., 0.], [0., 2.], [-2., 0.], [0., -2.]
+        ])
+        npt.assert_allclose(uca.element_locations, locations_expected, atol=1e-8)
+
+    def test_ura(self):
+        custom_name = 'TestURA'
+        m, n = 3, 4
+        indices_expected = np.array([
+            [0, 0], [0, 1], [0, 2], [0, 3],
+            [1, 0], [1, 1], [1, 2], [1, 3],
+            [2, 0], [2, 1], [2, 2], [2, 3]
+        ])
+        # Square cells
+        d0 = self.wavelength / 2
+        ura1 = UniformRectangularArray(m, n, d0, custom_name)
+        self.assertEqual(ura1.size, m * n)
+        self.assertEqual(ura1.ndim, 2)
+        self.assertEqual(ura1.name, custom_name)
+        self.assertEqual(ura1.shape, (m, n))
+        npt.assert_array_equal(ura1.element_indices, indices_expected)
+        npt.assert_allclose(ura1.element_locations, indices_expected * d0)
+        # Rectangular cells
+        d0 = (self.wavelength / 2, self.wavelength / 3)
+        ura2 = UniformRectangularArray(m, n, d0, custom_name)
+        self.assertEqual(ura2.size, m * n)
+        self.assertEqual(ura2.ndim, 2)
+        self.assertEqual(ura2.name, custom_name)
+        self.assertEqual(ura2.shape, (m, n))
+        npt.assert_array_equal(ura2.element_indices, indices_expected)
+        npt.assert_allclose(
+            ura2.element_locations,
+            indices_expected * np.array(d0)
+        )
+
+class TestArrayPerturbations(unittest.TestCase):
+
+    def setUp(self):
+        self.wavelength = 1
+    
+    def test_array_perturbations(self):
+        d0 = self.wavelength / 2
+        ula = UniformLinearArray(5, d0)
+        # No perturbations yet.
+        self.assertFalse(ula.is_perturbed)
+        for ptype in ['gain_errors', 'phase_errors', 'location_errors', 'mutual_coupling']:
+            self.assertFalse(ula.has_perturbation(ptype))
+        # Now we add perturbations.         
+        gain_errors = np.random.uniform(-0.5, 0.5, (ula.size,))
+        phase_errors = np.random.uniform(-np.pi, np.pi, (ula.size,))
+        mutual_coupling = toeplitz([1.0, 0.4+0.2j, 0.0, 0.0, 0.0])
+        perturbed_name = 'PerturbedULA'
+        # Test for 1D, 2D, 3D location errors.
+        for ndim in [1, 2, 3]:
+            location_errors = np.random.uniform(-0.1 * d0, 0.1 * d0, (ula.size, ndim))
+            perturbations = {
+                'gain_errors': (gain_errors, True),
+                'phase_errors': (phase_errors, True),
+                'location_errors': (location_errors, False),
+                'mutual_coupling': (mutual_coupling, True)
+            }
+            ula_perturbed = ula.get_perturbed_copy(perturbations, perturbed_name)
+            self.assertEqual(ula_perturbed.name, perturbed_name)
+            self.assertTrue(ula_perturbed.is_perturbed)
+            for k, v in perturbations.items():
+                self.assertEqual(ula_perturbed.has_perturbation(k), True)
+                npt.assert_allclose(ula_perturbed.get_perturbation_params(k), v[0])
+                self.assertEqual(ula_perturbed.is_perturbation_known(k), v[1])
+            # Verify location error calulations.
+            self.assertEqual(ula_perturbed.actual_ndim, ndim)
+            npt.assert_allclose(
+                ula_perturbed.actual_element_locations,
+                np.pad(ula.element_locations, ((0, 0), (0, ndim - 1)), 'constant') + location_errors
+            )
+            # The `perturbation` property should return a dictionary of
+            # perturbations.
+            perturbations_actual = ula_perturbed.perturbations
+            self.assertEqual(len(perturbations_actual), len(perturbations))
+            for k, v in perturbations.items():
+                npt.assert_allclose(perturbations_actual[k][0], v[0])
+                self.assertEqual(perturbations_actual[k][1], v[1])
+            # Perturbation-free copies should not have perturbations.
+            self.assertFalse(ula_perturbed.get_perturbation_free_copy().is_perturbed)
+
+    def test_perturbation_updates(self):
+        d0 = self.wavelength / 2
+        ula = UniformLinearArray(5, d0)
+        gain_errors = np.random.uniform(-0.5, 0.5, (ula.size,))
+        ula_perturbed = ula.get_perturbed_copy({
+            'gain_errors': (gain_errors, True)
+        })
+        for known in [False, True, True, False]:
+            phase_errors = np.random.uniform(-np.pi, np.pi, (ula.size, ))
+            ula_perturbed = ula_perturbed.get_perturbed_copy({
+                'phase_errors': (phase_errors, known)
+            })
+            # The gain errors should remain there.
+            self.assertTrue(ula_perturbed.has_perturbation('gain_errors'))
+            self.assertTrue(ula_perturbed.is_perturbation_known('gain_errors'))
+            npt.assert_allclose(
+                ula_perturbed.get_perturbation_params('gain_errors'),
+                gain_errors
+            )
+            # The phase errors should be updated.
+            self.assertTrue(ula_perturbed.has_perturbation('phase_errors'))
+            self.assertEqual(ula_perturbed.is_perturbation_known('phase_errors'), known)
+            npt.assert_allclose(
+                ula_perturbed.get_perturbation_params('phase_errors'),
+                phase_errors
+            )
 
 
 if __name__ == '__main__':

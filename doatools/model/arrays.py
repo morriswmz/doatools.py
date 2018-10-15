@@ -219,7 +219,7 @@ class ArrayDesign:
         design = self.get_perturbation_free_copy(new_name)
         # Merge perturbation parameters.
         perturbations = self._validate_and_copy_perturbations(perturbations)
-        design._perturbations = {**design._perturbations, **perturbations}
+        design._perturbations = {**self._perturbations, **perturbations}
         return design
 
     def get_perturbation_free_copy(self, new_name=None):
@@ -233,7 +233,7 @@ class ArrayDesign:
         if new_name is None:
             new_name = self._name
         design = copy.copy(self)
-        design._perturbation = {}
+        design._perturbations = {}
         design._name = new_name
         return design
 
@@ -337,6 +337,11 @@ class GridBasedArrayDesign(ArrayDesign):
         '''
         if not np.isscalar(d0):
             d0 = np.array(d0)
+            if indices.shape[1] < d0.size:
+                raise ValueError(
+                    'd0 must be a scalar, or a 1D ndarray of size 1 or {0}.'
+                    .format(indices.shape[1])
+                )
         super().__init__(indices * d0, name, **kwargs)
         self._element_indices = indices
         self._d0 = d0
@@ -548,5 +553,11 @@ class UniformRectangularArray(GridBasedArrayDesign):
         '''
         if name is None:
             name = 'URA {0}x{1}'.format(m, n)
+        self._shape = (m, n)
         indices = cartesian(np.arange(m), np.arange(n))
         super().__init__(indices, d0, name, **kwargs)
+    
+    @property
+    def shape(self):
+        '''Retrieves the shape of this uniform rectangular array.'''
+        return self._shape
