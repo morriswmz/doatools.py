@@ -45,7 +45,7 @@ class SpectrumBasedEstimatorBase:
         self._search_grid = search_grid
         self._peak_finder = peak_finder
 
-    def _estimate(self, f_sp, k, output_spectrum):
+    def _estimate(self, f_sp, k, return_spectrum):
         '''
         A generic implementation of the estimation process: compute the spectrum
         -> identify the peaks -> locate the largest peaks as estimates.
@@ -58,7 +58,7 @@ class SpectrumBasedEstimatorBase:
                 parameter and return a 1D numpy array representing the computed
                 spectrum.
             k (int): Expected number of sources. 
-            output_spectrum: Set to True to also output the spectrum for
+            return_spectrum: Set to True to also output the spectrum for
                 visualization.
         
         Returns:
@@ -71,7 +71,7 @@ class SpectrumBasedEstimatorBase:
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Will be `None` if resolved is False. Only present
-                if `output_spectrum` is True.
+                if `return_spectrum` is True.
         '''
         A_grid = self._design.steering_matrix(
             self._search_grid.source_placement,
@@ -88,7 +88,7 @@ class SpectrumBasedEstimatorBase:
         n_peaks = len(peak_indices[0])
         if n_peaks < k:
             # Not enough peaks.
-            if output_spectrum:
+            if return_spectrum:
                 return False, None, None
             else:
                 return False, None
@@ -107,7 +107,7 @@ class SpectrumBasedEstimatorBase:
             flattened_indices = np.ravel_multi_index(peak_indices, self._search_grid.shape)
             flattened_indices.sort()
             estimates = self._search_grid.source_placement[flattened_indices]
-            if output_spectrum:
+            if return_spectrum:
                 return True, estimates, sp
             else:
                 return True, estimates

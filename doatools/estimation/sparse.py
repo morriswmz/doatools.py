@@ -1,6 +1,11 @@
 import warnings
 import numpy as np
-import cvxpy as cvx
+try:
+    import cvxpy as cvx
+    cvx_available = True
+except ImportError:
+    warnings.warn('Cannot import cvxpr. Some sparse recovery based estimators will not be usable.')
+    cvx_available = False
 from .core import SpectrumBasedEstimatorBase
 from ..utils.math import khatri_rao, vec
 
@@ -62,6 +67,8 @@ class _SparseRecoveryProblem:
         '''
         if formulation not in _PROBLEM_CREATORS.keys():
             raise ValueError('Formulation must be one of the following: {0}.'.format(', '.join(_PROBLEM_CREATORS.keys())))
+        if not cvx_available:
+            raise RuntimeError('Cannot initialize when cvxpy is not available.')
         # Initialize parameters and variable.
         self._formulation = formulation
         self._A = cvx.Parameter((m, k), name='A')
@@ -132,7 +139,7 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
         b = np.vstack((b.real, b.imag))
         return self._problem.solve(A, b, reg_param, **kwargs).flatten()[:-1]
     
-    def estimate(self, R, k, l, output_spectrum=False, **kwargs):
+    def estimate(self, R, k, l, return_spectrum=False, **kwargs):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -146,7 +153,7 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
                 * 'constrainedl1': upper bound of the l1 norm of the signal
                   vector.
                 * 'constrainedl2': upper bound of the l2 norm of the residual.
-            output_spectrum (bool): Set to True to also output the spectrum for
+            return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
             **kwargs: Additional keyword arguments to be passed to the
                 optimization problem solver. For instance, you can specify the
@@ -162,7 +169,7 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Will be `None` if resolved is False. Only present
-                if `output_spectrum` is True.
+                if `return_spectrum` is True.
         '''        
-        return self._estimate(lambda A: self._solve_bpdn(A, R, l, **kwargs), k, output_spectrum)
+        return self._estimate(lambda A: self._solve_bpdn(A, R, l, **kwargs), k, return_spectrum)
 

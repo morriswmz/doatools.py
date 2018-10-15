@@ -55,7 +55,7 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
         '''
         super().__init__(design, wavelength, search_grid, **kwargs)
         
-    def estimate(self, R, k, output_spectrum=False):
+    def estimate(self, R, k, return_spectrum=False):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -63,7 +63,7 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
             R (ndarray): Covariance matrix input. The size of R must match that
                 of the array design used when creating this estimator.
             k (int): Expected number of sources.
-            output_spectrum (bool): Set to True to also output the spectrum for
+            return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
         
         Returns:
@@ -76,10 +76,10 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Will be `None` if resolved is False. Only present
-                if `output_spectrum` is True.
+                if `return_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
-        return self._estimate(lambda A: f_bartlett(A, R), k, output_spectrum)
+        return self._estimate(lambda A: f_bartlett(A, R), k, return_spectrum)
 
 class MVDRBeamformer(SpectrumBasedEstimatorBase):
 
@@ -100,7 +100,7 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
         '''
         super().__init__(design, wavelength, search_grid, **kwargs)
         
-    def estimate(self, R, k, output_spectrum=False):
+    def estimate(self, R, k, return_spectrum=False):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -108,7 +108,7 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
             R (ndarray): Covariance matrix input. The size of R must match that
                 of the array design used when creating this estimator.
             k (int): Expected number of sources.
-            output_spectrum (bool): Set to True to also output the spectrum for
+            return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
         
         Returns:
@@ -121,7 +121,7 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Will be `None` if resolved is False. Only present
-                if `output_spectrum` is True.
+                if `return_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
-        return self._estimate(lambda A: f_mvdr(A, R), k, output_spectrum)
+        return self._estimate(lambda A: f_mvdr(A, R), k, return_spectrum)

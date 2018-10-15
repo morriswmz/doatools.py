@@ -86,12 +86,6 @@ def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
                 plot_containers.append(plt.semilogy(x, y, '-', label=label, color=color))
             else:
                 plot_containers.append(plt.plot(x, y, '-', label=label, color=color))
-    # Set up x-axis
-    ax.set_xlabel('{0}/{1}'.format(grid.axis_names[0], grid.units[0]))
-    # Set up y-axis
-    if not use_log_scale:
-        ax.set_ylim((0, plt.ylim()[1]))
-    ax.set_ylabel('Normalized spectrum')
     # Plot estimates
     if estimates is not None:
         if estimates.units != grid.units:
@@ -114,6 +108,13 @@ def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
         plt.setp(container_truth, color=color_truth)
         plot_containers.append(container_truth)
         has_legend = True
+    # Set up x-axis
+    ax.set_xlabel('{0}/{1}'.format(grid.axis_names[0], grid.units[0]))
+    ax.margins(x=0)
+    # Set up y-axis
+    if not use_log_scale:
+        ax.set_ylim((0, plt.ylim()[1]))
+    ax.set_ylabel('Normalized spectrum')
     # Show the legend.
     if has_legend:
         ax.legend()
