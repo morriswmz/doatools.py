@@ -35,7 +35,8 @@ class Esprit1D:
         '''
         self._wavelength = wavelength
 
-    def estimate(self, R, k, d0=None, displacement=1, formulation='ls', row_weights='default'):
+    def estimate(self, R, k, d0=None, displacement=1, formulation='ls',
+                 row_weights='default', unit='rad'):
         '''Estimate the DOAs using ESPRIT.
 
         Args:
@@ -58,10 +59,15 @@ class Esprit1D:
                     [1 sqrt(2) sqrt(3) ... sqrt(3) sqrt(2) 1]
                 You can disable row weighting by passing in 'none', or specify
                 your own row weights with a 1D ndarray.
+            unit (str): Unit of the estimates. Default value is 'rad'. See
+                FarField1DSourcePlacement for valid units.
 
         Returns:
             resolved (bool): A boolean indicating if the desired number of
-                sources are resolved. If resolved is False, `estimates` will be
+                sources are found. This flag does not guarantee that the
+                estimated source locations are correct. The estimated source
+                locations may be completely wrong!
+                If resolved is False, both `estimates` and `spectrum` will be
                 None.
             estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
                 instance represeting the estimated DOAs. Will be `None` if
@@ -116,8 +122,4 @@ class Esprit1D:
             raise ValueError("Formulation must be either 'ls' or 'tls'.")
         # Recover the DOAs.
         z = np.linalg.eigvals(Phi)
-        s = 2 * np.pi * d0 / self._wavelength * displacement
-        phases = np.angle(z) / s
-        locations = np.arcsin(phases)
-        locations.sort()
-        return True, FarField1DSourcePlacement(locations)
+        return True, FarField1DSourcePlacement.from_z(z, self._wavelength, d0 * displacement, unit)

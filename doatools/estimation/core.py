@@ -62,9 +62,12 @@ class SpectrumBasedEstimatorBase:
                 visualization.
         
         Returns:
-            resolved (bool): A boolean indicating if the desired number of sources
-                are resolved. If resolved is False, both `estimates` and
-                `spectrum` will be None.
+            resolved (bool): A boolean indicating if the desired number of
+                sources are found. This flag does not guarantee that the
+                estimated source locations are correct. The estimated source
+                locations may be completely wrong!
+                If resolved is False, both `estimates` and `spectrum` will be
+                None.
             estimates (SourcePlacement): A SourcePlacement instance of the same
                 type as the one used in the search grid, represeting the
                 estimated DOAs. Will be `None` if resolved is False.

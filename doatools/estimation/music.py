@@ -70,8 +70,11 @@ class MUSIC(SpectrumBasedEstimatorBase):
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
-                sources are resolved. If resolved is False, both `estimates` and
-                `spectrum` will be None.
+                sources are found. This flag does not guarantee that the
+                estimated source locations are correct. The estimated source
+                locations may be completely wrong!
+                If resolved is False, both `estimates` and `spectrum` will be
+                None.
             estimates (SourcePlacement): A SourcePlacement instance of the same
                 type as the one used in the search grid, represeting the
                 estimated DOAs. Will be `None` if resolved is False.
@@ -94,7 +97,7 @@ class RootMUSIC1D:
         '''
         self._wavelength = wavelength
 
-    def estimate(self, R, k, d0=None):
+    def estimate(self, R, k, d0=None, unit='rad'):
         '''
         Estimates the DOAs of 1D far-field sources from the give covariance
         matrix.
@@ -105,10 +108,15 @@ class RootMUSIC1D:
             k (int): Expected number of sources.
             d0 (float): Inter-element spacing of the uniform linear array.
                 If not specified, it will be set to one half of the wavelength.
+            unit (str): Unit of the estimates. Default value is 'rad'. See
+                FarField1DSourcePlacement for valid units.
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
-                sources are resolved. If resolved is False, `estimates` will be
+                sources are found. This flag does not guarantee that the
+                estimated source locations are correct. The estimated source
+                locations may be completely wrong!
+                If resolved is False, both `estimates` and `spectrum` will be
                 None.
             estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
                 instance represeting the estimated DOAs. Will be `None` if
@@ -156,8 +164,5 @@ class RootMUSIC1D:
         if len(z) < k:
             return False, None
         else:
-            c = 2 * np.pi * d0 / self._wavelength
-            phases = np.angle(z[sorted_indices[:k]]) / c
-            locations = np.arcsin(phases)
-            locations.sort()
-            return True, FarField1DSourcePlacement(locations)
+            z = z[sorted_indices[:k]]
+            return True, FarField1DSourcePlacement.from_z(z, self._wavelength, d0, unit)

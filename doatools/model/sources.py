@@ -115,6 +115,32 @@ class FarField1DSourcePlacement(SourcePlacement):
             )
         super().__init__(locations, (unit,))
 
+    @staticmethod
+    def from_z(z, wavelength, d0, unit='rad'):
+        '''Creates a far-field 1D source placement from complex roots.
+        
+        Used in rooting based DOA estimators such as root-MUSIC and ESPRIT.
+
+        Args:
+            z: A ndarray of complex roots.
+            wavelength (float): Wavelength of the carrier wave.
+            d0 (float): Inter-element spacing of the uniform linear array.
+        
+        Returns:
+            A FarField1DSourcePlacement instance.
+        '''
+        c = 2 * np.pi * d0 / wavelength
+        sin_vals = np.angle(z) / c
+        if unit == 'sin':
+            sin_vals.sort()
+            return FarField1DSourcePlacement(sin_vals, 'sin')
+        locations = np.arcsin(sin_vals)
+        locations.sort()        
+        if unit == 'rad':
+            return FarField1DSourcePlacement(locations)
+        else:
+            return FarField1DSourcePlacement(np.rad2deg(locations), 'deg')
+
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for one-dimensional far-field
         sources.
