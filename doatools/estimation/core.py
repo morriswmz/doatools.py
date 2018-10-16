@@ -27,9 +27,9 @@ def get_noise_subspace(R, k):
 
 class SpectrumBasedEstimatorBase:
 
-    def __init__(self, design, wavelength, search_grid, peak_finder=find_peaks_simple):
-        '''
-        Base class for a spectrum-based estimator.
+    def __init__(self, design, wavelength, search_grid,
+                 peak_finder=find_peaks_simple, enable_caching=True):
+        '''Base class for a spectrum-based estimator.
 
         Args:
             design: Array design.
@@ -39,11 +39,30 @@ class SpectrumBasedEstimatorBase:
                 a tuple containing the indices representing the peak locations,
                 where the length of this tuple should be the number of
                 dimensions of the input ndarray.
+            enable_caching: If set to True, the steering matrix for the given
+                search grid will be cached. Otherwise the steering matrix will
+                be computed everything `estimate()` is called. Because the array
+                and the search grid are supposed to remain unchanged, caching
+                the steering matrix will save a lot of computations for dense
+                grids in Monte Carlo simulations. Default value is True.
         '''
         self._design = design
         self._wavelength = wavelength
         self._search_grid = search_grid
         self._peak_finder = peak_finder
+        self._enable_caching = enable_caching
+        self._A = None
+
+    def _get_steering_matrix(self):
+        if self._A is not None:
+            return self._A
+        A = self._design.steering_matrix(
+            self._search_grid.source_placement,
+            self._wavelength, perturbations='known'
+        )
+        if self._enable_caching:
+            self._A = A
+        return A
 
     def _estimate(self, f_sp, k, return_spectrum):
         '''
@@ -76,11 +95,7 @@ class SpectrumBasedEstimatorBase:
                 grid points. Will be `None` if resolved is False. Only present
                 if `return_spectrum` is True.
         '''
-        A_grid = self._design.steering_matrix(
-            self._search_grid.source_placement,
-            self._wavelength, perturbations='known'
-        )
-        sp = f_sp(A_grid)
+        sp = f_sp(self._get_steering_matrix())
         # Restores the shape of the spectrum.
         sp = sp.reshape(self._search_grid.shape)
         # Find peak locations.
