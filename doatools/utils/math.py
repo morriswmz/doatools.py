@@ -16,6 +16,14 @@ def vec(x):
     '''
     return x.reshape((-1, 1), order='F')
 
+def abs_squared(x):
+    '''Computes Re(x)^2 + Im(x)^2.
+    
+    Args:
+        x: An complex ndarray.
+    '''
+    return x.real**2 + x.imag**2
+
 def khatri_rao(a, b):
     '''Evaluates the Khatri-Rao (i.e., column-wise Kronecker product) between
     the two given matrices.'''

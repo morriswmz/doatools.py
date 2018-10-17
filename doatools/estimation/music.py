@@ -36,10 +36,10 @@ def _validate_estimation_input(design, R, k):
 class MUSIC(SpectrumBasedEstimatorBase):
 
     def __init__(self, design, wavelength, search_grid, **kwargs):
-        '''
-        Creates a spectrum-based MUSIC estimator. The MUSIC spectrum is computed
-        on a predefined-grid, and the source locations are estimated by
-        identifying the peaks.
+        '''Creates a spectrum-based MUSIC estimator.
+        
+        The MUSIC spectrum is computed on a predefined-grid, and the source
+        locations are estimated by identifying the peaks.
 
         Args:
             design (ArrayDesign): Array design.
@@ -47,9 +47,6 @@ class MUSIC(SpectrumBasedEstimatorBase):
             search_grid (SearchGrid): The search grid used to locate the
                 sources.
         
-        Example:
-
-
         References:
         [1] R. Schmidt, "Multiple emitter location and signal parameter
             estimation," IEEE Transactions on Antennas and Propagation,
@@ -58,8 +55,7 @@ class MUSIC(SpectrumBasedEstimatorBase):
         super().__init__(design, wavelength, search_grid, **kwargs)
         
     def estimate(self, R, k, **kwargs):
-        '''
-        Estimates the source locations from the given covariance matrix.
+        '''Estimates the source locations from the given covariance matrix.
 
         Args:
             R (ndarray): Covariance matrix input. The size of R must match that
