@@ -57,7 +57,7 @@ class MUSIC(SpectrumBasedEstimatorBase):
         '''
         super().__init__(design, wavelength, search_grid, **kwargs)
         
-    def estimate(self, R, k, return_spectrum=False):
+    def estimate(self, R, k, **kwargs):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -67,6 +67,14 @@ class MUSIC(SpectrumBasedEstimatorBase):
             k (int): Expected number of sources.
             return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
+            refine_estimates: Set to True to enable grid refinement to obtain
+                potentially more accurate estimates.
+            refinement_density: Density of the refinement grids. Higher density
+                values lead to denser refinement grids and increased
+                computational complexity. Default value is 10.
+            refinement_iters: Number of refinement iterations. More iterations
+                generally lead to better results, at the cost of increased
+                computational complexity. Default value is 3.
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
@@ -85,7 +93,7 @@ class MUSIC(SpectrumBasedEstimatorBase):
         '''
         _validate_estimation_input(self._design, R, k)
         En = get_noise_subspace(R, k)
-        return self._estimate(lambda A: f_music(A, En), k, return_spectrum)
+        return self._estimate(lambda A: f_music(A, En), k, **kwargs)
 
 class RootMUSIC1D:
 

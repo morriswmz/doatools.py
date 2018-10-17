@@ -55,7 +55,7 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
         '''
         super().__init__(design, wavelength, search_grid, **kwargs)
         
-    def estimate(self, R, k, return_spectrum=False):
+    def estimate(self, R, k, **kwargs):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -65,6 +65,14 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
             k (int): Expected number of sources.
             return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
+            refine_estimates: Set to True to enable grid refinement to obtain
+                potentially more accurate estimates.
+            refinement_density: Density of the refinement grids. Higher density
+                values lead to denser refinement grids and increased
+                computational complexity. Default value is 10.
+            refinement_iters: Number of refinement iterations. More iterations
+                generally lead to better results, at the cost of increased
+                computational complexity. Default value is 3.
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
@@ -82,7 +90,7 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
                 if `return_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
-        return self._estimate(lambda A: f_bartlett(A, R), k, return_spectrum)
+        return self._estimate(lambda A: f_bartlett(A, R), k, **kwargs)
 
 class MVDRBeamformer(SpectrumBasedEstimatorBase):
 
@@ -103,7 +111,7 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
         '''
         super().__init__(design, wavelength, search_grid, **kwargs)
         
-    def estimate(self, R, k, return_spectrum=False):
+    def estimate(self, R, k, **kwargs):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -113,6 +121,14 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
             k (int): Expected number of sources.
             return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
+            refine_estimates: Set to True to enable grid refinement to obtain
+                potentially more accurate estimates.
+            refinement_density: Density of the refinement grids. Higher density
+                values lead to denser refinement grids and increased
+                computational complexity. Default value is 10.
+            refinement_iters: Number of refinement iterations. More iterations
+                generally lead to better results, at the cost of increased
+                computational complexity. Default value is 3.
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
@@ -130,4 +146,4 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
                 if `return_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
-        return self._estimate(lambda A: f_mvdr(A, R), k, return_spectrum)
+        return self._estimate(lambda A: f_mvdr(A, R), k, **kwargs)

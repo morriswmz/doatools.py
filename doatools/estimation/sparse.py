@@ -139,7 +139,7 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
         b = np.vstack((b.real, b.imag))
         return self._problem.solve(A, b, reg_param, **kwargs).flatten()[:-1]
     
-    def estimate(self, R, k, l, return_spectrum=False, **kwargs):
+    def estimate(self, R, k, l, solver_options={}, **kwargs):
         '''
         Estimates the source locations from the given covariance matrix.
 
@@ -153,11 +153,11 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
                 * 'constrainedl1': upper bound of the l1 norm of the signal
                   vector.
                 * 'constrainedl2': upper bound of the l2 norm of the residual.
+            solver_options: A dictionary of additional keyword arguments to be
+                passed to the optimization problem solver. For instance, you can
+                specify the solver or set the verbosity.
             return_spectrum (bool): Set to True to also output the spectrum for
                 visualization. Default value if False.
-            **kwargs: Additional keyword arguments to be passed to the
-                optimization problem solver. For instance, you can specify the
-                solver or set the verbosity.
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
@@ -173,6 +173,8 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
                 specified search grid, consisting of values evaluated at the
                 grid points. Will be `None` if resolved is False. Only present
                 if `return_spectrum` is True.
-        '''        
-        return self._estimate(lambda A: self._solve_bpdn(A, R, l, **kwargs), k, return_spectrum)
+        '''
+        if 'refine_estimates' in kwargs:
+            raise ValueError('Grid refinement is not supported.')
+        return self._estimate(lambda A: self._solve_bpdn(A, R, l, **solver_options), k, **kwargs)
 

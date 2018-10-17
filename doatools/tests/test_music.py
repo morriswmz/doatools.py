@@ -26,6 +26,12 @@ class TestMUSIC(unittest.TestCase):
         resolved, estimates = music.estimate(R, n_sources)
         self.assertTrue(resolved)
         npt.assert_allclose(estimates.locations, sources.locations, rtol=1e-6, atol=1e-8)
+        # MUSIC with refinements
+        resolved, estimates_refined = music.estimate(R, n_sources, refine_estimates=True)
+        self.assertTrue(resolved)
+        mse_original = np.sum((estimates.locations - sources.locations)**2)
+        mse_refined = np.sum((estimates_refined.locations - sources.locations)**2)
+        self.assertLess(mse_refined, mse_original)
         # root-MUSIC
         rmusic = RootMUSIC1D(self.wavelength)
         resolved, estimates = rmusic.estimate(R, n_sources, ula.d0)

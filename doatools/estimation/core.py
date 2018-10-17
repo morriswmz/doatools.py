@@ -64,7 +64,8 @@ class SpectrumBasedEstimatorBase:
             self._A = A
         return A
 
-    def _estimate(self, f_sp, k, return_spectrum):
+    def _estimate(self, f_sp, k, return_spectrum=False, refine_estimates=False,
+                  refinement_density=10, refinement_iters=3):
         '''
         A generic implementation of the estimation process: compute the spectrum
         -> identify the peaks -> locate the largest peaks as estimates.
@@ -79,6 +80,14 @@ class SpectrumBasedEstimatorBase:
             k (int): Expected number of sources. 
             return_spectrum: Set to True to also output the spectrum for
                 visualization.
+            refine_estimates: Set to True to enable grid refinement to obtain
+                potentially more accurate estimates.
+            refinement_density: Density of the refinement grids. Higher density
+                values lead to denser refinement grids and increased
+                computational complexity. Default value is 10.
+            refinement_iters: Number of refinement iterations. More iterations
+                generally lead to better results, at the cost of increased
+                computational complexity. Default value is 3.
         
         Returns:
             resolved (bool): A boolean indicating if the desired number of
@@ -113,7 +122,7 @@ class SpectrumBasedEstimatorBase:
         else:
             # Obtain the peak values for sorting. Remember that `peak_indices`
             # is a tuple of 1D numpy arrays, and `sp` has been reshaped.
-            peak_values = [sp[t] for t in zip(*peak_indices)]
+            peak_values = sp[peak_indices]
             # Identify the k largest peaks.
             top_indices = np.argsort(peak_values)[-k:]
             # Filter out the peak indices of the k largest peaks.
@@ -125,13 +134,53 @@ class SpectrumBasedEstimatorBase:
             flattened_indices = np.ravel_multi_index(peak_indices, self._search_grid.shape)
             flattened_indices.sort()
             estimates = self._search_grid.source_placement[flattened_indices]
+            if refine_estimates:
+                # Convert sorted flattened indices back to a tuple of coordinate
+                # arrays.
+                peak_indices = np.unravel_index(flattened_indices, self._search_grid.shape)
+                self._refine_estimates(f_sp, estimates, peak_indices)
             if return_spectrum:
                 return True, estimates, sp
             else:
                 return True, estimates
         
-    def _refine_estimates(self, f_sp, estimates):
-        pass
+    def _refine_estimates(self, f_sp, est0, peak_indices, density=10, n_iters=3):
+        '''Refines the estimates.
+        
+        Given the i-th estimate, a refined grid will be created around it. The
+        spectrum function will be evaluated on this refined grid and a new peak
+        will be located to update the i-th estimate. This process is repeated
+        several times.
 
-
-
+        Args:
+            f_sp: A callable object that accepts the steering matrix as the
+                parameter and return a 1D numpy array representing the computed
+                spectrum.
+            est0: Initial estimates.
+            peak_indices: A tuple of indices arrays representing the coordinates
+                of the initial estimates on the original search grid.
+            density: Refinement density.
+            n_iters: Number of refinement iterations.
+        '''
+        # We modify the estimated locations **in-place** here.
+        locations = est0.locations
+        # Create initial refined grids.
+        subgrids = self._search_grid.create_refined_grids_at(*peak_indices, density=density)
+        for r in range(n_iters):
+            for i in range(len(subgrids)):
+                g = subgrids[i]
+                # Refine the i-th estimate.
+                A = self._design.steering_matrix(
+                    g.source_placement,
+                    self._wavelength,
+                    perturbations='known'
+                )
+                sp = f_sp(A)
+                i_max = sp.argmax() # argmax for the flattened spectrum.
+                # Update the initial estimates in-place.
+                locations[i] = g.source_placement[i_max]
+                if r == n_iters - 1:
+                    continue
+                # Continue to create finer grids.
+                peak_coord = np.unravel_index(i_max, g.shape)
+                subgrids[i] = g.create_refined_grid_at(peak_coord, density=density)

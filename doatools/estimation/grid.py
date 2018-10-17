@@ -124,9 +124,9 @@ class SearchGrid(ABC):
         '''
         raise NotImplementedError()
 
-    def create_refined_axes_at(self, *coords, **kwargs):
-        '''Creates new sets of axes by subdividing the grids around the input
-        coordinates into finer grids. These new axes can then be used to create
+    def create_refined_axes_at(self, coord, density, span):
+        '''Creates a new set of axes by subdividing the grids around the input
+        coordinate into finer grids. These new axes can then be used to create
         refined grids.
 
         For instance, suppose that the original grid is a 2D grid with the axes:
@@ -136,20 +136,11 @@ class SearchGrid(ABC):
         |  Azimuth  | [0, 10, 20, 30, 40] |
         | Elevation | [0, 20, 40]         |
         
-        Suppose that `coords` consists of two lists: `coords[0]` is [0, 3] and
-        `coords[1]` is [0, 1], that `density` is 4, and that `span` is 1. Then
-        two new sets of axes will be created:
+        Suppose that `coord` is (3, 1), `density` is 4, and `span` is 1. Then
+        the following set of axes will be created:
 
-        1. Refined axes around the coordinate (0, 0) (or azimuth = 0,
-           elevation = 0):
-
-           | Axis name | Axis data              |
-           |-----------|------------------------| 
-           |  Azimuth  | [0, 2.5, 5.0, 7.5, 10] |
-           | Elevation | [0, 5, 10, 15, 20]     |
-
-        2. Refined axes around the coordinate (3, 1) (or azimuth = 30,
-           elevation = 20):
+        Refined axes around the coordinate (3, 1) (or azimuth = 30,
+        elevation = 20):
 
            | Axis name | Axis data                                      |
            |-----------|------------------------------------------------| 
@@ -157,53 +148,39 @@ class SearchGrid(ABC):
            | Elevation | [0, 5, 10, 15, 20, 25, 30, 35, 40]             |
         
         Args:
-            *coords: A sequence of list-like objects representing the
-                coordinates of the grid points around which the refinement will
-                be performed. The length of `coords` should be equal to the
-                number of dimensions of this grid. The list-like objects in
-                `coords` should share the same length. `coords[j][i]` denotes
-                the j-th element of the i-th coordinate (c.f. the return
-                value of `numpy.nonzero`).
+            coord: A tuple of integers representing a single coordinate within
+                this grid.
             density: Controls number of new intervals between two adjacent
                 points in the original grid.
             span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coords` when
+                be considered around the point specified by `coord` when
                 performing the refinement.
         
         Returns:
-            A list of axes sets.
+            A tuple of ndarrays representing the refined axes.
         '''
-        density = kwargs.pop('density', 10)
         if density < 1:
             raise ValueError('Density must be greater than or equal to 1.')
-        span = kwargs.pop('span', 1)
         if span < 1:
             raise ValueError('Span must be greater than or equal to 1.')
-        if len(coords) != self.ndim:
+        if len(coord) != self.ndim:
             raise ValueError(
-                'Incorrect number of coordinate lists. Expecting {0}. Got {1}.'
-                .format(self.ndim, len(coords))
+                'Incorrect number of coordinate elements. Expecting {0}. Got {1}.'
+                .format(self.ndim, len(coord))
             )
-        n = len(coords[0])
-        axes_sets = []
-        for i in range(n):
-            # Refine around the i-th coordinate.
-            axes = []
-            for j in range(self.ndim):
-                # Lower bound and upper bound indices.
-                i_lb = max(0, coords[j][i] - span)
-                i_ub = min(self._shape[j] - 1, coords[j][i] + span)
-                # Convert to actual values.
-                lb = self._axes[j][i_lb]
-                ub = self._axes[j][i_ub]
-                axes.append(np.linspace(lb, ub, (i_ub - i_lb) * density + 1))
-            axes_sets.append(tuple(axes))
-        return axes_sets
+        axes = []
+        for j in range(self.ndim):
+            # Lower bound and upper bound indices.
+            i_lb = max(0, coord[j] - span)
+            i_ub = min(self._shape[j] - 1, coord[j] + span)
+            # Convert to actual values.
+            lb = self._axes[j][i_lb]
+            ub = self._axes[j][i_ub]
+            axes.append(np.linspace(lb, ub, (i_ub - i_lb) * density + 1))
+        return tuple(axes)
 
-    @abstractmethod
     def create_refined_grids_at(self, *coords, **kwargs):
-        '''Creates new search grids by subdividing a subset of the the current
-        search grid into finer ones.
+        '''Creates multiple new search grids around the given coordinates.
 
         Args:
             *coords: A sequence of list-like objects representing the
@@ -220,6 +197,24 @@ class SearchGrid(ABC):
         
         Returns:
             A list of refined grids.
+        '''
+        return [self.create_refined_grid_at(coord, **kwargs) for coord in zip(*coords)]
+    
+    @abstractmethod
+    def create_refined_grid_at(self, coord, density, span):
+        '''Creates a finer search grid around the given coordinate.
+
+        Args:
+            coord: A tuple of integers representing a single coordinate within
+                this grid.
+            density: Controls number of new intervals between two adjacent
+                points in the original grid.
+            span: Controls how many adjacent intervals in the original grid will
+                be considered around the point specified by `coord` when
+                performing the refinement.
+        
+        Returns:
+            A refined grid.
         '''
         raise NotImplementedError()
 
@@ -280,24 +275,23 @@ class FarField1DSearchGrid(SearchGrid):
     def _create_source_placement(self):
         return FarField1DSourcePlacement(self._axes[0], self._units[0])
 
-    def create_refined_grids_at(self, *coords, **kwargs):
-        '''Creates refined search grids for 1D far-field sources.
+    def create_refined_grid_at(self, coord, density=10, span=1):
+        '''Creates a finer search grid for 1D far-field sources.
         
         Args:
-            *coords: An one-element sequence of list-like objects representing
-                the coordinates of the grid points around which the refinement
-                will be performed.
+            coord: A tuple of integers representing a single coordinate within
+                this grid.
             density: Controls number of new intervals between two adjacent
                 points in the original grid. Default value is 10.
             span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `loc` when
+                be considered around the point specified by `coord` when
                 performing the refinement. Default value is 1.
         
         Returns:
-            A list of refined grids.
+            A refined 1D far-field search grid.
         '''
-        axes_sets = self.create_refined_axes_at(*coords, **kwargs)
-        return [FarField1DSearchGrid(unit=self._units[0], axes=axes) for axes in axes_sets]
+        axes = self.create_refined_axes_at(coord, density, span)
+        return FarField1DSearchGrid(unit=self._units[0], axes=axes)
 
 class FarField2DSearchGrid(SearchGrid):
 
@@ -353,24 +347,23 @@ class FarField2DSearchGrid(SearchGrid):
     def _create_source_placement(self):
         return FarField2DSourcePlacement(cartesian(*self._axes), self._units[0])
 
-    def create_refined_grids_at(self, *coords, **kwargs):
-        '''Creates refined search grids for 2D far-field sources.
+    def create_refined_grid_at(self, coord, density=10, span=1):
+        '''Creates a finer search grid for 2D far-field sources.
         
         Args:
-            *coords: A two-element sequence of list-like objects representing
-                the coordinates of the grid points around which the refinement
-                will be performed.
+            coord: A tuple of integers representing a single coordinate within
+                this grid.
             density: Controls number of new intervals between two adjacent
                 points in the original grid. Default value is 10.
             span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `loc` when
+                be considered around the point specified by `coord` when
                 performing the refinement. Default value is 1.
         
         Returns:
-            A list of refined grids.
+            A refined 2D far-field search grid.
         '''
-        axes_sets = self.create_refined_axes_at(*coords, **kwargs)
-        return [FarField2DSearchGrid(unit=self._units[0], axes=axes) for axes in axes_sets]
+        axes = self.create_refined_axes_at(coord, density, span)
+        return FarField2DSearchGrid(unit=self._units[0], axes=axes)
 
 class NearField2DSearchGrid(SearchGrid):
 
@@ -411,21 +404,20 @@ class NearField2DSearchGrid(SearchGrid):
     def _create_source_placement(self):
         return NearField2DSourcePlacement(cartesian(*self._axes))
 
-    def create_refined_grids_at(self, *coords, **kwargs):
-        '''Creates refined search grids for 2D near-field sources.
+    def create_refined_grids_at(self, coord, density=10, span=1):
+        '''Creates a finer search grid for 2D near-field sources.
         
         Args:
-            *coords: A two-element sequence of list-like objects representing
-                the coordinates of the grid points around which the refinement
-                will be performed.
+            coord: A tuple of integers representing a single coordinate within
+                this grid.
             density: Controls number of new intervals between two adjacent
                 points in the original grid. Default value is 10.
             span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coords` when
+                be considered around the point specified by `coord` when
                 performing the refinement. Default value is 1.
         
         Returns:
-            A list of refined grids.
+            A refined 2D near-field search grid.
         '''
-        axes_sets = self.create_refined_axes_at(*coords, **kwargs)
-        return [NearField2DSearchGrid(axes=axes) for axes in axes_sets]
+        axes = self.create_refined_axes_at(coord, density, span)
+        return NearField2DSearchGrid(axes=axes)

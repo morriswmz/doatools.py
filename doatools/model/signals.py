@@ -7,14 +7,13 @@ class SignalGenerator(ABC):
     @property
     @abstractmethod
     def dim(self):
-        '''
-        Retrieves the dimension of the signal generator.
-        '''
+        '''Retrieves the dimension of the signal generator.'''
         pass
 
     @abstractmethod
     def emit(self, n):
-        '''
+        '''Emits the signal matrix.
+
         Generates a k x n matrix where k is the dimension of the signal and
         each column represents a sample.
         '''
@@ -23,8 +22,7 @@ class SignalGenerator(ABC):
 class ComplexStochasticSignal(SignalGenerator):
 
     def __init__(self, C, n=None):
-        '''
-        Creates a signal generator that generates zero-mean complex
+        '''Creates a signal generator that generates zero-mean complex
         circularly-symmetric Gaussian signals.
 
         Args:

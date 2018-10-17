@@ -47,13 +47,18 @@ class Test1DGrids(unittest.TestCase):
     def test_far_field_1d_refinement(self):
         # [0, 10, 20, 30, 40, 50]
         grid = FarField1DSearchGrid(start=0, stop=60, size=6, unit='deg')
-        refined = grid.create_refined_grids_at([0, 3, 5], density=4, span=1)
+        # Single
+        refined_single = grid.create_refined_grid_at((1,), density=5, span=2)
+        axis_expected = np.linspace(0, 30, 16)
+        self.check_1d_grid_with_axes(refined_single, axis_expected, grid.axis_names, grid.units)
+        # Multiple
+        refined_multi = grid.create_refined_grids_at([0, 3, 5], density=4, span=1)
         axes_expected = [
             np.linspace(0, 10, 5),
             np.linspace(20, 40, 9),
             np.linspace(40, 50, 5)
         ]
-        for i, g in enumerate(refined):
+        for i, g in enumerate(refined_multi):
             self.check_1d_grid_with_axes(
                 g, axes_expected[i], grid.axis_names, grid.units
             )
@@ -93,7 +98,12 @@ class Test2DGrids(unittest.TestCase):
         # az: [0, 10, 20, 30, 40, 50]
         # el: [0, 20, 40]
         grid = FarField2DSearchGrid(start=(0, 0), stop=(60, 60), size=(6, 3), unit='deg')
-        refined = grid.create_refined_grids_at([0, 3, 5], [0, 1, 1], density=4, span=1)
+        # Single
+        refined_single = grid.create_refined_grid_at((0, 1), density=4, span=2)
+        axes_expected = (np.linspace(0, 20, 9), np.linspace(0, 40, 9))
+        self.check_2d_grid_with_axes(refined_single, axes_expected, grid.axis_names, grid.units)
+        # Multiple
+        refined_multi = grid.create_refined_grids_at([0, 3, 5], [0, 1, 1], density=4, span=1)
         axes_expected = [
             # (0, 0): (0, 0)
             (np.linspace(0, 10, 5), np.linspace(0, 20, 5)),
@@ -102,7 +112,7 @@ class Test2DGrids(unittest.TestCase):
             # (5, 1): (50, 20)
             (np.linspace(40, 50, 5), np.linspace(0, 40, 9))
         ]
-        for i, g in enumerate(refined):
+        for i, g in enumerate(refined_multi):
             self.check_2d_grid_with_axes(
                 g, axes_expected[i], grid.axis_names, grid.units
             )
