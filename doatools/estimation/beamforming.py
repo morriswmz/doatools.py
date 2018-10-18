@@ -86,8 +86,7 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
                 estimated DOAs. Will be `None` if resolved is False.
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` if resolved is False. Only present
-                if `return_spectrum` is True.
+                grid points. Only present if `return_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
         return self._estimate(lambda A: f_bartlett(A, R), k, **kwargs)
@@ -142,8 +141,7 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
                 estimated DOAs. Will be `None` if resolved is False.
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` if resolved is False. Only present
-                if `return_spectrum` is True.
+                grid points. Only present if `return_spectrum` is True.
         '''
         _validate_covariance_input(self._design, R)
         return self._estimate(lambda A: f_mvdr(A, R), k, **kwargs)

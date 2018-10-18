@@ -25,7 +25,7 @@ def get_noise_subspace(R, k):
     # Note: eigenvalues are sorted in ascending order.
     return E[:,:-k]
 
-class SpectrumBasedEstimatorBase:
+class SpectrumBasedEstimatorBase(ABC):
 
     def __init__(self, design, wavelength, search_grid,
                  peak_finder=find_peaks_simple, enable_caching=True):
@@ -51,17 +51,41 @@ class SpectrumBasedEstimatorBase:
         self._search_grid = search_grid
         self._peak_finder = peak_finder
         self._enable_caching = enable_caching
-        self._A = None
+        self._atom_matrix = None
 
-    def _get_steering_matrix(self):
-        if self._A is not None:
-            return self._A
+    def _get_atom_matrix(self, alt_grid=None):
+        '''Retrieves the atom matrix for spectrum computation.
+        
+        An atom matrix, A, is an M x K matrix, where M is the number of sensors
+        and K is equal to the size of the search grid. For instance, in MUSIC,
+        the atom matrix is just the steering matrix. The spectrum output for
+        the k-th grid point is given by |a_k E_n|^2, where a_k is the k-th
+        column of A.
+
+        Because A is actually the steering matrix in many spectrum based
+        estimators (e.g., MVDR, MUSIC), the default implementation will create
+        steering matrice. 
+
+        Args:
+            alt_grid: If specified, will evalute the atom matrix for this
+                grid instead of the default search_grid. Used in the grid
+                refinement process. Default value is None and the atom matrix
+                for the default search grid is returned.
+        '''
+        # Default implementation: steering matrix.
+        if alt_grid is not None:
+            return self._design.steering_matrix(
+                alt_grid.source_placement,
+                self._wavelength, perturbations='known'
+            )
+        if self._atom_matrix is not None:
+            return self._atom_matrix
         A = self._design.steering_matrix(
             self._search_grid.source_placement,
             self._wavelength, perturbations='known'
         )
         if self._enable_caching:
-            self._A = A
+            self._atom_matrix = A
         return A
 
     def _estimate(self, f_sp, k, return_spectrum=False, refine_estimates=False,
@@ -74,7 +98,7 @@ class SpectrumBasedEstimatorBase:
         estimates.
 
         Args:
-            f_sp: A callable object that accepts the steering matrix as the
+            f_sp: A callable object that accepts the atom matrix as the
                 parameter and return a 1D numpy array representing the computed
                 spectrum.
             k (int): Expected number of sources. 
@@ -101,10 +125,9 @@ class SpectrumBasedEstimatorBase:
                 estimated DOAs. Will be `None` if resolved is False.
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` if resolved is False. Only present
-                if `return_spectrum` is True.
+                grid points. Only present if `return_spectrum` is True.
         '''
-        sp = f_sp(self._get_steering_matrix())
+        sp = f_sp(self._get_atom_matrix())
         # Restores the shape of the spectrum.
         sp = sp.reshape(self._search_grid.shape)
         # Find peak locations.
@@ -116,7 +139,7 @@ class SpectrumBasedEstimatorBase:
         if n_peaks < k:
             # Not enough peaks.
             if return_spectrum:
-                return False, None, None
+                return False, None, sp
             else:
                 return False, None
         else:
@@ -170,11 +193,7 @@ class SpectrumBasedEstimatorBase:
             for i in range(len(subgrids)):
                 g = subgrids[i]
                 # Refine the i-th estimate.
-                A = self._design.steering_matrix(
-                    g.source_placement,
-                    self._wavelength,
-                    perturbations='known'
-                )
+                A = self._get_atom_matrix(g)
                 sp = f_sp(A)
                 i_max = sp.argmax() # argmax for the flattened spectrum.
                 # Update the initial estimates in-place.

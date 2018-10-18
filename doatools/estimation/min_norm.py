@@ -53,8 +53,7 @@ class MinNorm(SpectrumBasedEstimatorBase):
                 estimated DOAs. Will be `None` if resolved is False.
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` if resolved is False. Only present
-                if `return_spectrum` is True.
+                grid points. Only present if `return_spectrum` is True.
         '''
         if k >= self._design.size:
             raise ValueError('Too many sources.')

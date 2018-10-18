@@ -84,8 +84,7 @@ class MUSIC(SpectrumBasedEstimatorBase):
                 estimated DOAs. Will be `None` if resolved is False.
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` if resolved is False. Only present
-                if `return_spectrum` is True.
+                grid points. Only present if `return_spectrum` is True.
         '''
         _validate_estimation_input(self._design, R, k)
         En = get_noise_subspace(R, k)

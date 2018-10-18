@@ -1,108 +1,31 @@
 import warnings
+from abc import ABC, abstractmethod
 import numpy as np
-try:
-    import cvxpy as cvx
-    cvx_available = True
-except ImportError:
-    warnings.warn('Cannot import cvxpr. Some sparse recovery based estimators will not be usable.')
-    cvx_available = False
 from .core import SpectrumBasedEstimatorBase
+from ..optim.l1lsq import L1RegularizedLeastSquaresProblem
 from ..utils.math import khatri_rao, vec
 
-def _create_penalized_l1(A, b, x, l):
-    obj_func = 0.5 * cvx.sum_squares(cvx.matmul(A, x) - b) + l * cvx.norm1(x)
-    constraints = [x >= 0]
-    problem = cvx.Problem(cvx.Minimize(obj_func), constraints)
-    return obj_func, constraints, problem
+class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
 
-def _create_constrained_l1(A, b, x, l):
-    obj_func = cvx.sum_squares(cvx.matmul(A, x) - b)
-    constraints = [cvx.norm1(x) <= l, x >= 0]
-    problem = cvx.Problem(cvx.Minimize(obj_func), constraints)
-    return obj_func, constraints, problem
+    def __init__(self, design, wavelength, search_grid, noise_known=False,
+                 formulation='penalizedl1', **kwargs):
+        r'''Creates a source location estimator based on matching the sparse
+        representation of the covariance matrix.
 
-def _create_constrained_l2(A, b, x, l):
-    obj_func = cvx.norm1(x)
-    constraints = [cvx.norm(cvx.matmul(A, x) - b) <= l, x >= 0]
-    problem = cvx.Problem(cvx.Minimize(obj_func), constraints)
-    return obj_func, constraints, problem
+        The sources are assumed to be uncorrelated. After discretizing the
+        parameter space of source locations into a fine grid, the vectorized
+        covariance matrix can be represented by
+            r = [A^* \odot A, vec(I)][ p ]
+                                     [ s ]
+        where A is the steering matrix of the discretized source locations, p is
+        a sparse vector whose non-zero locations correspond to potential source
+        locations, and s is the noise variance.
 
-_PROBLEM_CREATORS = {
-    'penalizedl1': _create_penalized_l1,
-    'constrainedl1': _create_constrained_l1,
-    'constrainedl2': _create_constrained_l2
-}
-
-class _SparseRecoveryProblem:
-
-    def __init__(self, m, k, formulation='penalized'):
-        r'''
-        Creates a reusable sparse recovery problem.
-        Let A be an m x k real matrix, b be an m x 1 vector, x be an k x 1
-        vector, l be a nonnegative scalar. We formulate a sparse recovery
-        problem using the one of the following formulations:
-        
-        1. Penalized l1 ('penalizedl1'):
-
-        min_{x} 0.5 \| Ax - b \|_2^2 + l * \| x \|_1,
-        s.t. x >= 0.
-
-        2. Constrained l1 ('constrainedl1'):
-
-        min_{x} \| Ax - b \|_2^2,
-        s.t. \| x \|_1 <= l,
-             x >= 0.
-
-        3. Constrained l2 ('constrainedl2'):
-
-        min_{x} \| x \|_1,
-        s.t. \| Ax - b \|_2 <= l,
-             x >= 0.
-
-        Args:
-            m (int): Dimension of the observation vector b.
-            k (int): Dimension of the sparse vector x.
-            formulation (str): 'penalizedl1', 'constrainedl1' or
-                'constrainedl2'.
-        '''
-        if formulation not in _PROBLEM_CREATORS.keys():
-            raise ValueError('Formulation must be one of the following: {0}.'.format(', '.join(_PROBLEM_CREATORS.keys())))
-        if not cvx_available:
-            raise RuntimeError('Cannot initialize when cvxpy is not available.')
-        # Initialize parameters and variable.
-        self._formulation = formulation
-        self._A = cvx.Parameter((m, k), name='A')
-        self._b = cvx.Parameter((m, 1), name='b')
-        self._l = cvx.Parameter(nonneg=True, name='lambda')
-        self._x = cvx.Variable((k, 1), name='x')
-        self._obj_func, self._constraints, self._problem = \
-            _PROBLEM_CREATORS[formulation](self._A, self._b, self._x, self._l)
-
-    def solve(self, A, b, l, **kwargs):
-        '''
-        Solves the sparse recovery problem with the specified parameters.
-
-        Args:
-            A: Dictionary matrix.
-            b: Observation vector.
-            l: Regularization/constraint parameter.
-            **kwargs: Other keyword arguments to be passed to the solver.
-        '''
-        self._A.value = A
-        self._b.value = b
-        self._l.value = l
-        self._problem.solve(**kwargs)
-        if self._problem.status != 'optimal':
-            warnings.warn('Optimal solution cannot be obtained.')
-            return np.zeros((self._x.size,))
-        return self._x.value
-
-class SparseBPDN(SpectrumBasedEstimatorBase):
-
-    def __init__(self, design, wavelength, search_grid, formulation='penalizedl1', **kwargs):
-        r'''
-        Creates a source location estimator based on sparse basis pursuit
-        denoising.
+        Let Phi = [A^* \odot A, vec(I)], and x = [p^T s]^T. We have r = Phi x,
+        where x is sparse. We can this expression the sparse representation of
+        the covariance matrix. Given the estimates of r, r_est, we can formulate
+        a sparse recovery problem to recovery the sparse vector x, and then
+        recover the source locations.
 
         Args:
             design (ArrayDesign): Array design.
@@ -126,22 +49,52 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
             Letters, vol. 21, no. 1, pp. 26-29, Jan. 2014.
         '''
         super().__init__(design, wavelength, search_grid, **kwargs)
-        m = self._design.size
+        self._formulation = formulation
+        self._noise_known = noise_known
+        # vec(R) -> m*m elements, real + image -> 2*m*m
+        m = 2 * self._design.size**2
         k = self._search_grid.size
-        # vec(R) -> m*m elements, real + image -> 2*m*m, noise + 1
-        self._problem = _SparseRecoveryProblem(2*m*m, k + 1, formulation)
+        # If noise is not known, we need a additional column for vec(I).
+        if not self._noise_known:
+            k += 1
+        # Initialize the problem.
+        self._problem = L1RegularizedLeastSquaresProblem(m, k, formulation, True)
 
-    def _solve_bpdn(self, A, R, reg_param, **kwargs):
-        A = khatri_rao(A.conj(), A)
-        A = np.hstack((A, vec(np.eye(self._design.size))))
-        A = np.vstack((A.real, A.imag))
-        b = vec(R)
-        b = np.vstack((b.real, b.imag))
-        return self._problem.solve(A, b, reg_param, **kwargs).flatten()[:-1]
+    def _get_atom_matrix(self, alt_grid=None):
+        if alt_grid is not None:
+            sources = alt_grid.source_placement
+            need_compute = True
+        else:
+            sources = self._search_grid.source_placement
+            need_compute = self._atom_matrix is None
+        if need_compute:
+            A = self._design.steering_matrix(sources, self._wavelength,
+                                             perturbations='known')
+            Phi = khatri_rao(A.conj(), A)
+            if not self._noise_known:
+                Phi = np.hstack((Phi, vec(np.eye(self._design.size))))
+            Phi = np.vstack((Phi.real, Phi.imag))
+            # Cache when possible.
+            if alt_grid is None and self._enable_caching:
+                self._atom_matrix = Phi
+            return Phi
+        else:
+            return self._atom_matrix
+
+    def _call_solver(self, Phi, R, l, solver_options):
+        r = vec(R)
+        r = np.vstack((r.real, r.imag))
+        sol = self._problem.solve(Phi, r, l, **solver_options).flatten()
+        if not self._noise_known:
+            # The last element is the noise variance estimate.
+            # TODO: output noise estimate?
+            sol = sol[:-1]
+        return sol
     
-    def estimate(self, R, k, l, solver_options={}, **kwargs):
-        '''
-        Estimates the source locations from the given covariance matrix.
+    def estimate(self, R, k, l, sigma=None, solver_options={}, **kwargs):
+        r'''Estimates the source locations from the given covariance matrix.
+
+        When the sources are uncorrelated, 
 
         Args:
             R (ndarray): Covariance matrix input. The size of R must match that
@@ -171,10 +124,14 @@ class SparseBPDN(SpectrumBasedEstimatorBase):
                 estimated DOAs. Will be `None` if resolved is False.
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
-                grid points. Will be `None` if resolved is False. Only present
-                if `return_spectrum` is True.
+                grid points. Only present if `return_spectrum` is True.
         '''
         if 'refine_estimates' in kwargs:
             raise ValueError('Grid refinement is not supported.')
-        return self._estimate(lambda A: self._solve_bpdn(A, R, l, **solver_options), k, **kwargs)
+        if self._noise_known:
+            if sigma is None:
+                raise ValueError('sigma must be specified when noise variance is assumed known.')
+            # Do not modify R in-place!
+            R = R - np.eye(self._design.size) * sigma
+        return self._estimate(lambda Phi: self._call_solver(Phi, R, l, solver_options), k, **kwargs)
 
