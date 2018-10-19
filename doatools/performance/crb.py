@@ -1,6 +1,7 @@
 import numpy as np
 from ..model.sources import FarField1DSourcePlacement
 from .utils import unify_p_to_matrix, unify_p_to_vector
+from ..utils.math import projm
 
 def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     r'''
@@ -104,8 +105,7 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
         raise ValueError('The sample covariance matrix of the source signals must be a K x K matrix, where K is the number of sources.')
     A, D = array.steering_matrix(sources, wavelength, True, 'all')
     # Compute the projection matrix: A (A^H A)^{-1} A^H
-    A_H = A.conj().T
-    P_A = A @ np.linalg.solve(A_H @ A, A_H)
+    P_A = projm(A)
     # Compute the H matrix.
     H = D.conj().T @ (np.eye(m) - P_A) @ D
     # Compute the CRB.

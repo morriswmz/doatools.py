@@ -21,6 +21,26 @@ class TestMath(unittest.TestCase):
         ])
         npt.assert_allclose(actual, expected)
 
+    def test_projm(self):
+        # Real
+        A = np.array([[0.3, 0.4], [0.7, -0.1], [0.5, 0.9]])
+        PA_expected = np.array([
+            [1.792687e-01,  8.448704e-02,  3.741569e-01],
+            [8.448704e-02,  9.913028e-01, -3.851615e-02],
+            [3.741569e-01, -3.851615e-02,  8.294285e-01]
+        ])
+        PA_actual = doa_math.projm(A)
+        npt.assert_allclose(PA_actual, PA_expected, rtol=1e-6)
+        # Complex
+        B = A + 0.1j
+        PB_expected = np.array([
+            [1.874574e-1             ,  8.725290e-2+2.044990e-2j,  3.776414e-1+4.089980e-2j],
+            [8.725290e-2-2.044990e-2j,  9.901159e-1             , -4.158146e-2+5.112474e-3j],
+            [3.776414e-1-4.089980e-2j, -4.158146e-2-5.112474e-3j,  8.224267e-1             ]
+        ])
+        PB_actual = doa_math.projm(B)
+        npt.assert_allclose(PB_actual, PB_expected, rtol=1e-6)
+
     def test_cartesian(self):
         ax1 = np.array([1, 2])
         ax2 = np.array([3, 4, 5])

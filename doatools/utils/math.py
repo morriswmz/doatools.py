@@ -36,6 +36,25 @@ def khatri_rao(a, b):
         c[:,i] = np.outer(a[:,i], b[:,i]).flatten()
     return c
 
+def projm(A, use_pinv=False):
+    '''Computes the projection matrix of the input matrix.
+    
+    Given a full column rank matrix A, the projection matrix of A is given by
+        A (A^H A)^{-1} A^H
+
+    Args:
+        A: An ndarray.
+        use_pinv: If set to true, will use `pinv` instead `solve` to compute
+            the projection matrix. Set this to True if `A` is close to singular.
+    '''
+    if use_pinv:
+        return A @ np.linalg.pinv(A)
+    if np.iscomplexobj(A):
+        A_H = A.conj().T
+        return A @ np.linalg.solve(A_H @ A, A_H)
+    else:
+        return A @ np.linalg.solve(A.T @ A, A.T)
+
 def cartesian(*xi):
     '''Evaluates the Cartesian product among the input vectors.
 
