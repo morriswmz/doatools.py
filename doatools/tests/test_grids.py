@@ -82,8 +82,8 @@ class Test2DGrids(unittest.TestCase):
 
     def test_far_field_2d(self):
         default_sets = {
-            'rad': ((0, 0), (np.pi*2, np.pi/2), (360, 90)),
-            'deg': ((0, 0), (360, 90), (360, 90))
+            'rad': ((-np.pi, 0), (np.pi, np.pi/2), (360, 90)),
+            'deg': ((-180, 0), (180, 90), (360, 90))
         }
         for k, v in default_sets.items():
             grid = FarField2DSearchGrid(unit=k)

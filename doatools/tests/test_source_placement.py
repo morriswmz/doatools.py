@@ -8,36 +8,6 @@ class TestSourcePlacement(unittest.TestCase):
     def setUp(self):
         self.wavelength = 1
 
-    # def test_far_field_stochastic_creation(self):
-    #     sources = FarField1DSourcePlacement.generate(-np.pi/3, np.pi/3, 6)
-    #     self.assertEqual(sources.n_sources, 6)
-    #     npt.assert_allclose(
-    #         sources.locations,
-    #         np.linspace(-np.pi/3, np.pi/3, 6).reshape((-1, 1))
-    #     )
-    
-    # def test_far_field_stochastic_creation_2d(self):
-    #     sources = FarField2DSourcePlacement.generate((0, -1), (1.5, 1), (4, 3))
-    #     self.assertEqual(sources.n_sources, 12)
-    #     locations_expected = np.array([
-    #         [0., -1.],
-    #         [0., 0.],
-    #         [0., 1.],
-    #         [0.5, -1.],
-    #         [0.5, 0.],
-    #         [0.5, 1.],
-    #         [1., -1.],
-    #         [1., 0.],
-    #         [1., 1.],
-    #         [1.5, -1.],
-    #         [1.5, 0.],
-    #         [1.5, 1.],
-    #     ])
-    #     npt.assert_allclose(
-    #         sources.locations,
-    #         locations_expected
-    #     )
-
     def test_far_field_1d(self):
         n_sources = 10
         locations = np.linspace(-60, 60, n_sources)
@@ -105,7 +75,7 @@ class TestSourcePlacement(unittest.TestCase):
 
     def test_far_field_2d(self):
         locations = np.array([
-            [0, 30], [0, 50], [135, 35], [150, 70], [240, 60]
+            [0, 30], [0, 50], [135, 35], [150, 70], [-120, 60]
         ])
         sources = FarField2DSourcePlacement(locations, 'deg')
         self.assertEqual(sources.size, len(locations))

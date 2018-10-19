@@ -67,6 +67,16 @@ class SourcePlacement(ABC):
         '''Retrives a tuple consisting of units used for each dimension.'''
         return self._units
 
+    @property
+    @abstractmethod
+    def valid_ranges(self):
+        '''Retrieves the valid ranges for each dimension.
+
+        Returns:
+            A tuple of 2 element tuples: ((min_1, max_1), ...).
+        '''
+        raise NotImplementedError()
+
     @abstractmethod
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix.
@@ -92,7 +102,11 @@ class SourcePlacement(ABC):
 
 class FarField1DSourcePlacement(SourcePlacement):
 
-    VALID_UNITS = ('rad', 'deg', 'sin')
+    VALID_RANGES = {
+        'rad': (-np.pi/2, np.pi/2),
+        'deg': (-90.0, 90.0),
+        'sin': (-1.0, 1.0)
+    }
 
     def __init__(self, locations, unit='rad'):
         r'''Creates a far-field 1D source placement.
@@ -108,10 +122,16 @@ class FarField1DSourcePlacement(SourcePlacement):
             locations = np.array(locations)
         if locations.ndim > 1:
             raise ValueError('1D numpy array expected.')
-        if unit not in FarField1DSourcePlacement.VALID_UNITS:
+        if unit not in FarField1DSourcePlacement.VALID_RANGES:
             raise ValueError(
                 'Unit can only be one of the following: {0}.'
-                .format(', '.join(FarField1DSourcePlacement.VALID_UNITS))
+                .format(', '.join(FarField1DSourcePlacement.VALID_RANGES.keys()))
+            )
+        lb, ub = FarField1DSourcePlacement.VALID_RANGES[unit]
+        if np.any(locations < lb) or np.any(locations > ub):
+            raise ValueError(
+                "When unit is '{0}', source locations must be within [{0}, {1}]."
+                .format_map(unit, lb, ub)
             )
         super().__init__(locations, (unit,))
 
@@ -140,6 +160,10 @@ class FarField1DSourcePlacement(SourcePlacement):
             return FarField1DSourcePlacement(locations)
         else:
             return FarField1DSourcePlacement(np.rad2deg(locations), 'deg')
+
+    @property
+    def valid_ranges(self):
+        return FarField1DSourcePlacement.VALID_RANGES[self._units[0]],
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for one-dimensional far-field
@@ -230,7 +254,10 @@ class FarField1DSourcePlacement(SourcePlacement):
 
 class FarField2DSourcePlacement(SourcePlacement):
 
-    VALID_UNITS = ('rad', 'deg')
+    VALID_RANGES = {
+        'rad': ((-np.pi, np.pi), (-np.pi/2, np.pi/2)),
+        'deg': ((-180.0, 180.0), (-90.0, 90.0))
+    }
 
     def __init__(self, locations, unit='rad'):
         '''Creates a far-field 2D source placement.
@@ -246,12 +273,27 @@ class FarField2DSourcePlacement(SourcePlacement):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
             raise ValueError('Expecting an K x 2 numpy array.')
-        if unit not in FarField2DSourcePlacement.VALID_UNITS:
+        if unit not in FarField2DSourcePlacement.VALID_RANGES:
             raise ValueError(
                 'Unit can only be one of the following: {0}.'
-                .format(', '.join(FarField2DSourcePlacement.VALID_UNITS))
+                .format(', '.join(FarField2DSourcePlacement.VALID_RANGES.keys()))
+            )
+        (min_az, max_az), (min_el, max_el) = FarField2DSourcePlacement.VALID_RANGES[unit]
+        if np.any(locations[:, 0] < min_az) or np.any(locations[:, 0] > max_az):
+            raise ValueError(
+                "When unit is '{0}', azimuth angles must be within [{1}, {2}]."
+                .format(unit, min_az, max_az)
+            )
+        if np.any(locations[:, 1] < min_el) or np.any(locations[:, 1] > max_el):
+            raise ValueError(
+                "When unit is '{0}', elevation angles must be within [{1}, {2}]."
+                .format(unit, min_el, max_el)
             )
         super().__init__(locations, (unit, unit))
+
+    @property
+    def valid_ranges(self):
+        return FarField2DSourcePlacement.VALID_RANGES[self._units[0]]
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for two-dimensional far-field
@@ -302,8 +344,6 @@ class FarField2DSourcePlacement(SourcePlacement):
 
 class NearField2DSourcePlacement(SourcePlacement):
 
-    VALID_UNITS = ('m')
-
     def __init__(self, locations):
         '''Creates a near-field 2D source placement.
 
@@ -318,6 +358,10 @@ class NearField2DSourcePlacement(SourcePlacement):
         if locations.ndim != 2 or locations.shape[1] != 2:
             raise ValueError('Expecting an K x 2 numpy array.')
         super().__init__(locations, ('m', 'm'))
+
+    @property
+    def valid_ranges(self):
+        return (-np.inf, np.inf), (-np.inf, np.inf)
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for two-dimensional near-field

@@ -331,8 +331,8 @@ class FarField2DSearchGrid(SearchGrid):
             super().__init__(axes, axis_names, (unit, unit))
         else:
             default_ranges = {
-                'rad': ((0.0, 0.0), (np.pi*2, np.pi/2)),
-                'deg': ((0.0, 0.0), (360.0, 90.0))
+                'rad': ((-np.pi, 0.0), (np.pi, np.pi/2)),
+                'deg': ((-180.0, 0.0), (180.0, 90.0))
             }
             if start is None:
                 start = default_ranges[unit][0]
