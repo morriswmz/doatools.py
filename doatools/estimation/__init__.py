@@ -3,6 +3,7 @@ from .min_norm import MinNorm
 from .esprit import Esprit1D
 from .beamforming import BartlettBeamformer, MVDRBeamformer
 from .sparse import SparseCovarianceMatching
+from .ml import AMLEstimator, CMLEstimator, WSFEstimator
 from .grid import FarField1DSearchGrid, FarField2DSearchGrid, NearField2DSearchGrid
 from .coarray import CoarrayACMBuilder1D
 from .preprocessing import spatial_smooth
