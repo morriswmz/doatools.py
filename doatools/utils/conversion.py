@@ -24,3 +24,37 @@ def ae2broad(doas):
     --------+-------->x
     '''
     return np.arcsin(np.cos(doas[:,0]) * np.cos(doas[:,1])).reshape((-1, 1))
+
+ANGULAR_COV_MAT = {
+    'rad': {
+        'deg': lambda x: np.rad2deg(x),
+        'sin': lambda x: np.sin(x)
+    },
+    'deg': {
+        'rad': lambda x: np.deg2rad(x),
+        'sin': lambda x: np.sin(np.deg2rad(x))
+    },
+    'sin': {
+        'rad': lambda x: np.arcsin(x),
+        'deg': lambda x: np.rad2deg(np.arcsin(x))
+    }
+}
+
+def convert_angles(x, from_unit, to_unit):
+    '''Converts input angular values to a new unit.
+    
+    If `from_unit` and `to_unit` are the same, a copied will be made.
+
+    Args:
+        x: An ndarray of angular values. Must be within the following ranges to
+            ensure invertible conversion:
+                'rad': (-pi, pi)
+                'deg': (-180, 180)
+                'sin': (-1, 1)
+        from_unit: The original unit.
+        to_unit: The target unit.
+    '''
+    if from_unit == to_unit:
+        return x.copy()
+    return ANGULAR_COV_MAT[from_unit][to_unit](x)
+    

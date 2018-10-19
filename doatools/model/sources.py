@@ -4,6 +4,7 @@ import copy
 import warnings
 import numpy as np
 from scipy.spatial.distance import cdist
+from ..utils.conversion import convert_angles
 
 def _validate_sensor_location_ndim(sensor_locations):
     if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
@@ -38,7 +39,7 @@ class SourcePlacement(ABC):
         if np.isscalar(key):
             return self._locations[key]
         if isinstance(key, slice):
-            # Slicing results a view.
+            # Slicing results a view. We force a copy here.
             locations = self._locations[key].copy()
         elif isinstance(key, list):
             locations = self._locations[key]
@@ -59,7 +60,12 @@ class SourcePlacement(ABC):
 
     @property
     def locations(self):
-        '''Retrives the source locations.'''
+        '''Retrives the source locations.
+        
+        While this property provides read/write access to the underlying ndarray
+        storing the source locations. Modifying the underlying ndarray is
+        discourage because modified values are not checked for validity.
+        '''
         return self._locations
 
     @property
@@ -75,6 +81,11 @@ class SourcePlacement(ABC):
         Returns:
             A tuple of 2 element tuples: ((min_1, max_1), ...).
         '''
+        raise NotImplementedError()
+    
+    @abstractmethod
+    def as_unit(self, new_unit):
+        '''Creates a copy with the source locations converted to the new unit.'''
         raise NotImplementedError()
 
     @abstractmethod
@@ -164,6 +175,12 @@ class FarField1DSourcePlacement(SourcePlacement):
     @property
     def valid_ranges(self):
         return FarField1DSourcePlacement.VALID_RANGES[self._units[0]],
+
+    def as_unit(self, new_unit):
+        return FarField1DSourcePlacement(
+            convert_angles(self._locations, self._units[0], new_unit),
+            new_unit
+        )
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for one-dimensional far-field
@@ -295,6 +312,12 @@ class FarField2DSourcePlacement(SourcePlacement):
     def valid_ranges(self):
         return FarField2DSourcePlacement.VALID_RANGES[self._units[0]]
 
+    def as_unit(self, new_unit):
+        return FarField2DSourcePlacement(
+            convert_angles(self._locations, self._units[0], new_unit),
+            new_unit
+        )
+
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for two-dimensional far-field
         sources.
@@ -362,6 +385,11 @@ class NearField2DSourcePlacement(SourcePlacement):
     @property
     def valid_ranges(self):
         return (-np.inf, np.inf), (-np.inf, np.inf)
+
+    def as_unit(self, new_unit):
+        if new_unit != 'm':
+            raise ValueError("new_unit must be 'm'.")
+        return NearField2DSourcePlacement(self._locations.copy())
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         '''Computes the M x K phase delay matrix for two-dimensional near-field

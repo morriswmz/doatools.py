@@ -31,6 +31,20 @@ class TestSourcePlacement(unittest.TestCase):
         sources_subset = sources[[0, 1, 2]]
         sources_subset.locations[0] = -70
         npt.assert_array_equal(sources.locations, locations_copy)
+    
+    def test_far_field_1d_unit_conversion(self):
+        locations_rad = np.linspace(-np.pi/3, np.pi/4, 5)
+        location_sets = {
+            'rad': locations_rad,
+            'deg': np.rad2deg(locations_rad),
+            'sin': np.sin(locations_rad)
+        }
+        for from_unit, loc_from in location_sets.items():
+            for to_unit, loc_to in location_sets.items():
+                sources = FarField1DSourcePlacement(loc_from, unit=from_unit)
+                sources_converted = sources.as_unit(to_unit)
+                self.assertEqual(sources_converted.units, (to_unit,))
+                npt.assert_allclose(sources_converted.locations, loc_to)
 
     def test_far_field_1d_delay(self):
         # 1D array
