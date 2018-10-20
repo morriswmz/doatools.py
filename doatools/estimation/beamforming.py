@@ -1,5 +1,5 @@
 import numpy as np
-from .core import SpectrumBasedEstimatorBase
+from .core import SpectrumBasedEstimatorBase, ensure_covariance_size
 
 def f_bartlett(A, R):
     r'''
@@ -29,23 +29,16 @@ def f_mvdr(A, R):
     '''
     return 1.0 / np.sum(A.conj() * np.linalg.lstsq(R, A, None)[0], axis=0).real
 
-def _validate_covariance_input(design, R):
-    '''
-    A helper function that ensures the size of R matches the given design.
-    '''
-    if R.shape[0] != design.size or R.shape[0] != design.size:
-        raise ValueError('The dimension of the sample covariance matrix does not match the array size.')
-
 class BartlettBeamformer(SpectrumBasedEstimatorBase):
 
-    def __init__(self, design, wavelength, search_grid, **kwargs):
+    def __init__(self, array, wavelength, search_grid, **kwargs):
         '''
         Creates a Barlett-beamformer based estimator. The spectrum is computed
         on a predefined-grid, and the source locations are estimated by
         identifying the peaks.
 
         Args:
-            design (ArrayDesign): Array design.
+            array (ArrayDesign): Array design.
             wavelength (float): Wavelength of the carrier wave.
             search_grid (SearchGrid): The search grid used to locate the
                 sources.
@@ -53,7 +46,7 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
         References:
         [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
         '''
-        super().__init__(design, wavelength, search_grid, **kwargs)
+        super().__init__(array, wavelength, search_grid, **kwargs)
         
     def estimate(self, R, k, **kwargs):
         '''
@@ -88,19 +81,19 @@ class BartlettBeamformer(SpectrumBasedEstimatorBase):
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
         '''
-        _validate_covariance_input(self._design, R)
+        ensure_covariance_size(R, self._array)
         return self._estimate(lambda A: f_bartlett(A, R), k, **kwargs)
 
 class MVDRBeamformer(SpectrumBasedEstimatorBase):
 
-    def __init__(self, design, wavelength, search_grid, **kwargs):
+    def __init__(self, array, wavelength, search_grid, **kwargs):
         '''
         Creates a MVDR-beamformer based estimator. The spectrum is computed
         on a predefined-grid, and the source locations are estimated by
         identifying the peaks.
 
         Args:
-            design (ArrayDesign): Array design.
+            array (ArrayDesign): Array design.
             wavelength (float): Wavelength of the carrier wave.
             search_grid (SearchGrid): The search grid used to locate the
                 sources.
@@ -108,7 +101,7 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
         References:
         [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
         '''
-        super().__init__(design, wavelength, search_grid, **kwargs)
+        super().__init__(array, wavelength, search_grid, **kwargs)
         
     def estimate(self, R, k, **kwargs):
         '''
@@ -143,5 +136,5 @@ class MVDRBeamformer(SpectrumBasedEstimatorBase):
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
         '''
-        _validate_covariance_input(self._design, R)
+        ensure_covariance_size(R, self._array)
         return self._estimate(lambda A: f_mvdr(A, R), k, **kwargs)

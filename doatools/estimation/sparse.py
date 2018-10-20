@@ -1,13 +1,13 @@
 import warnings
 from abc import ABC, abstractmethod
 import numpy as np
-from .core import SpectrumBasedEstimatorBase
+from .core import SpectrumBasedEstimatorBase, ensure_covariance_size
 from ..optim.l1lsq import L1RegularizedLeastSquaresProblem
 from ..utils.math import khatri_rao, vec
 
 class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
 
-    def __init__(self, design, wavelength, search_grid, noise_known=False,
+    def __init__(self, array, wavelength, search_grid, noise_known=False,
                  formulation='penalizedl1', **kwargs):
         r'''Creates a source location estimator based on matching the sparse
         representation of the covariance matrix.
@@ -28,7 +28,7 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
         recover the source locations.
 
         Args:
-            design (ArrayDesign): Array design.
+            array (ArrayDesign): Array design.
             wavelength (float): Wavelength of the carrier wave.
             search_grid (SearchGrid): The search grid used to locate the
                 sources.
@@ -48,11 +48,11 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
             co-prime arrays with off-grid targets," IEEE Signal Processing
             Letters, vol. 21, no. 1, pp. 26-29, Jan. 2014.
         '''
-        super().__init__(design, wavelength, search_grid, **kwargs)
+        super().__init__(array, wavelength, search_grid, **kwargs)
         self._formulation = formulation
         self._noise_known = noise_known
         # vec(R) -> m*m elements, real + image -> 2*m*m
-        m = 2 * self._design.size**2
+        m = 2 * self._array.size**2
         k = self._search_grid.size
         # If noise is not known, we need a additional column for vec(I).
         if not self._noise_known:
@@ -68,11 +68,11 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
             sources = self._search_grid.source_placement
             need_compute = self._atom_matrix is None
         if need_compute:
-            A = self._design.steering_matrix(sources, self._wavelength,
+            A = self._array.steering_matrix(sources, self._wavelength,
                                              perturbations='known')
             Phi = khatri_rao(A.conj(), A)
             if not self._noise_known:
-                Phi = np.hstack((Phi, vec(np.eye(self._design.size))))
+                Phi = np.hstack((Phi, vec(np.eye(self._array.size))))
             Phi = np.vstack((Phi.real, Phi.imag))
             # Cache when possible.
             if alt_grid is None and self._enable_caching:
@@ -128,10 +128,11 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
         '''
         if 'refine_estimates' in kwargs:
             raise ValueError('Grid refinement is not supported.')
+        ensure_covariance_size(R, self._array)
         if self._noise_known:
             if sigma is None:
                 raise ValueError('sigma must be specified when noise variance is assumed known.')
             # Do not modify R in-place!
-            R = R - np.eye(self._design.size) * sigma
+            R = R - np.eye(self._array.size) * sigma
         return self._estimate(lambda Phi: self._call_solver(Phi, R, l, solver_options), k, **kwargs)
 

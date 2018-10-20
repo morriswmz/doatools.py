@@ -41,6 +41,21 @@ PERTURBATION_VALIDATORS = {
 class ArrayDesign:
     '''Base class for all array designs.
 
+    Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate
+    system. We define 1D, 2D, and 3D arrays as follows:
+    * 1D arrays are linear arrays along the x-axis.
+    * 2D arrays are planar arrays lying within the xy-plane.
+    * 3D arrays are not restricted, whose element can exist anywhere in the 3D
+      space.
+    We store the element locations with an m x d array, where m denotes the
+    number of elements (size) of the array.
+    * For 1D arrays, d equals one, and the i-th row of the m x 1 array stores
+      the x coordinate of the i-th element.
+    * For 2D arrays, d equals two, and the i-th row of the m x 2 array stores
+      the x and y coordinates of the i-th element.
+    * For 3D arrays, d equals three, and the i-th row of the m x 3 array stores
+      the x, y, and z coordinates of the i-th element.
+
     Implementation notice: array designs should be **immutable**. Because
     array design objects are passed around when computing steering matrices,
     weight functions, etc., having a mutable internal state leads to more
@@ -149,12 +164,16 @@ class ArrayDesign:
     def ndim(self):
         '''Retrieves the number of dimensions of the nominal array.
 
+        The number of dimensions is defined as the number of columns of the
+        ndarray storing the nominal array element locations. It does not
+        reflect the number of dimensions of the minimal subspace in which the
+        nominal array lies. For instance, if the element locations are given by
+        `[[0, 0], [1, 1], [2, 2]]`, `ndim` equals to 2 instead of 1, despite the
+        fact that this array is a linear array.
+
         Perturbations do not affect this value.
         '''
-        if self._locations.ndim == 1:
-            return 1
-        else:
-            return self._locations.shape[1]
+        return self._locations.shape[1]
     
     @property
     def actual_ndim(self):
@@ -216,11 +235,11 @@ class ArrayDesign:
                 If not provided, the name of the original array design will be
                 used.
         '''
-        design = self.get_perturbation_free_copy(new_name)
+        array = self.get_perturbation_free_copy(new_name)
         # Merge perturbation parameters.
         perturbations = self._validate_and_copy_perturbations(perturbations)
-        design._perturbations = {**self._perturbations, **perturbations}
-        return design
+        array._perturbations = {**self._perturbations, **perturbations}
+        return array
 
     def get_perturbation_free_copy(self, new_name=None):
         '''Returns a perturbation-free copy of this array design.
@@ -232,10 +251,10 @@ class ArrayDesign:
         '''
         if new_name is None:
             new_name = self._name
-        design = copy.copy(self)
-        design._perturbations = {}
-        design._name = new_name
-        return design
+        array = copy.copy(self)
+        array._perturbations = {}
+        array._name = new_name
+        return array
 
     def steering_matrix(self, sources, wavelength, compute_derivatives=False,
                         perturbations='all'):

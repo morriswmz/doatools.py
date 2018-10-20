@@ -34,11 +34,11 @@ def compute_unique_location_differences(locations, atol=0.0, rtol=1e-8):
 
 class WeightFunction1D:
 
-    def __init__(self, design):
+    def __init__(self, array):
         '''Creates an 1D weight function.
 
         Args:
-            design: Array design.
+            array: Array design.
 
         References:
         [1] P. Pal and P. P. Vaidyanathan, "Nested arrays: A novel approach to
@@ -46,11 +46,11 @@ class WeightFunction1D:
             Transactions on Signal Processing, vol. 58, no. 8, pp. 4167-4181,
             Aug. 2010.
         '''
-        if design.ndim != 1 or not isinstance(design, GridBasedArrayDesign):
+        if array.ndim != 1 or not isinstance(array, GridBasedArrayDesign):
             raise ValueError('Expecting an 1D grid-based array.')
-        self._m = design.size
+        self._m = array.size
         self._mv = None
-        self._build_map(design)
+        self._build_map(array)
 
     def __call__(self, diff):
         '''Evaluates the weight function at the given difference.'''
@@ -134,10 +134,10 @@ class WeightFunction1D:
             F[i, self.indices_of(diff)] = 1.0 / self.weight_of(diff)
         return F
     
-    def _build_map(self, design):
+    def _build_map(self, array):
         # Maps difference -> indices in the vectorized difference matrix 
         index_map = {}
-        diffs = compute_location_differences(design.element_indices).flatten()
+        diffs = compute_location_differences(array.element_indices).flatten()
         for i, diff in enumerate(diffs):
             if diff in index_map:
                 index_map[diff].append(i)

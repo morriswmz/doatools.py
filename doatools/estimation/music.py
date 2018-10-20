@@ -4,7 +4,8 @@ from scipy.signal import find_peaks
 import warnings
 from ..model.arrays import UniformLinearArray
 from ..model.sources import FarField1DSourcePlacement
-from .core import SpectrumBasedEstimatorBase, get_noise_subspace
+from .core import SpectrumBasedEstimatorBase, get_noise_subspace, \
+                  ensure_covariance_size, ensure_n_resolvable_sources
 
 def f_music(A, En):
     r'''
@@ -23,26 +24,16 @@ def f_music(A, En):
     v = En.T.conj() @ A
     return np.reciprocal(np.sum(v * v.conj(), axis=0).real)
 
-def _validate_estimation_input(design, R, k):
-    '''
-    A helper function that ensures the size of R matches the given design and
-    the number of expected sources k is less than the size of R.
-    '''
-    if k >= design.size:
-        raise ValueError('Too many sources.')
-    if R.shape[0] != design.size or R.shape[0] != design.size:
-        raise ValueError('The dimension of the sample covariance matrix does not match the array size.')
-
 class MUSIC(SpectrumBasedEstimatorBase):
 
-    def __init__(self, design, wavelength, search_grid, **kwargs):
+    def __init__(self, array, wavelength, search_grid, **kwargs):
         '''Creates a spectrum-based MUSIC estimator.
         
         The MUSIC spectrum is computed on a predefined-grid, and the source
         locations are estimated by identifying the peaks.
 
         Args:
-            design (ArrayDesign): Array design.
+            array (ArrayDesign): Array design.
             wavelength (float): Wavelength of the carrier wave.
             search_grid (SearchGrid): The search grid used to locate the
                 sources.
@@ -52,7 +43,7 @@ class MUSIC(SpectrumBasedEstimatorBase):
             estimation," IEEE Transactions on Antennas and Propagation,
             vol. 34, no. 3, pp. 276-280, Mar. 1986.
         '''
-        super().__init__(design, wavelength, search_grid, **kwargs)
+        super().__init__(array, wavelength, search_grid, **kwargs)
         
     def estimate(self, R, k, **kwargs):
         '''Estimates the source locations from the given covariance matrix.
@@ -86,7 +77,8 @@ class MUSIC(SpectrumBasedEstimatorBase):
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
         '''
-        _validate_estimation_input(self._design, R, k)
+        ensure_covariance_size(R, self._array)
+        ensure_n_resolvable_sources(k, self._array.size - 1)
         En = get_noise_subspace(R, k)
         return self._estimate(lambda A: f_music(A, En), k, **kwargs)
 
@@ -125,9 +117,10 @@ class RootMUSIC1D:
                 instance represeting the estimated DOAs. Will be `None` if
                 resolved is False.
         '''
+        if R.ndim != 2 or R.shape[0] != R.shape[1]:
+            raise ValueError('R should be a square matrix.')
         m = R.shape[0]
-        if k >= m:
-            raise ValueError('Too many sources.')
+        ensure_n_resolvable_sources(k, m - 1)
         if d0 is None:
             d0 = self._wavelength / 2.0
         En = get_noise_subspace(R, k)

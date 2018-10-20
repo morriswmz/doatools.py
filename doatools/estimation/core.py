@@ -4,6 +4,27 @@ import numpy as np
 from scipy.signal import find_peaks
 from scipy.ndimage import maximum_filter
 
+# Helper functions for validating inputs.
+def ensure_covariance_size(R, array):
+    '''Ensures the size of R matches the given array design.'''
+    m = array.size
+    if R.ndim != 2:
+        raise ValueError('Expecting a matrix.')
+    if R.shape[0] != m or R.shape[0] != m:
+        raise ValueError(
+            'The shape of the covariance matrix does not match the array size.'
+            'Expected shape is {0}. Got {1}'
+            .format((m, m), R.shape)
+        )
+
+def ensure_n_resolvable_sources(k, max_k):
+    '''Checks if the number of expected sources exceeds the maximum resolvable sources.'''
+    if k > max_k:
+        raise ValueError(
+            'Too many sources. Maximum number of resolvable sources is {0}'
+            .format(max_k)
+        )
+
 def find_peaks_simple(x):
     if x.ndim == 1:
         # Delegate to scipy's peak finder.
@@ -27,12 +48,12 @@ def get_noise_subspace(R, k):
 
 class SpectrumBasedEstimatorBase(ABC):
 
-    def __init__(self, design, wavelength, search_grid,
+    def __init__(self, array, wavelength, search_grid,
                  peak_finder=find_peaks_simple, enable_caching=True):
         '''Base class for a spectrum-based estimator.
 
         Args:
-            design: Array design.
+            array: Array design.
             wavelength: Wavelength of the carrier wave.
             search_grid: The search grid used to locate the sources.
             peak_finder: A callable object that accepts an ndarray and returns
@@ -46,7 +67,7 @@ class SpectrumBasedEstimatorBase(ABC):
                 the steering matrix will save a lot of computations for dense
                 grids in Monte Carlo simulations. Default value is True.
         '''
-        self._design = design
+        self._array = array
         self._wavelength = wavelength
         self._search_grid = search_grid
         self._peak_finder = peak_finder
@@ -74,13 +95,13 @@ class SpectrumBasedEstimatorBase(ABC):
         '''
         # Default implementation: steering matrix.
         if alt_grid is not None:
-            return self._design.steering_matrix(
+            return self._array.steering_matrix(
                 alt_grid.source_placement,
                 self._wavelength, perturbations='known'
             )
         if self._atom_matrix is not None:
             return self._atom_matrix
-        A = self._design.steering_matrix(
+        A = self._array.steering_matrix(
             self._search_grid.source_placement,
             self._wavelength, perturbations='known'
         )

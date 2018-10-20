@@ -1,5 +1,6 @@
 import numpy as np
-from .core import SpectrumBasedEstimatorBase, get_noise_subspace
+from .core import SpectrumBasedEstimatorBase, get_noise_subspace, \
+                  ensure_covariance_size, ensure_n_resolvable_sources
 from ..utils.math import abs_squared
 
 class MinNorm(SpectrumBasedEstimatorBase):
@@ -11,7 +12,7 @@ class MinNorm(SpectrumBasedEstimatorBase):
         locations are estimated by identifying the peaks.
 
         Args:
-            design (ArrayDesign): Array design.
+            array (ArrayDesign): Array design.
             wavelength (float): Wavelength of the carrier wave.
             search_grid (SearchGrid): The search grid used to locate the
                 sources.
@@ -55,8 +56,8 @@ class MinNorm(SpectrumBasedEstimatorBase):
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
         '''
-        if k >= self._design.size:
-            raise ValueError('Too many sources.')
+        ensure_covariance_size(R, self._array)
+        ensure_n_resolvable_sources(k, self._array.size - 1)
         # We compute the d vector from the noise subspace.
         # d = En c^* / |c|^2
         En = get_noise_subspace(R, k)

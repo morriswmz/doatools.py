@@ -1,5 +1,6 @@
 import numpy as np
 from ..model.sources import FarField1DSourcePlacement
+from .core import ensure_n_resolvable_sources
 
 def get_default_row_weights(m):
     '''Gets the default row weights for the ESPRIT estimator.
@@ -77,8 +78,7 @@ class Esprit1D:
         if displacement < 1:
             raise ValueError('Displacement must be a non-negative integer.')
         m_reduced = m - displacement
-        if k > m_reduced:
-            raise ValueError('Too many expected sources.')
+        ensure_n_resolvable_sources(k, m_reduced)
         if d0 is None:
             d0 = self._wavelength / 2.0
         if isinstance(row_weights, str):

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import minimize
 from ..model.sources import FarField1DSourcePlacement
 from ..utils.math import projm, vec
+from .core import ensure_covariance_size, ensure_n_resolvable_sources
 
 def f_nll_stouc(R, array, sources, wavelength, p, sigma):
     # log|S| + tr(S^{-1} R)
@@ -30,7 +31,13 @@ class CovarianceBasedMLEstimator(ABC):
         return self._estimates[:]
 
     def get_max_resolvable_sources(self):
-        '''Returns the maximum number of sources resolvable.'''
+        '''Returns the maximum number of sources resolvable.
+        
+        This default implementation returns (array size - 1), which is suitable
+        for most ML based estimators because the projection matrix of the
+        steering matrix is not well-defined when the number of sources is
+        greater than or equal to the number of sensors.
+        '''
         return self._array.size - 1
 
     @abstractmethod
@@ -143,12 +150,8 @@ class CovarianceBasedMLEstimator(ABC):
                 type as the one used in the search grid, represeting the
                 estimated DOAs. Will be `None` if resolved is False.
         '''
-        k = sources0.size
-        if k > self.get_max_resolvable_sources():
-            raise ValueError('Too many sources.')
-        m = self._array.size
-        if R.shape != (m, m):
-            raise ValueError('R must be a {0}x{0} matrix.'.format(m))
+        ensure_n_resolvable_sources(sources0.size, self.get_max_resolvable_sources())
+        ensure_covariance_size(R, self._array)
         # Make a copy of the initial guess as a working variable for the
         # optimization process.
         # This is reused and modified in-place during the optimization process

@@ -5,18 +5,18 @@ from ..utils.math import vec
 
 class CoarrayACMBuilder1D:
 
-    def __init__(self, design):
-        '''Based on the array design, creates an callable object that can
+    def __init__(self, array):
+        '''Based on the sensor array, creates an callable object that can
         transforms covariance matrices obtained from the physical array model
         into augmented covariance matrices under the difference coarray model.
 
         Args:
-            design - A 1D grid-based array design.
+            array - A 1D grid-based sensor array.
         '''
-        if not isinstance(design, GridBasedArrayDesign) or design.ndim > 1:
+        if not isinstance(array, GridBasedArrayDesign) or array.ndim > 1:
             raise ValueError('Expecting an 1D grid-based array.')
-        self._design = design
-        self._w = WeightFunction1D(design)
+        self._array = array
+        self._w = WeightFunction1D(array)
 
     def __call__(self, R, method='ss'):
         '''An shortcut to `self.transform()`.'''
@@ -25,7 +25,7 @@ class CoarrayACMBuilder1D:
     @property
     def input_size(self):
         '''Retrives the size of the input covariance matrix.'''
-        return self._design.size
+        return self._array.size
 
     @property
     def output_size(self):
@@ -34,8 +34,8 @@ class CoarrayACMBuilder1D:
     
     def get_virtual_ula(self, name=None):
         if name is None:
-            name = 'Virtual ULA of ' + self._design.name
-        return UniformLinearArray(self.output_size, self._design.d0, name)
+            name = 'Virtual ULA of ' + self._array.name
+        return UniformLinearArray(self.output_size, self._array.d0, name)
 
     def transform(self, R, method='ss'):
         '''Transforms the input covariance matrix into the augmented covariance
@@ -61,7 +61,7 @@ class CoarrayACMBuilder1D:
             Transactions on Signal Processing, vol. 58, no. 8, pp. 4167-4181,
             Aug. 2010.
         '''
-        if R.shape[0] != self._design.size or R.shape[1] != self._design.size:
+        if R.shape[0] != self._array.size or R.shape[1] != self._array.size:
             raise ValueError('The dimension of the covariance matrix does not match the array size.')
         if method not in ['ss', 'da']:
             raise ValueError('Method can only be one of the following: ss, da.')
