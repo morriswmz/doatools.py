@@ -9,7 +9,7 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
 
     def __init__(self, array, wavelength, search_grid, noise_known=False,
                  formulation='penalizedl1', **kwargs):
-        r'''Creates a source location estimator based on matching the sparse
+        r"""Creates a source location estimator based on matching the sparse
         representation of the covariance matrix.
 
         The sources are assumed to be uncorrelated. After discretizing the
@@ -47,7 +47,7 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
         [3] Z. Tan and A. Nehorai, "Sparse direction of arrival estimation using
             co-prime arrays with off-grid targets," IEEE Signal Processing
             Letters, vol. 21, no. 1, pp. 26-29, Jan. 2014.
-        '''
+        """
         super().__init__(array, wavelength, search_grid, **kwargs)
         self._formulation = formulation
         self._noise_known = noise_known
@@ -92,7 +92,7 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
         return sol
     
     def estimate(self, R, k, l, sigma=None, solver_options={}, **kwargs):
-        r'''Estimates the source locations from the given covariance matrix.
+        r"""Estimates the source locations from the given covariance matrix.
 
         When the sources are uncorrelated, 
 
@@ -125,7 +125,7 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
-        '''
+        """
         if 'refine_estimates' in kwargs:
             raise ValueError('Grid refinement is not supported.')
         ensure_covariance_size(R, self._array)

@@ -11,18 +11,18 @@ def _validate_sensor_location_ndim(sensor_locations):
         raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
 
 class SourcePlacement(ABC):
-    '''Represents the placement of several sources.'''
+    """Represents the placement of several sources."""
 
     def __init__(self, locations, units):
         self._locations = locations
         self._units = units
 
     def __len__(self):
-        '''Returns the number of sources.'''
+        """Returns the number of sources."""
         return self._locations.shape[0]
 
     def __getitem__(self, key):
-        '''Accesses a specific source location or obtains a subset of source
+        """Accesses a specific source location or obtains a subset of source
         placement via slicing.
 
         Implementation notice: this is a generic implementation. When `key` is
@@ -35,7 +35,7 @@ class SourcePlacement(ABC):
 
         Args:
             key : An integer, slice, or 1D numpy array of indices/boolean masks.
-        '''
+        """
         if np.isscalar(key):
             return self._locations[key]
         if isinstance(key, slice):
@@ -55,42 +55,42 @@ class SourcePlacement(ABC):
 
     @property
     def size(self):
-        '''Retrieves the number of sources.'''
+        """Retrieves the number of sources."""
         return len(self)
 
     @property
     def locations(self):
-        '''Retrives the source locations.
+        """Retrives the source locations.
         
         While this property provides read/write access to the underlying ndarray
         storing the source locations. Modifying the underlying ndarray is
         discourage because modified values are not checked for validity.
-        '''
+        """
         return self._locations
 
     @property
     def units(self):
-        '''Retrives a tuple consisting of units used for each dimension.'''
+        """Retrives a tuple consisting of units used for each dimension."""
         return self._units
 
     @property
     @abstractmethod
     def valid_ranges(self):
-        '''Retrieves the valid ranges for each dimension.
+        """Retrieves the valid ranges for each dimension.
 
         Returns:
             A tuple of 2 element tuples: ((min_1, max_1), ...).
-        '''
+        """
         raise NotImplementedError()
     
     @abstractmethod
     def as_unit(self, new_unit):
-        '''Creates a copy with the source locations converted to the new unit.'''
+        """Creates a copy with the source locations converted to the new unit."""
         raise NotImplementedError()
 
     @abstractmethod
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''Computes the M x K phase delay matrix.
+        """Computes the M x K phase delay matrix.
 
         The phase delay matrix D is an M x K matrix, where D[m,k] is the
         relative phase delay between the m-th sensor and the k-th source
@@ -108,7 +108,7 @@ class SourcePlacement(ABC):
             derivatives: If set to true, also outputs the derivative matrix (or
                 matrices) with respect to the source locations. Default value
                 is False.
-        '''
+        """
         pass
 
 class FarField1DSourcePlacement(SourcePlacement):
@@ -120,7 +120,7 @@ class FarField1DSourcePlacement(SourcePlacement):
     }
 
     def __init__(self, locations, unit='rad'):
-        r'''Creates a far-field 1D source placement.
+        r"""Creates a far-field 1D source placement.
 
         Args:
             locations: A list or 1D numpy array representing the source
@@ -128,7 +128,7 @@ class FarField1DSourcePlacement(SourcePlacement):
             unit: Can be 'rad', 'deg' or 'sin'. 'sin' is a special unit where
                 sine of the arrival angle is used instead of the arrival angle
                 itself. 
-        '''
+        """
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim > 1:
@@ -148,7 +148,7 @@ class FarField1DSourcePlacement(SourcePlacement):
 
     @staticmethod
     def from_z(z, wavelength, d0, unit='rad'):
-        '''Creates a far-field 1D source placement from complex roots.
+        """Creates a far-field 1D source placement from complex roots.
         
         Used in rooting based DOA estimators such as root-MUSIC and ESPRIT.
 
@@ -159,7 +159,7 @@ class FarField1DSourcePlacement(SourcePlacement):
         
         Returns:
             A FarField1DSourcePlacement instance.
-        '''
+        """
         c = 2 * np.pi * d0 / wavelength
         sin_vals = np.angle(z) / c
         if unit == 'sin':
@@ -183,7 +183,7 @@ class FarField1DSourcePlacement(SourcePlacement):
         )
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''Computes the M x K phase delay matrix for one-dimensional far-field
+        """Computes the M x K phase delay matrix for one-dimensional far-field
         sources.
         
         The phase delay matrix D is an M x K matrix, where D[m,k] is the
@@ -203,7 +203,7 @@ class FarField1DSourcePlacement(SourcePlacement):
         Returns:
             A: The steering matrix.
             D: The derivative matrix. Only returns when `derivatives` is True.
-        '''
+        """
         _validate_sensor_location_ndim(sensor_locations)
         
         if self._units[0] == 'sin':
@@ -277,7 +277,7 @@ class FarField2DSourcePlacement(SourcePlacement):
     }
 
     def __init__(self, locations, unit='rad'):
-        '''Creates a far-field 2D source placement.
+        """Creates a far-field 2D source placement.
 
         Args:
             locations: An K x 2 numpy array representing the source locations,
@@ -285,7 +285,7 @@ class FarField2DSourcePlacement(SourcePlacement):
                 the azimuth and elevation angle of the k-th source. Should never
                 be modified after creation.
             unit: Can be 'rad' or 'deg'.
-        '''
+        """
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
@@ -319,7 +319,7 @@ class FarField2DSourcePlacement(SourcePlacement):
         )
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''Computes the M x K phase delay matrix for two-dimensional far-field
+        """Computes the M x K phase delay matrix for two-dimensional far-field
         sources.
         
         The phase delay matrix D is an M x K matrix, where D[m,k] is the
@@ -334,7 +334,7 @@ class FarField2DSourcePlacement(SourcePlacement):
             derivatives: If set to true, also outputs the derivative matrix (or
                 matrices) with respect to the source locations. Default value
                 is False.
-        '''
+        """
         _validate_sensor_location_ndim(sensor_locations)
         
         if derivatives:
@@ -368,14 +368,14 @@ class FarField2DSourcePlacement(SourcePlacement):
 class NearField2DSourcePlacement(SourcePlacement):
 
     def __init__(self, locations):
-        '''Creates a near-field 2D source placement.
+        """Creates a near-field 2D source placement.
 
         Args:
             locations: An K x 2 numpy array representing the source locations,
                 where K is the number of sources and the k-th row consists of
                 the x and y coordinates of the k-th source. Should never be
                 modified after creation.
-        '''
+        """
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
@@ -392,7 +392,7 @@ class NearField2DSourcePlacement(SourcePlacement):
         return NearField2DSourcePlacement(self._locations.copy())
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        '''Computes the M x K phase delay matrix for two-dimensional near-field
+        """Computes the M x K phase delay matrix for two-dimensional near-field
         sources.
         
         The phase delay matrix D is an M x K matrix, where D[m,k] is the
@@ -408,7 +408,7 @@ class NearField2DSourcePlacement(SourcePlacement):
             derivatives: If set to true, also outputs the derivative matrix (or
                 matrices) with respect to the source locations. Default value
                 is False.
-        '''
+        """
         _validate_sensor_location_ndim(sensor_locations)
         
         if derivatives:

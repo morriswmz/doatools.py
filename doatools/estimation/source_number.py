@@ -2,7 +2,7 @@ import numpy as np
 from math import log
 
 def ld_stat(l, n_sources, n_snapshots):
-    '''
+    """
     Computes the sufficient statistic for source number detection in MDL/AIC.
 
     Args:
@@ -13,14 +13,14 @@ def ld_stat(l, n_sources, n_snapshots):
     
     References:
     [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    '''
+    """
     n_sensors = l.size
     diff = n_sensors - n_sources
     l = l[:diff]
     return n_snapshots * diff * log(np.sum(l) / diff / (np.prod(l)**(1./diff)))
 
 def aic(l, n_snapshots):
-    '''
+    """
     Detects source numbers using AIC.
 
     AIC is inconsistent, and tends to asymptotically overestimate the
@@ -34,7 +34,7 @@ def aic(l, n_snapshots):
     
     References:
     [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    '''
+    """
     n_sensors = l.size
     ld = np.zeros((n_sensors, 1))
     for i in range(n_sensors):
@@ -42,7 +42,7 @@ def aic(l, n_snapshots):
     return np.argmin(ld)
 
 def mdl(l, n_sensors, n_snapshots):
-    '''
+    """
     Detects source number using MDL.
     
     MDL is consistent.
@@ -54,7 +54,7 @@ def mdl(l, n_sensors, n_snapshots):
     
     References:
     [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    '''
+    """
     n_sensors = l.size
     ld = np.zeros((n_sensors, 1))
     for i in range(n_sensors):

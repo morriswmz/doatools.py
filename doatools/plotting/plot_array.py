@@ -5,11 +5,11 @@ import warnings
 from ..model.coarray import compute_unique_location_differences
 
 def _auto_scatter(ax, x, *args, **kwargs):
-    '''Scatter plots the input points (1D, 2D, or 3D).
+    """Scatter plots the input points (1D, 2D, or 3D).
 
     This function automatically calls `scatter` with the correct signature based
     on the number of columns of the input.
-    '''
+    """
     if x.shape[1] == 1:
         ax.scatter(x[:,0], np.zeros((x.shape[0])), *args, **kwargs)
     elif x.shape[1] == 2:
@@ -40,7 +40,7 @@ def _fix_3d_aspect(ax):
     ax.auto_scale_xyz(limits[0], limits[1], limits[2])
 
 def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
-    '''Internal implementation for plotting arrays.'''
+    """Internal implementation for plotting arrays."""
     if not array.has_perturbation('location_errors') and show_location_errors:
         warnings.warn('The input array does not have location errors. Visualization of location errors is disabled.')
         show_location_errors = False
@@ -82,7 +82,7 @@ def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
     return ax
 
 def plot_array(array, ax=None, show_location_errors=False):
-    '''Visualizes the input array.
+    """Visualizes the input array.
 
     Args:
         array: A sensor array.
@@ -93,11 +93,11 @@ def plot_array(array, ax=None, show_location_errors=False):
     
     Returns:
         ax: The axes object containing the plot.
-    '''
+    """
     return _plot_array_impl(array, ax, False, show_location_errors)
 
 def plot_coarray(array, ax=None, show_location_errors=False):
-    '''Visualizes the difference coarray of the input array.
+    """Visualizes the difference coarray of the input array.
 
     Args:
         array: A sensor array.
@@ -108,5 +108,5 @@ def plot_coarray(array, ax=None, show_location_errors=False):
     
     Returns:
         ax: The axes object containing the plot.
-    '''
+    """
     return _plot_array_impl(array, ax, True, show_location_errors)

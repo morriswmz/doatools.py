@@ -5,7 +5,7 @@ from ..model.sources import FarField1DSourcePlacement, FarField2DSourcePlacement
 from ..utils.math import cartesian
 
 def merge_intervals(intervals):
-    '''
+    """
     Merges closed intervals.
 
     Args:
@@ -14,7 +14,7 @@ def merge_intervals(intervals):
     Returns:
         merged: A list of two-element tuples representing the intervals after
             merging.
-    '''
+    """
     if len(intervals) == 0:
         return []
     merged = []
@@ -30,10 +30,10 @@ def merge_intervals(intervals):
     return merged
 
 class SearchGrid(ABC):
-    '''Base class for all search grids. Provides standard implementation.'''
+    """Base class for all search grids. Provides standard implementation."""
 
     def __init__(self, axes, axis_names, units):
-        '''Creates a search grid.
+        """Creates a search grid.
 
         Args:
             axes: A tuple of 1D ndarrays representing the axes of this search
@@ -41,7 +41,7 @@ class SearchGrid(ABC):
                 from these axes.
             axis_names: A tuple of strings denoting the names of the axes.
             units: A tuple of strings representing the unit used for each axis.
-        '''
+        """
         if not isinstance(axes, tuple):
             raise ValueError('axes should be a tuple.')
         if not isinstance(axis_names, tuple):
@@ -56,26 +56,26 @@ class SearchGrid(ABC):
 
     @property
     def ndim(self):
-        '''Retrieves the number of dimensions of this search grid.'''
+        """Retrieves the number of dimensions of this search grid."""
         return len(self._axes)
 
     @property
     def size(self):
-        '''Retrieves the number of elements on this search grid.'''
+        """Retrieves the number of elements on this search grid."""
         return np.prod(self.shape)
 
     @property
     def shape(self):
-        '''Retrives the shape of this search grid.
+        """Retrives the shape of this search grid.
 
         Returns:
             shape: A tuple representing the shape.
-        '''
+        """
         return self._shape
 
     @property
     def source_placement(self):
-        '''Retrieves the source placement based on this grid.
+        """Retrieves the source placement based on this grid.
         
         For a multi-dimensional search grid with shape (d1, d2,..., dn), the
         returned SourcePlacement instance will contain d1 x d2 x ... x dn
@@ -91,41 +91,41 @@ class SearchGrid(ABC):
         (1, 1) (1, 2) (1, 3) (2, 1) (2, 2) (2, 3)
 
         Do not modify the returned SourcePlacement instance.
-        '''
+        """
         if self._sources is None:
             self._sources = self._create_source_placement()
         return self._sources
 
     @property
     def units(self):
-        '''Retrieves a tuple of strings representing the unit used for each axis.'''
+        """Retrieves a tuple of strings representing the unit used for each axis."""
         return self._units
 
     @property
     def axes(self):
-        '''Retrieves a tuple of 1D numpy vectors representing the axes such
+        """Retrieves a tuple of 1D numpy vectors representing the axes such
         that: source_locations = cartesian(axes[0], axes[1], ...).
 
         Do NOT modify.
-        '''
+        """
         return self._axes
     
     @property
     def axis_names(self):
-        '''Retrieves a tuple of strings representing the axis names.'''
+        """Retrieves a tuple of strings representing the axis names."""
         return self._axis_names
     
     @abstractmethod
     def _create_source_placement(self):
-        '''Creates the source placement instance for this grid.
+        """Creates the source placement instance for this grid.
         
         Implementation notice: implement this method in a subclass to create
         the source placement instance of the desired type.
-        '''
+        """
         raise NotImplementedError()
 
     def create_refined_axes_at(self, coord, density, span):
-        '''Creates a new set of axes by subdividing the grids around the input
+        """Creates a new set of axes by subdividing the grids around the input
         coordinate into finer grids. These new axes can then be used to create
         refined grids.
 
@@ -158,7 +158,7 @@ class SearchGrid(ABC):
         
         Returns:
             A tuple of ndarrays representing the refined axes.
-        '''
+        """
         if density < 1:
             raise ValueError('Density must be greater than or equal to 1.')
         if span < 1:
@@ -180,7 +180,7 @@ class SearchGrid(ABC):
         return tuple(axes)
 
     def create_refined_grids_at(self, *coords, **kwargs):
-        '''Creates multiple new search grids around the given coordinates.
+        """Creates multiple new search grids around the given coordinates.
 
         Args:
             *coords: A sequence of list-like objects representing the
@@ -197,12 +197,12 @@ class SearchGrid(ABC):
         
         Returns:
             A list of refined grids.
-        '''
+        """
         return [self.create_refined_grid_at(coord, **kwargs) for coord in zip(*coords)]
     
     @abstractmethod
     def create_refined_grid_at(self, coord, density, span):
-        '''Creates a finer search grid around the given coordinate.
+        """Creates a finer search grid around the given coordinate.
 
         Args:
             coord: A tuple of integers representing a single coordinate within
@@ -215,13 +215,13 @@ class SearchGrid(ABC):
         
         Returns:
             A refined grid.
-        '''
+        """
         raise NotImplementedError()
 
 class FarField1DSearchGrid(SearchGrid):
 
     def __init__(self, start=None, stop=None, size=180, unit='rad', axes=None):
-        '''Creates a search grid for 1D far-field source localization.
+        """Creates a search grid for 1D far-field source localization.
 
         When both `start` and `stop` are scalars, the resulting search grid
         consists only one uniform grid. When both `start` and `stop` are lists
@@ -249,7 +249,7 @@ class FarField1DSearchGrid(SearchGrid):
         
         Returns:
             grid: A search grid for 1D far-field source localization.
-        '''
+        """
         if axes is not None:
             super().__init__(axes, ('DOA',), (unit,))
         else:
@@ -276,7 +276,7 @@ class FarField1DSearchGrid(SearchGrid):
         return FarField1DSourcePlacement(self._axes[0], self._units[0])
 
     def create_refined_grid_at(self, coord, density=10, span=1):
-        '''Creates a finer search grid for 1D far-field sources.
+        """Creates a finer search grid for 1D far-field sources.
         
         Args:
             coord: A tuple of integers representing a single coordinate within
@@ -289,7 +289,7 @@ class FarField1DSearchGrid(SearchGrid):
         
         Returns:
             A refined 1D far-field search grid.
-        '''
+        """
         axes = self.create_refined_axes_at(coord, density, span)
         return FarField1DSearchGrid(unit=self._units[0], axes=axes)
 
@@ -297,7 +297,7 @@ class FarField2DSearchGrid(SearchGrid):
 
     def __init__(self, start=None, stop=None, size=(360, 90), unit='rad',
                  axes=None):
-        '''Creates a search grid for 2D far-field source localization.
+        """Creates a search grid for 2D far-field source localization.
 
         The first dimension corresponds to the azimuth angle, and the second
         dimension corresponds to the elevation angle.
@@ -325,7 +325,7 @@ class FarField2DSearchGrid(SearchGrid):
         
         Returns:
             grid: A search grid for 2D far-field source localization.
-        '''
+        """
         axis_names = ('Azimuth', 'Elevation')
         if axes is not None:
             super().__init__(axes, axis_names, (unit, unit))
@@ -348,7 +348,7 @@ class FarField2DSearchGrid(SearchGrid):
         return FarField2DSourcePlacement(cartesian(*self._axes), self._units[0])
 
     def create_refined_grid_at(self, coord, density=10, span=1):
-        '''Creates a finer search grid for 2D far-field sources.
+        """Creates a finer search grid for 2D far-field sources.
         
         Args:
             coord: A tuple of integers representing a single coordinate within
@@ -361,14 +361,14 @@ class FarField2DSearchGrid(SearchGrid):
         
         Returns:
             A refined 2D far-field search grid.
-        '''
+        """
         axes = self.create_refined_axes_at(coord, density, span)
         return FarField2DSearchGrid(unit=self._units[0], axes=axes)
 
 class NearField2DSearchGrid(SearchGrid):
 
     def __init__(self, start=None, stop=None, size=None, axes=None):
-        '''Creates a search grid for 2D near-field source localization.
+        """Creates a search grid for 2D near-field source localization.
 
         The first dimension corresponds to the x coordinate, and the second
         dimension corresponds to the y coordinate.
@@ -390,7 +390,7 @@ class NearField2DSearchGrid(SearchGrid):
         
         Returns:
             grid: A search grid for 2D near-field source localization.
-        '''
+        """
         axis_names = ('x', 'y')
         if axes is not None:
             super().__init__(axes, axis_names, ('m', 'm'))
@@ -405,7 +405,7 @@ class NearField2DSearchGrid(SearchGrid):
         return NearField2DSourcePlacement(cartesian(*self._axes))
 
     def create_refined_grids_at(self, coord, density=10, span=1):
-        '''Creates a finer search grid for 2D near-field sources.
+        """Creates a finer search grid for 2D near-field sources.
         
         Args:
             coord: A tuple of integers representing a single coordinate within
@@ -418,6 +418,6 @@ class NearField2DSearchGrid(SearchGrid):
         
         Returns:
             A refined 2D near-field search grid.
-        '''
+        """
         axes = self.create_refined_axes_at(coord, density, span)
         return NearField2DSearchGrid(axes=axes)

@@ -10,11 +10,11 @@ def _normalize_by_maximum(x):
         return x
 
 def _build_spectrum_list(sp, grid):
-    '''
+    """
     Preprocesses the spectrum input and convert it into a list of tuples, where
     the first element in the tuple is the numpy array and the second element is
     the label. Also outputs the dimension of the spectrum.
-    '''
+    """
     if isinstance(sp, np.ndarray):
         sp_list = [(sp, '')]
     elif isinstance(sp, list) or isinstance(sp, tuple):
@@ -32,7 +32,7 @@ def _build_spectrum_list(sp, grid):
 
 def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
                      use_log_scale=False, discrete=False):
-    '''Plots an 1D spectrum or multiple 1D spectra.
+    """Plots an 1D spectrum or multiple 1D spectra.
 
     Args:
         sp: Can be one of the following:
@@ -58,7 +58,7 @@ def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
     Returns:
         A list of plot containers in the following order: spectrum plots,
         estimate plot, ground truth plot.
-    '''
+    """
     # Preprocess the sp input
     sp_list = _build_spectrum_list(sp, grid)
     x = grid.axes[0]
@@ -122,7 +122,7 @@ def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
 
 def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
                      use_log_scale=False, swap_axes=False, color_map='jet'):
-    '''Plots a 2D spectrum.
+    """Plots a 2D spectrum.
 
     Args:
         sp: A 2D ndarray representing the spectrum.
@@ -142,7 +142,7 @@ def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
     Returns:
         A list of plot containers in the following order: spectrum plot,
         estimate plot, ground truth plot.
-    '''
+    """
     if sp.shape != grid.shape:
         raise ValueError('The shape of the spectrum, {0}, does not match the search grid, {1}.'.format(sp.shape, grid.shape))
     # Note that columns -> x, rows -> y by default
@@ -199,7 +199,7 @@ def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
 
 def plot_spectrum(sp, grid, ax=None, figsize=None, estimates=None,
                   ground_truth=None, use_log_scale=False, **kwargs):
-    '''Provides a convenient way to plot the given spectrum. Automatically
+    """Provides a convenient way to plot the given spectrum. Automatically
     selects the plot function based on input grid's number of dimensions.
 
     Args:
@@ -221,7 +221,7 @@ def plot_spectrum(sp, grid, ax=None, figsize=None, estimates=None,
     Returns:
         ax: The axes object containing the plot.
         containers: A list of plot containers.
-    '''
+    """
     if ax is None:
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)

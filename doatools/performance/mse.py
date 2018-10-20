@@ -5,7 +5,7 @@ from ..model.coarray import WeightFunction1D
 from .utils import unify_p_to_matrix, unify_p_to_vector
 
 def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbations='all'):
-    '''Computes the asymptotic covariance matrix of the estimation errors of
+    """Computes the asymptotic covariance matrix of the estimation errors of
     the classical MUSIC algorithm.
 
     Args:
@@ -36,7 +36,7 @@ def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbat
     [2] P. Stoica and A. Nehorai, "MUSIC, maximum likelihood, and Cramér-Rao
         bound," IEEE Transactions on Acoustics, Speech and Signal Processing,
         vol. 37, no. 5, pp. 720-741, May 1989.
-    '''
+    """
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     k = sources.size
@@ -60,7 +60,7 @@ def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbat
     return C
 
 def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
-    '''Computes the asymptotic covariance matrix of the estimation errors of the
+    """Computes the asymptotic covariance matrix of the estimation errors of the
     coarray-based MUSIC algorithm, SS-MUSIC or DA-MUSIC.
 
     Args:
@@ -85,7 +85,7 @@ def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
         IEEE Transactions on Signal Processing, vol. 65, no. 4, pp. 933-946,
         Feb. 2017.
-    '''
+    """
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     if array.is_perturbed:

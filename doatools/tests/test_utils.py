@@ -53,14 +53,14 @@ class TestMath(unittest.TestCase):
         npt.assert_array_equal(actual, expected)
 
     def assert_unique_rows(self, x, y, atol, rtol):
-        '''Asserts that the rows are unique.
+        """Asserts that the rows are unique.
 
         Args:
             x: Original matrix.
             y: Matrix of unique rows.
             atol: Absolute tolerance.
             rtol: Relative tolerance.
-        '''
+        """
         tol = atol + rtol * (np.abs(x)).max()
         n = y.shape[0]
         for i in range(n):

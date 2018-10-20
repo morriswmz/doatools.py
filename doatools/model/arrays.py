@@ -39,7 +39,7 @@ PERTURBATION_VALIDATORS = {
 }
 
 class ArrayDesign:
-    '''Base class for all array designs.
+    """Base class for all array designs.
 
     Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate
     system. We define 1D, 2D, and 3D arrays as follows:
@@ -62,10 +62,10 @@ class ArrayDesign:
     complexities and potential unexpected results. Although the internal
     states are generally accessible in Python, please refrain from modifying
     them.
-    '''
+    """
 
     def __init__(self, locations, name, perturbations={}):
-        '''Creates an custom array design.
+        """Creates an custom array design.
 
         Args:
             locations: A list or ndarray specifying the element locations. For
@@ -85,7 +85,7 @@ class ArrayDesign:
                 The values are two-element tuples where the first element is an
                 ndarray representing the parameters and the second element is
                 a bool specifying whether these parameters are known in prior.
-        '''
+        """
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
         if locations.ndim > 2:
@@ -101,40 +101,40 @@ class ArrayDesign:
     
     @property
     def name(self):
-        '''Retrieves the name of this array.'''
+        """Retrieves the name of this array."""
         return self._name
     
     @property
     def element_count(self):
-        '''(Deprecated) Retrieves the number of elements in the array.'''
+        """(Deprecated) Retrieves the number of elements in the array."""
         warnings.warn('Use size instead of element_count in the future.', DeprecationWarning)
         return self.size
 
     @property
     def size(self):
-        '''Retrieves the number of elements in the array.'''
+        """Retrieves the number of elements in the array."""
         return self._locations.shape[0]
     
     @property
     def element_locations(self):
-        '''Retrives the nominal element locations.
+        """Retrives the nominal element locations.
 
         Returns:
             An M x d matrix, where M is the number of elements and d is the
             number of dimensions of the nominal array.
-        '''
+        """
         return self._locations.copy()
 
     @property
     def actual_element_locations(self):
-        '''Retrieves the actual element locations, considering location errors.
+        """Retrieves the actual element locations, considering location errors.
 
         Returns:
             An M x d matrix, where M is the number of elements and d is the
             maximum of the following two:
             1. number of dimensions of the nominal array;
             2. number of dimensions of the sensor location errors.
-        '''
+        """
         if 'location_errors' in self._perturbations:
             return self._compute_actual_locations(self._perturbations['location_errors'][0])
         else:
@@ -157,12 +157,12 @@ class ArrayDesign:
 
     @property
     def is_perturbed(self):
-        '''Returns if the array contains perturbations.'''
+        """Returns if the array contains perturbations."""
         return len(self._perturbations) > 0
 
     @property
     def ndim(self):
-        '''Retrieves the number of dimensions of the nominal array.
+        """Retrieves the number of dimensions of the nominal array.
 
         The number of dimensions is defined as the number of columns of the
         ndarray storing the nominal array element locations. It does not
@@ -172,32 +172,32 @@ class ArrayDesign:
         fact that this array is a linear array.
 
         Perturbations do not affect this value.
-        '''
+        """
         return self._locations.shape[1]
     
     @property
     def actual_ndim(self):
-        '''Retrieves the number of dimensions of the array, considering location errors.'''
+        """Retrieves the number of dimensions of the array, considering location errors."""
         if 'location_errors' in self._perturbations:
             return max(self._perturbations['location_errors'][0].shape[1], self.ndim)
         else:
             return self.ndim
     
     def has_perturbation(self, ptype):
-        '''Checks if the array has the given type of perturbation.'''
+        """Checks if the array has the given type of perturbation."""
         return ptype in self._perturbations
     
     def is_perturbation_known(self, ptype):
-        '''Checks if the specified perturbation is known in prior.'''
+        """Checks if the specified perturbation is known in prior."""
         return self._perturbations[ptype][1]
     
     def get_perturbation_params(self, ptype):
-        '''Retrieves the parameters for the specified perturbation type.'''
+        """Retrieves the parameters for the specified perturbation type."""
         return self._perturbations[ptype][0]
     
     @property
     def perturbations(self):
-        '''Retrieves a copy of the dictionary of all perturbations.'''
+        """Retrieves a copy of the dictionary of all perturbations."""
         # Here we have a deep copy.
         return copy.deepcopy(self._perturbations)
     
@@ -216,7 +216,7 @@ class ArrayDesign:
         return p_copy
 
     def get_perturbed_copy(self, perturbations, new_name=None):
-        '''Returns a copy of this array design but with the specified
+        """Returns a copy of this array design but with the specified
         perturbations.
         
         The specified perturbations will replace the existing ones.
@@ -234,7 +234,7 @@ class ArrayDesign:
             new_name (str): An optional new name for the resulting array design.
                 If not provided, the name of the original array design will be
                 used.
-        '''
+        """
         array = self.get_perturbation_free_copy(new_name)
         # Merge perturbation parameters.
         perturbations = self._validate_and_copy_perturbations(perturbations)
@@ -242,13 +242,13 @@ class ArrayDesign:
         return array
 
     def get_perturbation_free_copy(self, new_name=None):
-        '''Returns a perturbation-free copy of this array design.
+        """Returns a perturbation-free copy of this array design.
 
         Args:
             new_name (str): An optional new name for the resulting array design.
                 If not provided, the name of the original array design will be
                 used.
-        '''
+        """
         if new_name is None:
             new_name = self._name
         array = copy.copy(self)
@@ -258,7 +258,7 @@ class ArrayDesign:
 
     def steering_matrix(self, sources, wavelength, compute_derivatives=False,
                         perturbations='all'):
-        '''Creates the steering matrix for the given DOAs.
+        """Creates the steering matrix for the given DOAs.
 
         Note: the steering matrix calculation is bound to array designs.
         This is a generic implementation, which can be overridden for special
@@ -288,7 +288,7 @@ class ArrayDesign:
                     used by DOA estimators when the exact knowledge of these
                     perturbations are known in prior.
                 * 'none' - None of the perturbations are considered.
-        '''
+        """
         # Filter perturbations.
         if perturbations == 'all':
             perturb_dict = self._perturbations
@@ -334,10 +334,10 @@ class ArrayDesign:
             return A
 
 class GridBasedArrayDesign(ArrayDesign):
-    '''Base class for all grid-based array designs.'''
+    """Base class for all grid-based array designs."""
     
     def __init__(self, indices, d0, name, **kwargs):
-        '''Creates an array design where each elements is placed on a predefined
+        """Creates an array design where each elements is placed on a predefined
         grid with grid size d0.
 
         Args:
@@ -353,7 +353,7 @@ class GridBasedArrayDesign(ArrayDesign):
                 the i-th axis.
             name (str): Name of the array design.
             **kwargs: Other keyword arguments supported by ArrayDesign.
-        '''
+        """
         if not np.isscalar(d0):
             d0 = np.array(d0)
             if indices.shape[1] < d0.size:
@@ -367,18 +367,18 @@ class GridBasedArrayDesign(ArrayDesign):
 
     @property
     def d0(self):
-        '''Retrieves the base inter-element spacing.'''
+        """Retrieves the base inter-element spacing."""
         return self._d0
 
     @property
     def element_indices(self):
-        '''Retrives the element indices.'''
+        """Retrives the element indices."""
         return self._element_indices.copy()
 
 class UniformLinearArray(GridBasedArrayDesign):
 
     def __init__(self, n, d0, name=None, **kwargs):
-        '''Creates an n-element uniform linear array (ULA).
+        """Creates an n-element uniform linear array (ULA).
         
         The ULA is placed along the x-axis, whose the first sensor is placed at
         the origin.
@@ -388,7 +388,7 @@ class UniformLinearArray(GridBasedArrayDesign):
             d0 (float): Fundamental inter-element spacing (usually smallest).
             name (str): Name of the array design.
             **kwargs: Other keyword arguments supported by ArrayDesign.
-        '''
+        """
         if name is None:
             name = 'ULA ' + str(n)
         super().__init__(np.arange(n).reshape((-1, 1)), d0, name, **kwargs)
@@ -396,7 +396,7 @@ class UniformLinearArray(GridBasedArrayDesign):
 class NestedArray(GridBasedArrayDesign):
 
     def __init__(self, n1, n2, d0, name=None, **kwargs):
-        '''Creates an 1D nested array.
+        """Creates an 1D nested array.
 
         Args:
             n1 (int): Parameter N1.
@@ -410,7 +410,7 @@ class NestedArray(GridBasedArrayDesign):
             array processing with enhanced degrees of freedom," IEEE
             Transactions on Signal Processing, vol. 58, no. 8, pp. 4167-4181,
             Aug. 2010.
-        '''
+        """
         if name is None:
             name = 'Nested ({0},{1})'.format(n1, n2)
         indices = np.concatenate((
@@ -423,18 +423,18 @@ class NestedArray(GridBasedArrayDesign):
 
     @property
     def n1(self):
-        '''Retrieves the parameter, N1, used when creating this nested array.'''
+        """Retrieves the parameter, N1, used when creating this nested array."""
         return self._n1
     
     @property
     def n2(self):
-        '''Retrieves the parameter, N2, used when creating this nested array.'''
+        """Retrieves the parameter, N2, used when creating this nested array."""
         return self._n2
 
 class CoPrimeArray(GridBasedArrayDesign):
 
     def __init__(self, m, n, d0, mode='2m', name=None, **kwargs):
-        '''Creates an 1D co-prime array.
+        """Creates an 1D co-prime array.
 
         Args:
             m (int): The smaller number in the co-prime pair.
@@ -448,7 +448,7 @@ class CoPrimeArray(GridBasedArrayDesign):
         [1] P. Pal and P. P. Vaidyanathan, "Coprime sampling and the music
             algorithm," in 2011 Digital Signal Processing and Signal Processing
             Education Meeting (DSP/SPE), 2011, pp. 289-294.
-        '''
+        """
         if name is None:
             name = 'Co-prime ({0},{1})'.format(m, n)
         if m > n:
@@ -475,12 +475,12 @@ class CoPrimeArray(GridBasedArrayDesign):
 
     @property
     def coprime_pair(self):
-        '''Retrieves the co-prime pair used when creating this co-prime array.'''
+        """Retrieves the co-prime pair used when creating this co-prime array."""
         return self._coprime_pair
 
     @property
     def mode(self):
-        '''Retrieves the mode used when creating this co-prime array.'''
+        """Retrieves the mode used when creating this co-prime array."""
         return self._mode
 
 _MRLA_PRESETS = [
@@ -509,7 +509,7 @@ _MRLA_PRESETS = [
 class MinimumRedundancyLinearArray(GridBasedArrayDesign):
 
     def __init__(self, n, d0, name=None, **kwargs):
-        '''Creates an n-element minimum redundancy linear array (MRLA).
+        """Creates an n-element minimum redundancy linear array (MRLA).
 
         Args:
             n (int): Number of elements. Up to 20.
@@ -522,7 +522,7 @@ class MinimumRedundancyLinearArray(GridBasedArrayDesign):
             of antennas," Radio Sci., vol. 15, no. 6, pp. 1163-1170, Nov. 1980.
         [2] A. Moffet, "Minimum-redundancy linear arrays," IEEE Transactions
             on Antennas and Propagation, vol. 16, no. 2, pp. 172-175, Mar. 1968.
-        '''
+        """
         if n < 1 or n >= len(_MRLA_PRESETS):
             raise ValueError('The MRLA presets only support up to 20 elements.')
         if name is None:
@@ -532,7 +532,7 @@ class MinimumRedundancyLinearArray(GridBasedArrayDesign):
 class UniformCircularArray(ArrayDesign):
 
     def __init__(self, n, r, name=None, **kwargs):
-        '''Creates a uniform circular array (UCA).
+        """Creates a uniform circular array (UCA).
         
         The UCA is centered at the origin, in the xy-plane.
 
@@ -541,7 +541,7 @@ class UniformCircularArray(ArrayDesign):
             r (float): Radius of the circle.
             name (str): Name of the array design.
             **kwargs: Other keyword arguments supported by ArrayDesign.
-        '''
+        """
         if name is None:
             name = 'UCA ' + str(n)
         self._r = r
@@ -551,13 +551,13 @@ class UniformCircularArray(ArrayDesign):
 
     @property
     def radius(self):
-        '''Retrieves the radius of the uniform circular array.'''
+        """Retrieves the radius of the uniform circular array."""
         return self._r
 
 class UniformRectangularArray(GridBasedArrayDesign):
 
     def __init__(self, m, n, d0, name=None, **kwargs):
-        '''Creates an m x n uniform rectangular array (URA).
+        """Creates an m x n uniform rectangular array (URA).
         
         The URA is placed on the xy-plane, whose the (0,0)-th sensor is placed
         at the origin.
@@ -569,7 +569,7 @@ class UniformRectangularArray(GridBasedArrayDesign):
                 scalar or a two-element list-like object.
             name (str): Name of the array design.
             **kwargs: Other keyword arguments supported by ArrayDesign.
-        '''
+        """
         if name is None:
             name = 'URA {0}x{1}'.format(m, n)
         self._shape = (m, n)
@@ -578,5 +578,5 @@ class UniformRectangularArray(GridBasedArrayDesign):
     
     @property
     def shape(self):
-        '''Retrieves the shape of this uniform rectangular array.'''
+        """Retrieves the shape of this uniform rectangular array."""
         return self._shape

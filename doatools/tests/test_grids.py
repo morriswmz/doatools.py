@@ -8,7 +8,7 @@ class Test1DGrids(unittest.TestCase):
 
     def check_1d_grid_with_axes(self, grid, axis_expected, axis_names_expected,
                                 units_expected):
-        '''Helper method to check whether the grid matches the expectations.'''
+        """Helper method to check whether the grid matches the expectations."""
         self.assertEqual(grid.ndim, 1)
         self.assertEqual(grid.size, axis_expected.size)
         self.assertEqual(grid.shape, (axis_expected.size,))

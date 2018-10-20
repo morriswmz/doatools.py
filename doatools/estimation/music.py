@@ -8,7 +8,7 @@ from .core import SpectrumBasedEstimatorBase, get_noise_subspace, \
                   ensure_covariance_size, ensure_n_resolvable_sources
 
 def f_music(A, En):
-    r'''
+    r"""
     Function to evaluate the MUSIC spectrum. This is a vectorized
     implementation of the spectrum function:
 
@@ -20,14 +20,14 @@ def f_music(A, En):
             direction-of-arrivals.
         En: M x D matrix of noise eigenvectors, where D is the dimension of the
             noise subspace.
-    '''
+    """
     v = En.T.conj() @ A
     return np.reciprocal(np.sum(v * v.conj(), axis=0).real)
 
 class MUSIC(SpectrumBasedEstimatorBase):
 
     def __init__(self, array, wavelength, search_grid, **kwargs):
-        '''Creates a spectrum-based MUSIC estimator.
+        """Creates a spectrum-based MUSIC estimator.
         
         The MUSIC spectrum is computed on a predefined-grid, and the source
         locations are estimated by identifying the peaks.
@@ -42,11 +42,11 @@ class MUSIC(SpectrumBasedEstimatorBase):
         [1] R. Schmidt, "Multiple emitter location and signal parameter
             estimation," IEEE Transactions on Antennas and Propagation,
             vol. 34, no. 3, pp. 276-280, Mar. 1986.
-        '''
+        """
         super().__init__(array, wavelength, search_grid, **kwargs)
         
     def estimate(self, R, k, **kwargs):
-        '''Estimates the source locations from the given covariance matrix.
+        """Estimates the source locations from the given covariance matrix.
 
         Args:
             R (ndarray): Covariance matrix input. The size of R must match that
@@ -76,7 +76,7 @@ class MUSIC(SpectrumBasedEstimatorBase):
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
-        '''
+        """
         ensure_covariance_size(R, self._array)
         ensure_n_resolvable_sources(k, self._array.size - 1)
         En = get_noise_subspace(R, k)
@@ -85,15 +85,15 @@ class MUSIC(SpectrumBasedEstimatorBase):
 class RootMUSIC1D:
 
     def __init__(self, wavelength):
-        '''Create a root-MUSIC estimator for uniform linear arrays.
+        """Create a root-MUSIC estimator for uniform linear arrays.
 
         Args:
             wavelength (float): Wavelength of the carrier wave.
-        '''
+        """
         self._wavelength = wavelength
 
     def estimate(self, R, k, d0=None, unit='rad'):
-        '''
+        """
         Estimates the DOAs of 1D far-field sources from the give covariance
         matrix.
 
@@ -116,7 +116,7 @@ class RootMUSIC1D:
             estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
                 instance represeting the estimated DOAs. Will be `None` if
                 resolved is False.
-        '''
+        """
         if R.ndim != 2 or R.shape[0] != R.shape[1]:
             raise ValueError('R should be a square matrix.')
         m = R.shape[0]

@@ -16,7 +16,7 @@ def f_nll_stouc(R, array, sources, wavelength, p, sigma):
     return logdet + np.trace(np.linalg.solve(S, R))
 
 class CovarianceBasedMLEstimator(ABC):
-    '''Encapsulates a covariance based maximum-likelihood problem.'''
+    """Encapsulates a covariance based maximum-likelihood problem."""
 
     def __init__(self, array, wavelength):
         self._array = array
@@ -24,25 +24,25 @@ class CovarianceBasedMLEstimator(ABC):
         self._estimates = None
 
     def get_last_estimates(self):
-        '''Retrieves the last estimates of source locations.'''
+        """Retrieves the last estimates of source locations."""
         if self._estimates is None:
             raise RuntimeError('No estimation has been performed yet.')
         # Returns a copy.
         return self._estimates[:]
 
     def get_max_resolvable_sources(self):
-        '''Returns the maximum number of sources resolvable.
+        """Returns the maximum number of sources resolvable.
         
         This default implementation returns (array size - 1), which is suitable
         for most ML based estimators because the projection matrix of the
         steering matrix is not well-defined when the number of sources is
         greater than or equal to the number of sensors.
-        '''
+        """
         return self._array.size - 1
 
     @abstractmethod
     def eval_nll(self, x, R, k):
-        '''Evaluates the negative log-likelihood function for the given input.
+        """Evaluates the negative log-likelihood function for the given input.
         
         Implementation notice: `self._estimates` serves as a working instance
         for computing the steering matrix. It is reused and modified in-placed
@@ -60,11 +60,11 @@ class CovarianceBasedMLEstimator(ABC):
         Returns:
             A real number, the value of the negative log-likelihood function for
             the given input.
-        '''
+        """
         raise NotImplementedError()
 
     def prepare_opt_prob(self, sources0, R):
-        '''Prepares the optimization problem.
+        """Prepares the optimization problem.
 
         More specifically, this method
         1. constructs the objective function.
@@ -88,7 +88,7 @@ class CovarianceBasedMLEstimator(ABC):
                 ML-based optimization problem.
             bounds: A list of 2-element tuples representing the bounds for the
                 variables.
-        '''
+        """
         k = sources0.size
         # Delegate the call to self.eval_nll
         f = lambda x : self.eval_nll(x, R, k)
@@ -103,7 +103,7 @@ class CovarianceBasedMLEstimator(ABC):
         return f, x0, bounds
 
     def update_estimates_from_x(self, x):
-        '''Updates the current source location estimates from x.'''
+        """Updates the current source location estimates from x."""
         n = self._estimates.locations.size
         np.copyto(
             self._estimates.locations,
@@ -111,11 +111,11 @@ class CovarianceBasedMLEstimator(ABC):
         )
 
     def eval_steering_matrix_from_x(self, x):
-        '''Evaluates the steering matrix from x.
+        """Evaluates the steering matrix from x.
         
         `self._estimates` is first updated from x and then used to evaluate
         the steering matrix.
-        '''
+        """
         self.update_estimates_from_x(x)
         return self._array.steering_matrix(
             self._estimates, self._wavelength,
@@ -123,7 +123,7 @@ class CovarianceBasedMLEstimator(ABC):
         )
     
     def estimate(self, R, sources0, **kwargs):
-        r'''Solves the ML problem for the given inputs.
+        r"""Solves the ML problem for the given inputs.
 
         Note: in general, ML estimates are computationally expensive to obtain
         and sensitive to initialization. They are generally used in theoretical
@@ -149,7 +149,7 @@ class CovarianceBasedMLEstimator(ABC):
             estimates (SourcePlacement): A SourcePlacement instance of the same
                 type as the one used in the search grid, represeting the
                 estimated DOAs. Will be `None` if resolved is False.
-        '''
+        """
         ensure_n_resolvable_sources(sources0.size, self.get_max_resolvable_sources())
         ensure_covariance_size(R, self._array)
         # Make a copy of the initial guess as a working variable for the
@@ -171,7 +171,7 @@ class CovarianceBasedMLEstimator(ABC):
         return True, self.get_last_estimates()
 
 class AMLEstimator(CovarianceBasedMLEstimator):
-    r'''Asymptotic maximum-likelihood (AML) estimator.
+    r"""Asymptotic maximum-likelihood (AML) estimator.
     
     The AML estimator maximizes the following log-likelihood function:
         - logdet S - tr(S^{-1} R)
@@ -184,7 +184,7 @@ class AMLEstimator(CovarianceBasedMLEstimator):
 
     References:
     [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    '''
+    """
 
     def eval_nll(self, x, R, k):
         # See 8.6.1 of the following:
@@ -207,7 +207,7 @@ class AMLEstimator(CovarianceBasedMLEstimator):
             return nll_val
 
 class CMLEstimator(CovarianceBasedMLEstimator):
-    r'''Conditional maximum-likelihood (CML) estimator.
+    r"""Conditional maximum-likelihood (CML) estimator.
     
     Given the conditional observation model (the source signals are assumed to
     be deterministic unknown):
@@ -220,7 +220,7 @@ class CMLEstimator(CovarianceBasedMLEstimator):
 
     References:
     [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    '''
+    """
 
     def eval_nll(self, x, R, k):
         # See 8.5.2 of the following:
@@ -231,7 +231,7 @@ class CMLEstimator(CovarianceBasedMLEstimator):
         return np.real(np.trace(PPA @ R))
 
 class WSFEstimator(CovarianceBasedMLEstimator):
-    r'''Weighted subspace fitting (WSF) estimator.
+    r"""Weighted subspace fitting (WSF) estimator.
 
     WSF is based on the CML estimator. This class uses the asymptotically
     optimal weights.
@@ -244,10 +244,10 @@ class WSFEstimator(CovarianceBasedMLEstimator):
     [3] P. Stoica and K. Sharman, "Maximum likelihood methods for direction-of-
         arrival estimation," IEEE Trans. Acoust., Speech, Signal Process.,
         vol. 38, pp. 1132-1143, July 1990.
-    '''
+    """
 
     def prepare_m(self, sources0, R):
-        '''Prepare the M matrix used in the optimization.'''
+        """Prepare the M matrix used in the optimization."""
         k = sources0.size
         # Pre-calculate optimal weights
         v, E = np.linalg.eigh(R)

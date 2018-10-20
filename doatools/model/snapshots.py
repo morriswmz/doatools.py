@@ -1,7 +1,7 @@
 def get_narrowband_snapshots(array, sources, wavelength, source_signal,
                              noise_signal=None, n_snapshots=1,
                              return_covariance=False):
-    '''Generates snapshots based on the narrowband snapshot model (see
+    """Generates snapshots based on the narrowband snapshot model (see
     Chapter 8.1 of [1]).
 
     Let A be the steering matrix, s(t) be the source signal vector, and n(t) be
@@ -26,7 +26,7 @@ def get_narrowband_snapshots(array, sources, wavelength, source_signal,
 
     References:
     [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    '''
+    """
     A = array.steering_matrix(sources, wavelength)
     S = source_signal.emit(n_snapshots)
     Y = A @ S

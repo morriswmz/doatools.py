@@ -1,7 +1,7 @@
 import numpy as np
 
 def ae2broad(doas):
-    '''Converts azimuth-elevation pairs to broadside angles.
+    """Converts azimuth-elevation pairs to broadside angles.
 
     The array is assumed to be placed along the x-axis.
 
@@ -22,7 +22,7 @@ def ae2broad(doas):
             | /
             |/  < azimuth angle 
     --------+-------->x
-    '''
+    """
     return np.arcsin(np.cos(doas[:,0]) * np.cos(doas[:,1])).reshape((-1, 1))
 
 ANGULAR_COV_MAT = {
@@ -41,7 +41,7 @@ ANGULAR_COV_MAT = {
 }
 
 def convert_angles(x, from_unit, to_unit):
-    '''Converts input angular values to a new unit.
+    """Converts input angular values to a new unit.
     
     If `from_unit` and `to_unit` are the same, a copied will be made.
 
@@ -53,7 +53,7 @@ def convert_angles(x, from_unit, to_unit):
                 'sin': (-1, 1)
         from_unit: The original unit.
         to_unit: The target unit.
-    '''
+    """
     if from_unit == to_unit:
         return x.copy()
     return ANGULAR_COV_MAT[from_unit][to_unit](x)

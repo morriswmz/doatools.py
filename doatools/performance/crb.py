@@ -4,7 +4,7 @@ from .utils import unify_p_to_matrix, unify_p_to_vector
 from ..utils.math import projm
 
 def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
-    r'''
+    r"""
     Computes the stochastic CRB for 1D farfield sources.
     
     Under the stochastic signal model, the source signal is assumed to be
@@ -41,7 +41,7 @@ def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
         unconditional direction-of-arrival estimation," IEEE Transactions on
         Acoustics, Speech and Signal Processing, vol. 38, no. 10,
         pp. 1783-1795, Oct. 1990.
-    '''
+    """
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     k = sources.size
@@ -61,7 +61,7 @@ def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     return 0.5 * (CRB + CRB.T)
 
 def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
-    r'''
+    r"""
     Computes the deterministic CRB for 1D farfield sources.
     
     Under the deterministic signal model, the source signal is assumed to be
@@ -96,7 +96,7 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
         unconditional direction-of-arrival estimation," IEEE Transactions on
         Acoustics, Speech and Signal Processing, vol. 38, no. 10,
         pp. 1783-1795, Oct. 1990.
-    '''
+    """
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     k = sources.size
@@ -114,7 +114,7 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
 
 def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
                           output_fim=False):
-    r'''
+    r"""
     Computes the stochastic CRB for 1D farfield sources with the assumption
     that the sources are uncorrelated.
     
@@ -156,7 +156,7 @@ def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
     [3] C-L. Liu and P. P. Vaidyanathan, "Cramér-Rao bounds for coprime and
         other sparse arrays, which find more sources than sensors," Digital
         Signal Processing, vol. 61, pp. 43-61, 2017.
-    '''
+    """
     if not isinstance(sources, FarField1DSourcePlacement):
         raise ValueError('Sources must be far-field and 1D.')
     k = sources.size

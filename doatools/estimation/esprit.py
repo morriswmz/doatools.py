@@ -3,14 +3,14 @@ from ..model.sources import FarField1DSourcePlacement
 from .core import ensure_n_resolvable_sources
 
 def get_default_row_weights(m):
-    '''Gets the default row weights for the ESPRIT estimator.
+    """Gets the default row weights for the ESPRIT estimator.
     
     Args:
         m (int): Number of rows.
 
     Returns:
         A ndarray vector of weights.
-    '''
+    """
     w = np.zeros((m,))
     for i in range(m // 2):
         w[i] = i + 1
@@ -22,7 +22,7 @@ def get_default_row_weights(m):
 class Esprit1D:
 
     def __init__(self, wavelength):
-        '''Creates an ESPRIT estimator for 1D ULAs.
+        """Creates an ESPRIT estimator for 1D ULAs.
         
         Args:
             wavelength (float): Wavelength of the carrier wave.
@@ -33,12 +33,12 @@ class Esprit1D:
             Speech and Signal Processing, vol. 37, no. 7, pp. 984–995,
             Jul. 1989.
         [2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-        '''
+        """
         self._wavelength = wavelength
 
     def estimate(self, R, k, d0=None, displacement=1, formulation='ls',
                  row_weights='default', unit='rad'):
-        '''Estimate the DOAs using ESPRIT.
+        """Estimate the DOAs using ESPRIT.
 
         Args:
             R (ndarray): Covariance matrix input. The size of R determines
@@ -73,7 +73,7 @@ class Esprit1D:
             estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
                 instance represeting the estimated DOAs. Will be `None` if
                 resolved is False.
-        '''
+        """
         m = R.shape[0]
         if displacement < 1:
             raise ValueError('Displacement must be a non-negative integer.')

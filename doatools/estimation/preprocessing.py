@@ -1,7 +1,7 @@
 import numpy as np
 
 def spatial_smooth(R, l, fb=False):
-    '''
+    """
     Applys spatial smoothing to the given covariance matrix.
     
     Reference:
@@ -21,7 +21,7 @@ def spatial_smooth(R, l, fb=False):
     Returns:
         Rs: (M - l + 1) x (M - l + 1) spatially-smoothed covariance matrix,
             where M is the size of the input covariance matrix.
-    '''
+    """
     m = R.shape[0]
     if l < 1 or l > m:
         raise ValueError('The number of subarrays must be within [1, {0}].'.format(m))

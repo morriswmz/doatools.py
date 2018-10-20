@@ -3,7 +3,7 @@ from scipy.signal import find_peaks
 from scipy.ndimage import maximum_filter
 
 def vec(x):
-    '''Vectorizes a matrix by stacking the columns.
+    """Vectorizes a matrix by stacking the columns.
     
     NumPy arrays use row major ordering, while MATLAB uses column major
     ordering. Therefore in NumPy `reshape((-1, 1))` stacks the rows instead of
@@ -13,20 +13,20 @@ def vec(x):
 
     Args:
         x: An ndarray to be vectorized.
-    '''
+    """
     return x.reshape((-1, 1), order='F')
 
 def abs_squared(x):
-    '''Computes Re(x)^2 + Im(x)^2.
+    """Computes Re(x)^2 + Im(x)^2.
     
     Args:
         x: An complex ndarray.
-    '''
+    """
     return x.real**2 + x.imag**2
 
 def khatri_rao(a, b):
-    '''Evaluates the Khatri-Rao (i.e., column-wise Kronecker product) between
-    the two given matrices.'''
+    """Evaluates the Khatri-Rao (i.e., column-wise Kronecker product) between
+    the two given matrices."""
     n1, k1 = a.shape
     n2, k2 = b.shape
     if k1 != k2:
@@ -37,7 +37,7 @@ def khatri_rao(a, b):
     return c
 
 def projm(A, use_pinv=False):
-    '''Computes the projection matrix of the input matrix.
+    """Computes the projection matrix of the input matrix.
     
     Given a full column rank matrix A, the projection matrix of A is given by
         A (A^H A)^{-1} A^H
@@ -46,7 +46,7 @@ def projm(A, use_pinv=False):
         A: An ndarray.
         use_pinv: If set to true, will use `pinv` instead `solve` to compute
             the projection matrix. Set this to True if `A` is close to singular.
-    '''
+    """
     if use_pinv:
         return A @ np.linalg.pinv(A)
     if np.iscomplexobj(A):
@@ -56,7 +56,7 @@ def projm(A, use_pinv=False):
         return A @ np.linalg.solve(A.T @ A, A.T)
 
 def cartesian(*xi):
-    '''Evaluates the Cartesian product among the input vectors.
+    """Evaluates the Cartesian product among the input vectors.
 
     For instance, if the inputs are [1, 2] and [3, 4, 5], the result will be
     
@@ -67,12 +67,12 @@ def cartesian(*xi):
     
     Returns:
         prod: An ndarray array containing the Cartesian product.
-    '''
+    """
     yi = np.meshgrid(*xi, indexing='ij')
     return np.vstack([y.flatten() for y in yi]).T
 
 def unique_rows(x, atol=0.0, rtol=1e-8, return_index=False, sort=False):
-    '''Obtains the unique rows within the specified tolerance.
+    """Obtains the unique rows within the specified tolerance.
     
     This function is designed to obtain unique rows from a matrix while
     considering floating-point errors. Hence, the tolerance is usually set to
@@ -104,7 +104,7 @@ def unique_rows(x, atol=0.0, rtol=1e-8, return_index=False, sort=False):
         y: An ndarray consists of the unique rows.
         indices: An ndarray of indices representing the rows in the input matrix
             that are used to construct the output.
-    '''
+    """
     if x.ndim != 2:
         raise ValueError('Matrix input expected.')
     n, m = x.shape

@@ -6,7 +6,7 @@ from ..utils.math import abs_squared
 class MinNorm(SpectrumBasedEstimatorBase):
 
     def __init__(self, array, wavelength, search_grid, **kwargs):
-        '''Creates a spectrum-based Min-Norm estimator.
+        """Creates a spectrum-based Min-Norm estimator.
         
         The Min-Norm spectrum is computed on a predefined-grid, and the source
         locations are estimated by identifying the peaks.
@@ -21,11 +21,11 @@ class MinNorm(SpectrumBasedEstimatorBase):
         [1] R. Kumaresan and D. W. Tufts, "Estimating the angles of arrival of
             multiple plane waves," IEEE Trans. Aerospace Electron. Syst.,
             vol.AES-19, pp. 134-139, January 1983.
-        '''
+        """
         super().__init__(array, wavelength, search_grid, **kwargs)
 
     def estimate(self, R, k, **kwargs):
-        '''Estimates the source locations from the given covariance matrix.
+        """Estimates the source locations from the given covariance matrix.
 
         Args:
             R (ndarray): Covariance matrix input. The size of R must match that
@@ -55,7 +55,7 @@ class MinNorm(SpectrumBasedEstimatorBase):
             spectrum (ndarray): A numpy array of the same shape of the
                 specified search grid, consisting of values evaluated at the
                 grid points. Only present if `return_spectrum` is True.
-        '''
+        """
         ensure_covariance_size(R, self._array)
         ensure_n_resolvable_sources(k, self._array.size - 1)
         # We compute the d vector from the noise subspace.
