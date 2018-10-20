@@ -7,7 +7,8 @@ I made some notebooks that produce figures similar to those in my papers (may no
 ## Features
 
 * Several array design and difference coarray related functions.
-* Commonly used DOA estimators including MVDR beamformer, MUSIC, root-MUSIC, ESPRIT, etc.
+* Commonly used DOA estimators including MVDR beamformer, MUSIC, root-MUSIC, ESPRIT.
+* Maximum-likelihood estimators including AML, CML, and WSF.
 * Sparsity-based DOA estimator.
 * Functions to compute the [Cramér-Rao bounds](https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93Rao_bound).
 * Functions to compute the asymptotic covariance matrix of the estimation errors of MUSIC estimators (including difference coarray based).
@@ -15,9 +16,15 @@ I made some notebooks that produce figures similar to those in my papers (may no
 
 >**Note:** **doatools.py** is designed to facilitate my theoretical research on array signal processing. It is not designed for real-world applications. Nevertheless, the implementations of various DOA estimators in this repository provide good references on understanding these estimation algorithms.
 
+## Differences from the MATLAB version
+
+The Python version retains most of the functionalities of the MATLAB version, while adding some new ones. For instance, the Python version supports 2D (azimuth and elevation) DOA estimation and includes more ML-based estimators.
+
+The Python version is also more modular, providing more flexibility over the MATLAB version. Many spectrum-based estimators (e.g., MUSIC) are now reusable, and work for both 1D and 2D sources.
+
 ## Requirements
 
-**doatools.py** requires **NumPy**, **SciPy** and **matplotlib**. It also requires **cvxpy** to solve sparse recovery problems.
+**doatools.py** requires [NumPy](https://github.com/numpy/numpy), [SciPy](https://github.com/scipy/scipy) and [Matplotlib](https://github.com/matplotlib/matplotlib). It also requires [CVXPY]](https://github.com/cvxgrp/cvxpy) to solve sparse recovery problems. To run the examples, you also need to install [tqdm](https://github.com/tqdm/tqdm).
 
 ## Examples
 
@@ -29,5 +36,4 @@ The source code is released under the [MIT](LICENSE.md) license.
 
 ## Citation
 
-If you find my code helpful. You are welcomed to cite my papers
-[here](http://research.wmz.ninja/research.html).
+If you find my code helpful. You are welcomed to cite my papers [here](http://research.wmz.ninja/research.html).
