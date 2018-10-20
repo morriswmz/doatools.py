@@ -24,7 +24,7 @@ The Python version is also more modular, providing more flexibility over the MAT
 
 ## Requirements
 
-**doatools.py** requires [NumPy](https://github.com/numpy/numpy), [SciPy](https://github.com/scipy/scipy) and [Matplotlib](https://github.com/matplotlib/matplotlib). It also requires [CVXPY]](https://github.com/cvxgrp/cvxpy) to solve sparse recovery problems. To run the examples, you also need to install [tqdm](https://github.com/tqdm/tqdm).
+**doatools.py** requires [NumPy](https://github.com/numpy/numpy), [SciPy](https://github.com/scipy/scipy) and [Matplotlib](https://github.com/matplotlib/matplotlib). It also requires [CVXPY](https://github.com/cvxgrp/cvxpy) to solve sparse recovery problems. To run the examples, you also need to install [tqdm](https://github.com/tqdm/tqdm).
 
 ## Examples
 
