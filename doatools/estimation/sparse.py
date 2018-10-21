@@ -2,7 +2,8 @@ import warnings
 from abc import ABC, abstractmethod
 import numpy as np
 from .core import SpectrumBasedEstimatorBase, ensure_covariance_size
-from ..optim.l1lsq import L1RegularizedLeastSquaresProblem
+from ..optim.l1lsq import L1RegularizedLeastSquaresProblem, \
+                          L21RegularizedLeastSquaresProblem
 from ..utils.math import khatri_rao, vec
 
 class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
@@ -36,10 +37,9 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
                 'constrainedl2'
 
         References:
-        [1] D. Malioutov, M. Cetin, and A. S. Willsky, "A sparse signal
-            reconstruction perspective for source localization with sensor
-            arrays," IEEE Transactions on Signal Processing, vol. 53, no. 8,
-            pp. 3010-3022, Aug. 2005.
+        [1] J. Yin and T. Chen, "Direction-of-Arrival Estimation Using a Sparse
+            Representation of Array Covariance Vectors," IEEE Transactions on
+            Signal Processing, vol. 59, no. 9, pp. 4489–4493, Sep. 2011.
         [2] Y. D. Zhang, M. G. Amin, and B. Himed, "Sparsity-based DOA
             estimation using co-prime arrays," in 2013 IEEE International
             Conference on Acoustics, Speech and Signal Processing (ICASSP),
@@ -60,28 +60,18 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
         # Initialize the problem.
         self._problem = L1RegularizedLeastSquaresProblem(m, k, formulation, True)
 
-    def _get_atom_matrix(self, alt_grid=None):
-        if alt_grid is not None:
-            sources = alt_grid.source_placement
-            need_compute = True
-        else:
-            sources = self._search_grid.source_placement
-            need_compute = self._atom_matrix is None
-        if need_compute:
-            A = self._array.steering_matrix(sources, self._wavelength,
-                                             perturbations='known')
-            Phi = khatri_rao(A.conj(), A)
-            if not self._noise_known:
-                Phi = np.hstack((Phi, vec(np.eye(self._array.size))))
-            Phi = np.vstack((Phi.real, Phi.imag))
-            # Cache when possible.
-            if alt_grid is None and self._enable_caching:
-                self._atom_matrix = Phi
-            return Phi
-        else:
-            return self._atom_matrix
+    def _compute_atom_matrix(self, grid):
+        A = self._array.steering_matrix(
+            grid.source_placement, self._wavelength,
+            perturbations='known'
+        )
+        Phi = khatri_rao(A.conj(), A)
+        if not self._noise_known:
+            Phi = np.hstack((Phi, vec(np.eye(self._array.size))))
+        Phi = np.vstack((Phi.real, Phi.imag))
+        return Phi
 
-    def _call_solver(self, Phi, R, l, solver_options):
+    def _get_sparse_spectrum(self, Phi, R, l, solver_options):
         r = vec(R)
         r = np.vstack((r.real, r.imag))
         sol = self._problem.solve(Phi, r, l, **solver_options).flatten()
@@ -134,5 +124,36 @@ class SparseCovarianceMatching(SpectrumBasedEstimatorBase):
                 raise ValueError('sigma must be specified when noise variance is assumed known.')
             # Do not modify R in-place!
             R = R - np.eye(self._array.size) * sigma
-        return self._estimate(lambda Phi: self._call_solver(Phi, R, l, solver_options), k, **kwargs)
+        f_sp = lambda Phi: self._get_sparse_spectrum(Phi, R, l, solver_options)
+        return self._estimate(f_sp, k, **kwargs)
 
+class GroupSparseEstimator(SpectrumBasedEstimatorBase):
+    """Group-sparsity based estimator.
+    
+    References:
+    [1] D. Malioutov, M. Cetin, and A. S. Willsky, "A sparse signal
+        reconstruction perspective for source localization with sensor
+        arrays," IEEE Transactions on Signal Processing, vol. 53, no. 8,
+        pp. 3010-3022, Aug. 2005.
+    """
+
+    def __init__(self, array, wavelength, search_grid, n_snapshots, **kwargs):
+        super().__init__(array, wavelength, search_grid, **kwargs)
+        self._n_snapshots = n_snapshots
+        self._problem = L21RegularizedLeastSquaresProblem(
+            array.size, search_grid.size, n_snapshots, True
+        )
+    
+    def _get_sparse_spectrum(self, A, Y, l, solver_options):
+        X = self._problem.solve(A, Y, l, **solver_options)
+        return np.linalg.norm(X, ord=2, axis=1)
+
+    def estimate(self, Y, k, l, solver_options={}, **kwargs):
+        if 'refine_estimates' in kwargs:
+            raise ValueError('Grid refinement is not supported.')
+        if Y.shape[0] != self._array.size:
+            raise ValueError('The number of rows of Y must be equal to the array size.')
+        if Y.shape[1] != self._n_snapshots:
+            raise ValueError('The number of columns of Y must be equal to the number of snapshots.')
+        f_sp = lambda A: self._get_sparse_spectrum(A, Y, l, solver_options)
+        return self._estimate(f_sp, k, **kwargs)

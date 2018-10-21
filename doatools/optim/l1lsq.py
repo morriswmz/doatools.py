@@ -52,7 +52,7 @@ class L1RegularizedLeastSquaresProblem:
         """
         if not cvx_available:
             raise RuntimeError('Cannot initialize when cvxpy is not available.')
-        # Initialize parameters and variable.
+        # Initialize parameters and variables
         A = cvx.Parameter((m, k))
         b = cvx.Parameter((m, 1))
         l = cvx.Parameter(nonneg=True)
@@ -98,3 +98,60 @@ class L1RegularizedLeastSquaresProblem:
             warnings.warn('Optimal solution cannot be obtained.')
             return np.zeros((self._x.size,))
         return self._x.value
+
+class L21RegularizedLeastSquaresProblem:
+    r"""l-21 norm regularized least squares problem.
+    
+    The l-21 norm of a matrix variable X is given by
+        \|X\|_{2,1} = \sum_{i=1}^M \|X_i\|_2,
+    where X_i is the i-th row of X.
+
+    The l-21 norm regularized least squares problem is given by
+        min_X \frac{1}{2} \|AX - B\|_F^2 + l \|X\|_{2,1},
+    where A is M x K, X is K x L, B is M x L, and l is the regularization
+    parameter. Usually A is the dictionary matrix, X is the sparse signal to be
+    reconstructed, and B is the observation matrix where each column of B
+    represents a single observation.
+
+    Args:
+        m (int): Number of rows of the dictionary matrix A.
+        k (int): Number of rows of X (or the number of columns of the dictionary
+            matrix, A).
+        n (int): Number of observations (or the number of columns of the
+            observation matrix, B)
+    """
+
+    def __init__(self, m, k, n, complex=False):
+        if not cvx_available:
+            raise RuntimeError('Cannot initialize when cvxpy is not available.')
+        # Initialize parameters and variables
+        A = cvx.Parameter((m, k), complex=complex)
+        B = cvx.Parameter((m, n), complex=complex)
+        l = cvx.Parameter(nonneg=True)
+        X = cvx.Variable((k, n), complex=complex)
+        # Create the problem
+        obj_func = 0.5 * cvx.norm(cvx.matmul(A, X) - B, 'fro')**2 + \
+                   l * cvx.sum(cvx.norm(X.T, 2, axis=0))
+        self._problem = cvx.Problem(cvx.Minimize(obj_func))
+        self._A = A
+        self._B = B
+        self._l = l
+        self._X = X
+
+    def solve(self, A, B, l, **kwargs):
+        """Solves the problem with the specified parameters.
+
+        Args:
+            A: Dictionary matrix.
+            B: Observation matrix.
+            l: Regularization parameter.
+            **kwargs: Other keyword arguments to be passed to the solver.
+        """
+        self._A.value = A
+        self._B.value = B
+        self._l.value = l
+        self._problem.solve(**kwargs)
+        if self._problem.status != 'optimal':
+            warnings.warn('Optimal solution cannot be obtained.')
+            return np.zeros(self._X.shape)
+        return self._X.value

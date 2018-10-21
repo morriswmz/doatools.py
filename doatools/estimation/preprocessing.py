@@ -39,3 +39,32 @@ def spatial_smooth(R, l, fb=False):
         return 0.5 * (Rf + np.flip(Rf).conj())
     else:
         return 0.5 * (Rf + np.flip(Rf))
+
+def l1_svd(y, k):
+    """Performs l1-SVD to help reduce the dimensionality.
+    
+    The original multiple measurement model is given by
+        y = Ax + n. (1)
+    When the number of snapshots is large, the resulting problem may be
+    computationally expensive to solve. Note that rank(Ax) = k <= m. We can
+    decompose y into two parts: the part corresponding to the signal subspace,
+    and the part corresponding to the noise subspace. We can keep just the part
+    corresponding to the signal subspace to reduce the dimensionality without
+    losing too much information.
+
+    To do so, we compute the SVD of y = USV^H. Let T_k = [I_k 0]. Multiplying
+    both sides of (1) by V T_k, we obtain
+        y_s = A x_s + n_s, (2)
+    where y_s = y V T_k, x_s = x V T_k, n_s = n V T_k. We can then use (2)
+    instead of (1) to perform DOA estimation.
+
+    Args:
+        y: An m x l measurement matrix, where m denotes the number of sensors
+            and l denotes the number of snapshots.
+        k: Dimension of the signal subspace, cannot be greater than min(m,l).
+
+    Returns:
+        An m x k matrix.
+    """
+    U, s, Vh = np.linalg.svd(y, full_matrices=False)
+    return U[:,:k] * s[:k]

@@ -73,9 +73,9 @@ class SpectrumBasedEstimatorBase(ABC):
         self._peak_finder = peak_finder
         self._enable_caching = enable_caching
         self._atom_matrix = None
-
-    def _get_atom_matrix(self, alt_grid=None):
-        """Retrieves the atom matrix for spectrum computation.
+    
+    def _compute_atom_matrix(self, grid):
+        """Computes the atom matrix for spectrum computation.
         
         An atom matrix, A, is an M x K matrix, where M is the number of sensors
         and K is equal to the size of the search grid. For instance, in MUSIC,
@@ -88,23 +88,31 @@ class SpectrumBasedEstimatorBase(ABC):
         steering matrice. 
 
         Args:
-            alt_grid: If specified, will evalute the atom matrix for this
+            grid: The search grid used to generate the atom matrix.
+        """
+        # Default implementation: steering matrix.
+        return self._array.steering_matrix(
+            grid.source_placement, self._wavelength,
+            perturbations='known'
+        )
+
+    def _get_atom_matrix(self, alt_grid=None):
+        """Retrieves the atom matrix for spectrum computation.
+
+        See `_compute_atom_matrix` for more details on the atom matrix.
+
+        Args:
+            alt_grid: If specified, will retrieve the atom matrix for this
                 grid instead of the default search_grid. Used in the grid
                 refinement process. Default value is None and the atom matrix
                 for the default search grid is returned.
         """
-        # Default implementation: steering matrix.
         if alt_grid is not None:
-            return self._array.steering_matrix(
-                alt_grid.source_placement,
-                self._wavelength, perturbations='known'
-            )
+            return self._compute_atom_matrix(alt_grid)
+        # Check cached version of the default search grid if possible.
         if self._atom_matrix is not None:
             return self._atom_matrix
-        A = self._array.steering_matrix(
-            self._search_grid.source_placement,
-            self._wavelength, perturbations='known'
-        )
+        A = self._compute_atom_matrix(self._search_grid)
         if self._enable_caching:
             self._atom_matrix = A
         return A
