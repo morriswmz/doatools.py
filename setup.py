@@ -25,7 +25,7 @@ setup(
     url='https://github.com/morriswmz/doatools.py',
     author='Mianzhi Wang',
     # author_email='',
-    packages=find_packages(),
+    packages=find_packages(exclude=('docs',)),
     python_requires='>=3.5',
     install_requires=[
         'numpy>=1.14.0',

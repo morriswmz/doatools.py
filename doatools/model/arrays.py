@@ -43,12 +43,15 @@ class ArrayDesign:
 
     Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate
     system. We define 1D, 2D, and 3D arrays as follows:
+
     * 1D arrays are linear arrays along the x-axis.
     * 2D arrays are planar arrays lying within the xy-plane.
     * 3D arrays are not restricted, whose element can exist anywhere in the 3D
       space.
+
     We store the element locations with an m x d array, where m denotes the
     number of elements (size) of the array.
+
     * For 1D arrays, d equals one, and the i-th row of the m x 1 array stores
       the x coordinate of the i-th element.
     * For 2D arrays, d equals two, and the i-th row of the m x 2 array stores
@@ -56,36 +59,41 @@ class ArrayDesign:
     * For 3D arrays, d equals three, and the i-th row of the m x 3 array stores
       the x, y, and z coordinates of the i-th element.
 
-    Implementation notice: array designs should be **immutable**. Because
-    array design objects are passed around when computing steering matrices,
-    weight functions, etc., having a mutable internal state leads to more
-    complexities and potential unexpected results. Although the internal
-    states are generally accessible in Python, please refrain from modifying
-    them.
+    While this class is generally intended for internal use. You can also use
+    this class to create custom arrays. Just to make sure that you do not modify
+    ``locations`` after creating the array.
+
+    Args:
+        locations: A list or ndarray specifying the element locations. For
+            1D arrays, ``locations`` can be either a 1D list/ndarray, or
+            an m x 1 list/ndarray, where m is the number of elements. For 2D
+            or 3D arrays, ``locations`` must be a 2D list/ndarray of shape
+            m x d, where d is 2 or 3. If the input is an ndarray, it will
+            not be copied and should not be changed after creating the
+            array design.
+        name (str): Name of the array design.
+        perturbations (dict): A dictionary containing the perturbation 
+            parameters. The keys should be among the following:
+
+            * ``'location_errors'``
+            * ``'gain_errors'`` (relative, -0.2 means 0.8 * original gain)
+            * ``'phase_errors'`` (in radians)
+            * ``'mutual_coupling'``
+
+            The values are two-element tuples where the first element is an
+            ndarray representing the parameters and the second element is
+            a bool specifying whether these parameters are known in prior.
+
+    .. note::
+        Array designs are supposed to be **immutable**. Because array
+        design objects are passed around when computing steering matrices,
+        weight functions, etc., having a mutable internal state leads to more
+        complexities and potential unexpected results. Although the internal
+        states are generally accessible in Python, please refrain from modifying
+        them.
     """
 
     def __init__(self, locations, name, perturbations={}):
-        """Creates an custom array design.
-
-        Args:
-            locations: A list or ndarray specifying the element locations. For
-                1D arrays, `locations` can be either a 1D list/ndarray, or
-                an m x 1 list/ndarray, where m is the number of elements. For 2D
-                or 3D arrays, `locations` must be a 2D list/ndarray of shape
-                m x d, where d is 2 or 3. If the input is an ndarray, it will
-                not be copied and should not be changed after creating the
-                array design.
-            name (str): Name of the array design.
-            perturbations (Dict): A dictionary containing the perturbation
-                parameters. The keys should be among the following:
-                * 'location_errors'
-                * 'gain_errors' (relative, -0.2 means 0.8 * original gain)
-                * 'phase_errors' (in radians)
-                * 'mutual_coupling'
-                The values are two-element tuples where the first element is an
-                ndarray representing the parameters and the second element is
-                a bool specifying whether these parameters are known in prior.
-        """
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
         if locations.ndim > 2:
@@ -132,6 +140,7 @@ class ArrayDesign:
         Returns:
             An M x d matrix, where M is the number of elements and d is the
             maximum of the following two:
+            
             1. number of dimensions of the nominal array;
             2. number of dimensions of the sensor location errors.
         """
@@ -168,8 +177,8 @@ class ArrayDesign:
         ndarray storing the nominal array element locations. It does not
         reflect the number of dimensions of the minimal subspace in which the
         nominal array lies. For instance, if the element locations are given by
-        `[[0, 0], [1, 1], [2, 2]]`, `ndim` equals to 2 instead of 1, despite the
-        fact that this array is a linear array.
+        ``[[0, 0], [1, 1], [2, 2]]``, ``ndim`` equals to 2 instead of 1, despite
+        the fact that this array is a linear array.
 
         Perturbations do not affect this value.
         """
@@ -222,12 +231,14 @@ class ArrayDesign:
         The specified perturbations will replace the existing ones.
 
         Args:
-            perturbations (Dict): A dictionary containing the perturbation
+            perturbations (dict): A dictionary containing the perturbation
                 parameters. The keys should be among the following:
+
                 * 'location_errors'
                 * 'gain_errors' (relative, -0.2 means 0.8 * original gain)
                 * 'phase_errors' (in radians)
                 * 'mutual_coupling'
+
                 The values are two-element tuples where the first element is an
                 ndarray representing the parameters and the second element is
                 a bool specifying whether these parameters are known in prior.
@@ -258,21 +269,19 @@ class ArrayDesign:
 
     def steering_matrix(self, sources, wavelength, compute_derivatives=False,
                         perturbations='all'):
-        """Creates the steering matrix for the given DOAs.
-
-        Note: the steering matrix calculation is bound to array designs.
-        This is a generic implementation, which can be overridden for special
-        types of arrays.
+        r"""Creates the steering matrix for the given DOAs.
 
         Args:
-            sources: An instance of SourcePlacement. 
-                Notes:
+            sources: An instance of :class:`~doatools.model.sources.SourcePlacement`.
+
                 1. 1D arrays are placed along the x-axis. 2D arrays are placed
                    within the xy-plane.
                 2. If you pass in 1D DOAs for an 2D or 3D array, these DOAs will
-                   be assumed to be within the xy-plane:
-                    azimuth = pi/2 - 1D DOA (broadside -> azimuth)
-                    elevation = 0 (with xy-plane)
+                   be assumed to be within the xy-plane. The azimuth angles are
+                   calculated as :math:`\pi/2` minus the original 1D DOA values
+                   (broadside -> azimuth). The elevation angles are set to zeros
+                   (within the xy-plane).
+            
             wavelength: Wavelength of the carrier wave.
             compute_derivatives: If set to True, also outputs the derivative
                 matrix DA with respect to the DOAs, where the k-th column of
@@ -281,13 +290,19 @@ class ArrayDesign:
                 1D DOAs.
             perturbations: Specifies which perturbations are considered when
                 constructing the steering matrix:
-                * 'all' - All perturbations are considered. This is the default
-                    value.
-                * 'known' - Only known perturbations (we have prior knowledge of
-                    the perturbation parameters) are considered. This option is
-                    used by DOA estimators when the exact knowledge of these
-                    perturbations are known in prior.
-                * 'none' - None of the perturbations are considered.
+
+                * ``'all'`` - All perturbations are considered. This is the
+                  default value.
+                * ``'known'`` - Only known perturbations (we have prior
+                  knowledge of the perturbation parameters) are considered. This
+                  option is used by DOA estimators when the exact knowledge of
+                  these perturbations are known in prior.
+                * ``'none'`` - None of the perturbations are considered.
+        
+        .. note::
+            The steering matrix calculation is bound to array designs. This is
+            a generic implementation, which can be overridden for special types
+            of arrays.
         """
         # Filter perturbations.
         if perturbations == 'all':
@@ -334,26 +349,26 @@ class ArrayDesign:
             return A
 
 class GridBasedArrayDesign(ArrayDesign):
-    """Base class for all grid-based array designs."""
+    """Base class for all grid-based array designs.
+    
+    For grid based arrays, each elements is placed on a predefined grid.
+
+    Args:
+        indices (ndarray): m x d matrix denoting the grid indices
+            of each element. e.g., if indices is ``[1, 2, 3,]``, then the
+            actual locations will be ``[d0, 2*d0, 3*d0]``. The input ndarray is
+            not copied and should never be changed after creating this array
+            design.
+        d0 (float): Grid size (or base inter-element spacing). For 2D and 3D
+            arrays, d0 can either be a scalar (if the base inter-element
+            spacing remains the same along all axes), or a list-like object
+            such that d0[i] specifies the base inter-element spacing along
+            the i-th axis.
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+    """
     
     def __init__(self, indices, d0, name, **kwargs):
-        """Creates an array design where each elements is placed on a predefined
-        grid with grid size d0.
-
-        Args:
-            indices (ndarray): m x d matrix denoting the grid indices
-                of each element. e.g., if indices is [1, 2, 3,], then the
-                actual locations will be [d0, 2*d0, 3*d0]. The input ndarray is
-                not copied and should never be changed after creating this array
-                design.
-            d0 (float): Grid size (or base inter-element spacing). For 2D and 3D
-                arrays, d0 can either be a scalar (if the base inter-element
-                spacing remains the same along all axes), or a list-like object
-                such that d0[i] specifies the base inter-element spacing along
-                the i-th axis.
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-        """
         if not np.isscalar(d0):
             d0 = np.array(d0)
             if indices.shape[1] < d0.size:
@@ -376,41 +391,40 @@ class GridBasedArrayDesign(ArrayDesign):
         return self._element_indices.copy()
 
 class UniformLinearArray(GridBasedArrayDesign):
+    """Creates an n-element uniform linear array (ULA).
+        
+    The ULA is placed along the x-axis, whose the first sensor is placed at
+    the origin.
+
+    Args:
+        n (int): Number of elements.
+        d0 (float): Fundamental inter-element spacing (usually smallest).
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+    """
 
     def __init__(self, n, d0, name=None, **kwargs):
-        """Creates an n-element uniform linear array (ULA).
-        
-        The ULA is placed along the x-axis, whose the first sensor is placed at
-        the origin.
-
-        Args:
-            n (int): Number of elements.
-            d0 (float): Fundamental inter-element spacing (usually smallest).
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-        """
         if name is None:
             name = 'ULA ' + str(n)
         super().__init__(np.arange(n).reshape((-1, 1)), d0, name, **kwargs)
 
 class NestedArray(GridBasedArrayDesign):
+    """Creates an 1D nested array.
+
+    Args:
+        n1 (int): Parameter N1.
+        n2 (int): Parameter N2.
+        d0 (float): Fundamental inter-element spacing (usually smallest).
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+
+    References:
+        [1] P. Pal and P. P. Vaidyanathan, "Nested arrays: A novel approach to
+        array processing with enhanced degrees of freedom," IEEE Transactions on
+        Signal Processing, vol. 58, no. 8, pp. 4167-4181, Aug. 2010.
+    """
 
     def __init__(self, n1, n2, d0, name=None, **kwargs):
-        """Creates an 1D nested array.
-
-        Args:
-            n1 (int): Parameter N1.
-            n2 (int): Parameter N2.
-            d0 (float): Fundamental inter-element spacing (usually smallest).
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-
-        References:
-        [1] P. Pal and P. P. Vaidyanathan, "Nested arrays: A novel approach to
-            array processing with enhanced degrees of freedom," IEEE
-            Transactions on Signal Processing, vol. 58, no. 8, pp. 4167-4181,
-            Aug. 2010.
-        """
         if name is None:
             name = 'Nested ({0},{1})'.format(n1, n2)
         indices = np.concatenate((
@@ -432,23 +446,23 @@ class NestedArray(GridBasedArrayDesign):
         return self._n2
 
 class CoPrimeArray(GridBasedArrayDesign):
+    """Creates an 1D co-prime array.
+
+    Args:
+        m (int): The smaller number in the co-prime pair.
+        n (int): The larger number in the co-prime pair.
+        d0 (float): Fundamental inter-element spacing (usually smallest).
+        mode (str): Either ``'m'`` or ``'2m'``.
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+    
+    References:
+        [1] P. Pal and P. P. Vaidyanathan, "Coprime sampling and the music
+        algorithm," in 2011 Digital Signal Processing and Signal Processing
+        Education Meeting (DSP/SPE), 2011, pp. 289-294.
+    """
 
     def __init__(self, m, n, d0, mode='2m', name=None, **kwargs):
-        """Creates an 1D co-prime array.
-
-        Args:
-            m (int): The smaller number in the co-prime pair.
-            n (int): The larger number in the co-prime pair.
-            d0 (float): Fundamental inter-element spacing (usually smallest).
-            mode (str): Either 'm' or '2m'.
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-        
-        References:
-        [1] P. Pal and P. P. Vaidyanathan, "Coprime sampling and the music
-            algorithm," in 2011 Digital Signal Processing and Signal Processing
-            Education Meeting (DSP/SPE), 2011, pp. 289-294.
-        """
         if name is None:
             name = 'Co-prime ({0},{1})'.format(m, n)
         if m > n:
@@ -507,22 +521,22 @@ _MRLA_PRESETS = [
 ]
 
 class MinimumRedundancyLinearArray(GridBasedArrayDesign):
+    """Creates an n-element minimum redundancy linear array (MRLA).
+
+    Args:
+        n (int): Number of elements. Up to 20.
+        d0 (float): Fundamental inter-element spacing (usually smallest).
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+    
+    References:
+        [1] M. Ishiguro, "Minimum redundancy linear arrays for a large number of
+        antennas," Radio Sci., vol. 15, no. 6, pp. 1163-1170, Nov. 1980.
+        [2] A. Moffet, "Minimum-redundancy linear arrays," IEEE Transactions on
+        Antennas and Propagation, vol. 16, no. 2, pp. 172-175, Mar. 1968.
+    """
 
     def __init__(self, n, d0, name=None, **kwargs):
-        """Creates an n-element minimum redundancy linear array (MRLA).
-
-        Args:
-            n (int): Number of elements. Up to 20.
-            d0 (float): Fundamental inter-element spacing (usually smallest).
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-        
-        References:
-        [1] M. Ishiguro, "Minimum redundancy linear arrays for a large number
-            of antennas," Radio Sci., vol. 15, no. 6, pp. 1163-1170, Nov. 1980.
-        [2] A. Moffet, "Minimum-redundancy linear arrays," IEEE Transactions
-            on Antennas and Propagation, vol. 16, no. 2, pp. 172-175, Mar. 1968.
-        """
         if n < 1 or n >= len(_MRLA_PRESETS):
             raise ValueError('The MRLA presets only support up to 20 elements.')
         if name is None:
@@ -530,18 +544,18 @@ class MinimumRedundancyLinearArray(GridBasedArrayDesign):
         super().__init__(np.array(_MRLA_PRESETS[n - 1])[:, np.newaxis], d0, name, **kwargs)
         
 class UniformCircularArray(ArrayDesign):
+    """Creates a uniform circular array (UCA).
+    
+    The UCA is centered at the origin, in the xy-plane.
+
+    Args:
+        n (int): Number of elements.
+        r (float): Radius of the circle.
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+    """
 
     def __init__(self, n, r, name=None, **kwargs):
-        """Creates a uniform circular array (UCA).
-        
-        The UCA is centered at the origin, in the xy-plane.
-
-        Args:
-            n (int): Number of elements.
-            r (float): Radius of the circle.
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-        """
         if name is None:
             name = 'UCA ' + str(n)
         self._r = r
@@ -555,21 +569,21 @@ class UniformCircularArray(ArrayDesign):
         return self._r
 
 class UniformRectangularArray(GridBasedArrayDesign):
+    """Creates an m x n uniform rectangular array (URA).
+    
+    The URA is placed on the xy-plane, and the (0,0)-th sensor is placed
+    at the origin.
+
+    Args:
+        m (int): Number of elements along the x-axis.
+        n (int): Number of elements along the y-axis.
+        d0 (float): Fundamental inter-element spacing. Can be either a
+            scalar or a two-element list-like object.
+        name (str): Name of the array design.
+        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.
+    """
 
     def __init__(self, m, n, d0, name=None, **kwargs):
-        """Creates an m x n uniform rectangular array (URA).
-        
-        The URA is placed on the xy-plane, whose the (0,0)-th sensor is placed
-        at the origin.
-
-        Args:
-            m (int): Number of elements along the x-axis.
-            n (int): Number of elements along the y-axis.
-            d0 (float): Fundamental inter-element spacing. Can be either a
-                scalar or a two-element list-like object.
-            name (str): Name of the array design.
-            **kwargs: Other keyword arguments supported by ArrayDesign.
-        """
         if name is None:
             name = 'URA {0}x{1}'.format(m, n)
         self._shape = (m, n)
