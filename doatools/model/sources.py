@@ -11,7 +11,10 @@ def _validate_sensor_location_ndim(sensor_locations):
         raise ValueError('Sensor locations can only consists of 1D, 2D or 3D coordinates.')
 
 class SourcePlacement(ABC):
-    """Represents the placement of several sources."""
+    """Represents the placement of several sources.
+    
+    This the base abstract class and should not be directly instantiated.
+    """
 
     def __init__(self, locations, units):
         self._locations = locations
@@ -25,16 +28,20 @@ class SourcePlacement(ABC):
         """Accesses a specific source location or obtains a subset of source
         placement via slicing.
 
-        Implementation notice: this is a generic implementation. When `key` is
-        a scalar, key is treated as an index and normal indexing operation
-        follows. When `key` is not a scalar, we need to return a new instance
-        with source locations specified by `key`. First, a shallow copy is made
-        with `copy.copy()`. Then the shallow copy's `_locations` field is set to
-        the source locations specified by `key`. Finally, the shallow copy is
-        returned.
+        For instance, ``sources[i]`` and ``sources.locations[i]`` are
+        equivalent, and ``sources[:]`` will return a full copy.
 
         Args:
             key : An integer, slice, or 1D numpy array of indices/boolean masks.
+
+        Notes:
+            This is a generic implementation. When ``key`` is a scalar, key is
+            treated as an index and normal indexing operation follows. When
+            ``key`` is not a scalar, we need to return a new instance with
+            source locations specified by ``key``. First, a shallow copy is
+            made with :meth:`~copy.copy`. Then the shallow copy's
+            location data are set to the source locations specified by
+            ``key``. Finally, the shallow copy is returned.
         """
         if np.isscalar(key):
             return self._locations[key]
@@ -79,7 +86,7 @@ class SourcePlacement(ABC):
         """Retrieves the valid ranges for each dimension.
 
         Returns:
-            A tuple of 2 element tuples: ((min_1, max_1), ...).
+            ((min_1, max_1), ...): A tuple of 2-element tuples of min-max pairs.
         """
         raise NotImplementedError()
     
@@ -90,28 +97,44 @@ class SourcePlacement(ABC):
 
     @abstractmethod
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        """Computes the M x K phase delay matrix.
+        """Computes the phase delay matrix.
 
-        The phase delay matrix D is an M x K matrix, where D[m,k] is the
-        relative phase delay between the m-th sensor and the k-th source
-        (usually using the first sensor as the reference).
-
-        Notes: the phase delay matrix is used in constructing the steering
-        matrix. This method is decoupled from the steering matrix method
-        because the phase delays are calculated differently for different
-        types of sources (e.g. far-field vs. near-field).
+        The phase delay matrix D is an m x k matrix, where D[i,j] is the
+        relative phase difference between the i-th sensor and the j-th source
+        (usually using the first sensor as the reference). By convention,
+        a positive value means that the corresponding signal arrives earlier
+        than the referenced one.
 
         Args:
-            sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
+            sensor_locations: An m x d (d = 1, 2, 3) matrix representing the
                 sensor locations using the Cartesian coordinate system.
             wavelength: Wavelength of the carrier wave.
             derivatives: If set to true, also outputs the derivative matrix (or
                 matrices) with respect to the source locations. Default value
                 is False.
+        
+        Returns:
+            * When ``derivatives`` is ``False``, returns the steering matrix.
+            * When ``derivatives`` is ``True``, returns both the steering matrix
+              and the derivative matrix (or matrices if possible) with a tuple.
+
+        Notes:
+            The phase delay matrix is used in constructing the steering
+            matrix. This method is decoupled from the steering matrix method
+            because the phase delays are calculated differently for different
+            types of sources (e.g. far-field vs. near-field).
         """
         pass
 
 class FarField1DSourcePlacement(SourcePlacement):
+    """Creates a far-field 1D source placement.
+
+    Args:
+        locations: A list or 1D numpy array representing the source locations.
+        unit (str): Can be ``'rad'``, ``'deg'`` or ``'sin'``. ``'sin'`` is a
+            special unit where sine value of the broadside angle is used instead
+            of the broadside angle itself. Default value is ``'rad'``.
+    """
 
     VALID_RANGES = {
         'rad': (-np.pi/2, np.pi/2),
@@ -120,15 +143,6 @@ class FarField1DSourcePlacement(SourcePlacement):
     }
 
     def __init__(self, locations, unit='rad'):
-        r"""Creates a far-field 1D source placement.
-
-        Args:
-            locations: A list or 1D numpy array representing the source
-                locations.
-            unit: Can be 'rad', 'deg' or 'sin'. 'sin' is a special unit where
-                sine of the arrival angle is used instead of the arrival angle
-                itself. 
-        """
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim > 1:
@@ -156,9 +170,12 @@ class FarField1DSourcePlacement(SourcePlacement):
             z: A ndarray of complex roots.
             wavelength (float): Wavelength of the carrier wave.
             d0 (float): Inter-element spacing of the uniform linear array.
+            unit (str): Can be ``'rad'``, ``'deg'`` or ``'sin'``. Default value
+                is ``'rad'``.
         
         Returns:
-            A FarField1DSourcePlacement instance.
+            An instance of
+            :class:`~doatools.model.sources.FarField1DSourcePlacement`.
         """
         c = 2 * np.pi * d0 / wavelength
         sin_vals = np.angle(z) / c
@@ -183,27 +200,7 @@ class FarField1DSourcePlacement(SourcePlacement):
         )
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        """Computes the M x K phase delay matrix for one-dimensional far-field
-        sources.
-        
-        The phase delay matrix D is an M x K matrix, where D[m,k] is the
-        relative phase delay between the m-th sensor and the k-th far-field
-        source (usually using the first sensor as the reference).
-
-        Args:
-            sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
-                sensor locations using the Cartesian coordinate system. When the
-                sensor locations are 2D or 3D, the DOAs are assumed to be within
-                the xy-plane.
-            wavelength: Wavelength of the carrier wave.
-            derivatives: If set to true, also outputs the derivative matrix (or
-                matrices) with respect to the source locations. Default value
-                is False.
-
-        Returns:
-            A: The steering matrix.
-            D: The derivative matrix. Only returns when `derivatives` is True.
-        """
+        """Computes the phase delay matrix for 1D far-field sources."""
         _validate_sensor_location_ndim(sensor_locations)
         
         if self._units[0] == 'sin':
@@ -270,6 +267,15 @@ class FarField1DSourcePlacement(SourcePlacement):
 
 
 class FarField2DSourcePlacement(SourcePlacement):
+    """Creates a far-field 2D source placement.
+
+    Args:
+        locations: An k x 2 numpy array representing the source locations,
+            where k is the number of sources, and the k-th row consists of
+            the azimuth and elevation angles of the k-th source. Should never
+            be modified after creation.
+        unit: Can be ``'rad'`` or ``'deg'``. Default value is ``'rad'``.
+    """
 
     VALID_RANGES = {
         'rad': ((-np.pi, np.pi), (-np.pi/2, np.pi/2)),
@@ -277,15 +283,6 @@ class FarField2DSourcePlacement(SourcePlacement):
     }
 
     def __init__(self, locations, unit='rad'):
-        """Creates a far-field 2D source placement.
-
-        Args:
-            locations: An K x 2 numpy array representing the source locations,
-                where K is the number of sources, and the k-th row consists of
-                the azimuth and elevation angle of the k-th source. Should never
-                be modified after creation.
-            unit: Can be 'rad' or 'deg'.
-        """
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
@@ -319,24 +316,8 @@ class FarField2DSourcePlacement(SourcePlacement):
         )
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        """Computes the M x K phase delay matrix for two-dimensional far-field
-        sources.
-        
-        The phase delay matrix D is an M x K matrix, where D[m,k] is the
-        relative phase delay between the m-th sensor and the k-th far-field
-        source (usually using the first sensor as the reference).
-
-        Args:
-            sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
-                sensor locations using the Cartesian coordinate system. Linear
-                arrays (1D arrays) are assumed to be placed along the x-axis.
-            wavelength: Wavelength of the carrier wave.
-            derivatives: If set to true, also outputs the derivative matrix (or
-                matrices) with respect to the source locations. Default value
-                is False.
-        """
+        """Computes the phase delay matrix for 2D far-field sources."""
         _validate_sensor_location_ndim(sensor_locations)
-        
         if derivatives:
             raise ValueError('Derivative matrix computation is not supported for far-field 2D DOAs.')
 
@@ -366,16 +347,16 @@ class FarField2DSourcePlacement(SourcePlacement):
         return D
 
 class NearField2DSourcePlacement(SourcePlacement):
+    """Creates a near-field 2D source placement.
+
+    Args:
+        locations: An k x 2 numpy array representing the source locations,
+            where k is the number of sources and the k-th row consists of
+            the x and y coordinates of the k-th source. Should never be
+            modified after creation.
+    """
 
     def __init__(self, locations):
-        """Creates a near-field 2D source placement.
-
-        Args:
-            locations: An K x 2 numpy array representing the source locations,
-                where K is the number of sources and the k-th row consists of
-                the x and y coordinates of the k-th source. Should never be
-                modified after creation.
-        """
         if isinstance(locations, list):
             locations = np.array(locations)
         if locations.ndim != 2 or locations.shape[1] != 2:
@@ -392,25 +373,8 @@ class NearField2DSourcePlacement(SourcePlacement):
         return NearField2DSourcePlacement(self._locations.copy())
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        """Computes the M x K phase delay matrix for two-dimensional near-field
-        sources.
-        
-        The phase delay matrix D is an M x K matrix, where D[m,k] is the
-        relative phase delay between the m-th sensor and the k-th near-field
-        source (usually using the first sensor as the reference).
-
-        Args:
-            sensor_locations: An M x d (d = 1, 2, 3) matrix representing the
-                sensor locations using the Cartesian coordinate system. Linear
-                arrays (1D arrays) are assumed to be placed along the x-axis,
-                and 2D arrays are assumed to be placed in the xy-plane.
-            wavelength: Wavelength of the carrier wave.
-            derivatives: If set to true, also outputs the derivative matrix (or
-                matrices) with respect to the source locations. Default value
-                is False.
-        """
+        """Computes the phase delay matrix for 2D near-field sources."""
         _validate_sensor_location_ndim(sensor_locations)
-        
         if derivatives:
             raise ValueError('Derivative matrix computation is not supported for near-field 2D DOAs.')
 

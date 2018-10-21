@@ -299,7 +299,7 @@ class ArrayDesign:
                   these perturbations are known in prior.
                 * ``'none'`` - None of the perturbations are considered.
         
-        .. note::
+        Notes:
             The steering matrix calculation is bound to array designs. This is
             a generic implementation, which can be overridden for special types
             of arrays.

@@ -2,7 +2,7 @@ Modeling
 ========
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     
     doatools.model.arrays
     doatools.model.sources
