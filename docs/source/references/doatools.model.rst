@@ -6,3 +6,6 @@ Modeling
     
     doatools.model.arrays
     doatools.model.sources
+    doatools.model.signals
+    doatools.model.snapshots
+    doatools.model.coarray

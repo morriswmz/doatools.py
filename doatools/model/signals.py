@@ -3,6 +3,10 @@ import numpy as np
 from scipy.linalg import sqrtm
 
 class SignalGenerator(ABC):
+    """Abstrace base class for all signal generators.
+    
+    Extend this class to create your own signal generators.
+    """
 
     @property
     @abstractmethod
@@ -20,23 +24,25 @@ class SignalGenerator(ABC):
         pass
 
 class ComplexStochasticSignal(SignalGenerator):
+    """Creates a signal generator that generates zero-mean complex
+    circularly-symmetric Gaussian signals.
+
+    Args:
+        C: Covariance matrix of the complex Gaussian distribution.
+            Can be specified by
+
+            1. A full covariance matrix.
+            2. An real vector denoting the diagonals of the covariance
+               matrix if the covariance matrix is diagonal.
+            3. A scalar if the covariance matrix is diagonal and all
+               diagonal elements share the same value. In this case,
+               parameter n must be specified.
+        
+        n (int): Dimension of the complex Gaussian distribution. Only need to be
+            specified when ``C`` is a scalar.
+    """
 
     def __init__(self, C, n=None):
-        """Creates a signal generator that generates zero-mean complex
-        circularly-symmetric Gaussian signals.
-
-        Args:
-            C: Covariance matrix of the complex Gaussian distribution.
-                Can be specified by
-                1. A full covariance matrix.
-                2. An real vector denoting the diagonals of the covariance
-                   matrix if the covariance matrix is diagonal.
-                3. A scalar if the covariance matrix is diagonal and all
-                   diagonal elements share the same value. In this case,
-                   parameter n must be specified.
-            n: Dimension of the complex Gaussian distribution. Only need to be
-                specified when `C` is a scalar.
-        """
         self._C = C
         if np.isscalar(C):
             self._dim = n
@@ -59,6 +65,7 @@ class ComplexStochasticSignal(SignalGenerator):
         Args:
             C: Covariance matrix of the complex Gaussian distribution.
                 Can be specified by
+
                 1. A full covariance matrix.
                 2. An real vector denoting the diagonals of the covariance
                    matrix if the covariance matrix is diagonal.
