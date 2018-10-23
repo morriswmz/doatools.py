@@ -1,0 +1,200 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Source number detection &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Beamforming based estimators" href="doatools.estimation.beamforming.html" />
+    <link rel="prev" title="Data preprocessing" href="doatools.estimation.preprocessing.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="source-number-detection">
+<h1>Source number detection<a class="headerlink" href="#source-number-detection" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-doatools.estimation.source_number">
+<span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.estimation.source_number" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="doatools.estimation.source_number.ld_stat">
+<code class="descclassname">doatools.estimation.source_number.</code><code class="descname">ld_stat</code><span class="sig-paren">(</span><em>l</em>, <em>n_sources</em>, <em>n_snapshots</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/source_number.html#ld_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.source_number.ld_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the sufficient statistic for source number detection in MDL/AIC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>l</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An 1D vector of the eigenvalues of the covariance
+matrix in ascending order.</li>
+<li><strong>n_sources</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of sources.</li>
+<li><strong>n_snapshots</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of snapshots.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.estimation.source_number.aic">
+<code class="descclassname">doatools.estimation.source_number.</code><code class="descname">aic</code><span class="sig-paren">(</span><em>x</em>, <em>n_snapshots</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/source_number.html#aic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.source_number.aic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detects source numbers using AIC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An 1D vector of the eigenvalues of the covariance
+matrix in ascending order, or the covariance matrix itself.</li>
+<li><strong>n_snapshots</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of snapshots.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>AIC is inconsistent, and tends to asymptotically overestimate the
+number of sources. However, it tends to give a higher probability of a
+correct decision.</p>
+<p class="rubric">References</p>
+<p>[1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.estimation.source_number.mdl">
+<code class="descclassname">doatools.estimation.source_number.</code><code class="descname">mdl</code><span class="sig-paren">(</span><em>x</em>, <em>n_sensors</em>, <em>n_snapshots</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/source_number.html#mdl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.source_number.mdl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detects source number using MDL.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>x</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An 1D vector of the eigenvalues of the covariance
+matrix in ascending order, or the covariance matrix itself.</li>
+<li><strong>n_snapshots</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of snapshots.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>MDL is consistent.</p>
+<p class="rubric">References</p>
+<p>[1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="doatools.model.html">Modeling</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.estimation.html">Estimation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.grid.html">Creating search grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.preprocessing.html">Data preprocessing</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Source number detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.beamforming.html">Beamforming based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.music.html">MUSIC-based Estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.min_norm.html">Min-Norm based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.esprit.html">ESPRIT based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.sparse.html">Sparsity-based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.ml.html">Maximum-likelihood based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.coarray.html">Augmented covariance matrices for difference coarrays</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.estimation.html">Estimation</a><ul>
+      <li>Previous: <a href="doatools.estimation.preprocessing.html" title="previous chapter">Data preprocessing</a></li>
+      <li>Next: <a href="doatools.estimation.beamforming.html" title="next chapter">Beamforming based estimators</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.estimation.source_number.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

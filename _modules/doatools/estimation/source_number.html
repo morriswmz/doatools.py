@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.estimation.source_number &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.estimation.source_number</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">log</span>
+
+<div class="viewcode-block" id="ld_stat"><a class="viewcode-back" href="../../../references/doatools.estimation.source_number.html#doatools.estimation.source_number.ld_stat">[docs]</a><span class="k">def</span> <span class="nf">ld_stat</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">n_sources</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Computes the sufficient statistic for source number detection in MDL/AIC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        l (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">            matrix in ascending order.</span>
+<span class="sd">        n_sources (int): Number of sources.</span>
+<span class="sd">        n_snapshots (int): Number of snapshots.</span>
+<span class="sd">    </span>
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;An 1D numpy vector expected.&#39;</span><span class="p">)</span>
+    <span class="n">n_sensors</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">diff</span> <span class="o">=</span> <span class="n">n_sensors</span> <span class="o">-</span> <span class="n">n_sources</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">l</span><span class="p">[:</span><span class="n">diff</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">n_snapshots</span> <span class="o">*</span> <span class="n">diff</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">/</span> <span class="n">diff</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">diff</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="aic"><a class="viewcode-back" href="../../../references/doatools.estimation.source_number.html#doatools.estimation.source_number.aic">[docs]</a><span class="k">def</span> <span class="nf">aic</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Detects source numbers using AIC.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">            matrix in ascending order, or the covariance matrix itself.</span>
+<span class="sd">        n_snapshots (int): Number of snapshots.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        AIC is inconsistent, and tends to asymptotically overestimate the</span>
+<span class="sd">        number of sources. However, it tends to give a higher probability of a</span>
+<span class="sd">        correct decision.</span>
+<span class="sd">    </span>
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">n_sensors</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">ld</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sensors</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sensors</span><span class="p">):</span>
+        <span class="n">ld</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ld_stat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_sensors</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">ld</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="mdl"><a class="viewcode-back" href="../../../references/doatools.estimation.source_number.html#doatools.estimation.source_number.mdl">[docs]</a><span class="k">def</span> <span class="nf">mdl</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_sensors</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Detects source number using MDL.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        x (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">            matrix in ascending order, or the covariance matrix itself.</span>
+<span class="sd">        n_snapshots (int): Number of snapshots.</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        MDL is consistent.</span>
+<span class="sd">    </span>
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">n_sensors</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">ld</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sensors</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sensors</span><span class="p">):</span>
+        <span class="n">ld</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ld_stat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_sensors</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">n_snapshots</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">ld</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

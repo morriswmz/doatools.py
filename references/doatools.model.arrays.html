@@ -1,0 +1,579 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Modeling arrays &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Modeling source placements" href="doatools.model.sources.html" />
+    <link rel="prev" title="Modeling" href="doatools.model.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="modeling-arrays">
+<h1>Modeling arrays<a class="headerlink" href="#modeling-arrays" title="Permalink to this headline">¶</a></h1>
+<p>In array signal processing, sensor arrays consists a group of sensors (acoustic,
+electromagnetic, etc.) arranged in special geometry patterns. They find wide
+applications in radar, sonar, audio and speech processing, geophysics, and
+communications. In <code class="docutils literal notranslate"><span class="pre">doatools</span></code>, we focus on their application in
+direction-of-arrival (DOA) estimation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">doatools.model</span> <span class="kn">as</span> <span class="nn">model</span>
+<span class="c1"># Create a 10-element ULA with inter-element spacing 0.5.</span>
+<span class="n">ula</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">UniformLinearArray</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="module-doatools.model.arrays">
+<span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.model.arrays" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="doatools.model.arrays.ArrayDesign">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">ArrayDesign</code><span class="sig-paren">(</span><em>locations</em>, <em>name</em>, <em>perturbations={}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all array designs.</p>
+<p>Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate
+system. We define 1D, 2D, and 3D arrays as follows:</p>
+<ul class="simple">
+<li>1D arrays are linear arrays along the x-axis.</li>
+<li>2D arrays are planar arrays lying within the xy-plane.</li>
+<li>3D arrays are not restricted, whose element can exist anywhere in the 3D
+space.</li>
+</ul>
+<p>We store the element locations with an m x d array, where m denotes the
+number of elements (size) of the array.</p>
+<ul class="simple">
+<li>For 1D arrays, d equals one, and the i-th row of the m x 1 array stores
+the x coordinate of the i-th element.</li>
+<li>For 2D arrays, d equals two, and the i-th row of the m x 2 array stores
+the x and y coordinates of the i-th element.</li>
+<li>For 3D arrays, d equals three, and the i-th row of the m x 3 array stores
+the x, y, and z coordinates of the i-th element.</li>
+</ul>
+<p>While this class is generally intended for internal use. You can also use
+this class to create custom arrays. Just to make sure that you do not modify
+<code class="docutils literal notranslate"><span class="pre">locations</span></code> after creating the array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>locations</strong> – A list or ndarray specifying the element locations. For
+1D arrays, <code class="docutils literal notranslate"><span class="pre">locations</span></code> can be either a 1D list/ndarray, or
+an m x 1 list/ndarray, where m is the number of elements. For 2D
+or 3D arrays, <code class="docutils literal notranslate"><span class="pre">locations</span></code> must be a 2D list/ndarray of shape
+m x d, where d is 2 or 3. If the input is an ndarray, it will
+not be copied and should not be changed after creating the
+array design.</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>A dictionary containing the perturbation
+parameters. The keys should be among the following:</p>
+<ul>
+<li><code class="docutils literal notranslate"><span class="pre">'location_errors'</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">'gain_errors'</span></code> (relative, -0.2 means 0.8 * original gain)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'phase_errors'</span></code> (in radians)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'mutual_coupling'</span></code></li>
+</ul>
+<p>The values are two-element tuples where the first element is an
+ndarray representing the parameters and the second element is
+a bool specifying whether these parameters are known in prior.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Array designs are supposed to be <strong>immutable</strong>. Because array
+design objects are passed around when computing steering matrices,
+weight functions, etc., having a mutable internal state leads to more
+complexities and potential unexpected results. Although the internal
+states are generally accessible in Python, please refrain from modifying
+them.</p>
+</div>
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.name">
+<code class="descname">name</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the name of this array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.element_count">
+<code class="descname">element_count</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.element_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>(Deprecated) Retrieves the number of elements in the array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.size">
+<code class="descname">size</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the number of elements in the array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.element_locations">
+<code class="descname">element_locations</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.element_locations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the nominal element locations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An M x d matrix, where M is the number of elements and d is the
+number of dimensions of the nominal array.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.actual_element_locations">
+<code class="descname">actual_element_locations</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.actual_element_locations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the actual element locations, considering location errors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An M x d matrix, where M is the number of elements and d is the
+maximum of the following two:<ol class="arabic simple">
+<li>number of dimensions of the nominal array;</li>
+<li>number of dimensions of the sensor location errors.</li>
+</ol>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.is_perturbed">
+<code class="descname">is_perturbed</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.is_perturbed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns if the array contains perturbations.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.ndim">
+<code class="descname">ndim</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the number of dimensions of the nominal array.</p>
+<p>The number of dimensions is defined as the number of columns of the
+ndarray storing the nominal array element locations. It does not
+reflect the number of dimensions of the minimal subspace in which the
+nominal array lies. For instance, if the element locations are given by
+<code class="docutils literal notranslate"><span class="pre">[[0,</span> <span class="pre">0],</span> <span class="pre">[1,</span> <span class="pre">1],</span> <span class="pre">[2,</span> <span class="pre">2]]</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim</span></code> equals to 2 instead of 1, despite
+the fact that this array is a linear array.</p>
+<p>Perturbations do not affect this value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.actual_ndim">
+<code class="descname">actual_ndim</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.actual_ndim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the number of dimensions of the array, considering location errors.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.arrays.ArrayDesign.has_perturbation">
+<code class="descname">has_perturbation</code><span class="sig-paren">(</span><em>ptype</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.has_perturbation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.has_perturbation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the array has the given type of perturbation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.arrays.ArrayDesign.is_perturbation_known">
+<code class="descname">is_perturbation_known</code><span class="sig-paren">(</span><em>ptype</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.is_perturbation_known"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.is_perturbation_known" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the specified perturbation is known in prior.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.arrays.ArrayDesign.get_perturbation_params">
+<code class="descname">get_perturbation_params</code><span class="sig-paren">(</span><em>ptype</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.get_perturbation_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.get_perturbation_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the parameters for the specified perturbation type.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.perturbations">
+<code class="descname">perturbations</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.perturbations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves a copy of the dictionary of all perturbations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.arrays.ArrayDesign.get_perturbed_copy">
+<code class="descname">get_perturbed_copy</code><span class="sig-paren">(</span><em>perturbations</em>, <em>new_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.get_perturbed_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.get_perturbed_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of this array design but with the specified
+perturbations.</p>
+<p>The specified perturbations will replace the existing ones.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>A dictionary containing the perturbation
+parameters. The keys should be among the following:</p>
+<ul>
+<li>’location_errors’</li>
+<li>’gain_errors’ (relative, -0.2 means 0.8 * original gain)</li>
+<li>’phase_errors’ (in radians)</li>
+<li>’mutual_coupling’</li>
+</ul>
+<p>The values are two-element tuples where the first element is an
+ndarray representing the parameters and the second element is
+a bool specifying whether these parameters are known in prior.</p>
+</li>
+<li><strong>new_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – An optional new name for the resulting array design.
+If not provided, the name of the original array design will be
+used.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.arrays.ArrayDesign.get_perturbation_free_copy">
+<code class="descname">get_perturbation_free_copy</code><span class="sig-paren">(</span><em>new_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.get_perturbation_free_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.get_perturbation_free_copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a perturbation-free copy of this array design.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>new_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – An optional new name for the resulting array design.
+If not provided, the name of the original array design will be
+used.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.arrays.ArrayDesign.steering_matrix">
+<code class="descname">steering_matrix</code><span class="sig-paren">(</span><em>sources</em>, <em>wavelength</em>, <em>compute_derivatives=False</em>, <em>perturbations='all'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.steering_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.steering_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the steering matrix for the given DOAs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sources</strong> – <p>An instance of <a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a>.</p>
+<ol class="arabic">
+<li>1D arrays are placed along the x-axis. 2D arrays are placed
+within the xy-plane.</li>
+<li>If you pass in 1D DOAs for an 2D or 3D array, these DOAs will
+be assumed to be within the xy-plane. The azimuth angles are
+calculated as <span class="math notranslate nohighlight">\(\pi/2\)</span> minus the original 1D DOA values
+(broadside -&gt; azimuth). The elevation angles are set to zeros
+(within the xy-plane).</li>
+</ol>
+</li>
+<li><strong>wavelength</strong> – Wavelength of the carrier wave.</li>
+<li><strong>compute_derivatives</strong> – If set to True, also outputs the derivative
+matrix DA with respect to the DOAs, where the k-th column of
+DA is the derivative of the k-th column of A with respect to the
+k-th DOA. DA is used when computing the CRBs. Only available to
+1D DOAs.</li>
+<li><strong>perturbations</strong> – <p>Specifies which perturbations are considered when
+constructing the steering matrix:</p>
+<ul>
+<li><code class="docutils literal notranslate"><span class="pre">'all'</span></code> - All perturbations are considered. This is the
+default value.</li>
+<li><code class="docutils literal notranslate"><span class="pre">'known'</span></code> - Only known perturbations (we have prior
+knowledge of the perturbation parameters) are considered. This
+option is used by DOA estimators when the exact knowledge of
+these perturbations are known in prior.</li>
+<li><code class="docutils literal notranslate"><span class="pre">'none'</span></code> - None of the perturbations are considered.</li>
+</ul>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The steering matrix calculation is bound to array designs. This is
+a generic implementation, which can be overridden for special types
+of arrays.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.arrays.UniformLinearArray">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">UniformLinearArray</code><span class="sig-paren">(</span><em>n</em>, <em>d0</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#UniformLinearArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.UniformLinearArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an n-element uniform linear array (ULA).</p>
+<p>The ULA is placed along the x-axis, whose the first sensor is placed at
+the origin.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of elements.</li>
+<li><strong>d0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Fundamental inter-element spacing (usually smallest).</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by <a class="reference internal" href="#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayDesign</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.arrays.NestedArray">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">NestedArray</code><span class="sig-paren">(</span><em>n1</em>, <em>n2</em>, <em>d0</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#NestedArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.NestedArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an 1D nested array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Parameter N1.</li>
+<li><strong>n2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Parameter N2.</li>
+<li><strong>d0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Fundamental inter-element spacing (usually smallest).</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by <a class="reference internal" href="#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayDesign</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] P. Pal and P. P. Vaidyanathan, “Nested arrays: A novel approach to
+array processing with enhanced degrees of freedom,” IEEE Transactions on
+Signal Processing, vol. 58, no. 8, pp. 4167-4181, Aug. 2010.</p>
+<dl class="attribute">
+<dt id="doatools.model.arrays.NestedArray.n1">
+<code class="descname">n1</code><a class="headerlink" href="#doatools.model.arrays.NestedArray.n1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the parameter, N1, used when creating this nested array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.NestedArray.n2">
+<code class="descname">n2</code><a class="headerlink" href="#doatools.model.arrays.NestedArray.n2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the parameter, N2, used when creating this nested array.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.arrays.CoPrimeArray">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">CoPrimeArray</code><span class="sig-paren">(</span><em>m</em>, <em>n</em>, <em>d0</em>, <em>mode='2m'</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#CoPrimeArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.CoPrimeArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an 1D co-prime array.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The smaller number in the co-prime pair.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – The larger number in the co-prime pair.</li>
+<li><strong>d0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Fundamental inter-element spacing (usually smallest).</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Either <code class="docutils literal notranslate"><span class="pre">'m'</span></code> or <code class="docutils literal notranslate"><span class="pre">'2m'</span></code>.</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by <a class="reference internal" href="#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayDesign</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] P. Pal and P. P. Vaidyanathan, “Coprime sampling and the music
+algorithm,” in 2011 Digital Signal Processing and Signal Processing
+Education Meeting (DSP/SPE), 2011, pp. 289-294.</p>
+<dl class="attribute">
+<dt id="doatools.model.arrays.CoPrimeArray.coprime_pair">
+<code class="descname">coprime_pair</code><a class="headerlink" href="#doatools.model.arrays.CoPrimeArray.coprime_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the co-prime pair used when creating this co-prime array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.CoPrimeArray.mode">
+<code class="descname">mode</code><a class="headerlink" href="#doatools.model.arrays.CoPrimeArray.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the mode used when creating this co-prime array.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.arrays.MinimumRedundancyLinearArray">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">MinimumRedundancyLinearArray</code><span class="sig-paren">(</span><em>n</em>, <em>d0</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#MinimumRedundancyLinearArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.MinimumRedundancyLinearArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an n-element minimum redundancy linear array (MRLA).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of elements. Up to 20.</li>
+<li><strong>d0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Fundamental inter-element spacing (usually smallest).</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by <a class="reference internal" href="#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayDesign</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] M. Ishiguro, “Minimum redundancy linear arrays for a large number of
+antennas,” Radio Sci., vol. 15, no. 6, pp. 1163-1170, Nov. 1980.</p>
+<p>[2] A. Moffet, “Minimum-redundancy linear arrays,” IEEE Transactions on
+Antennas and Propagation, vol. 16, no. 2, pp. 172-175, Mar. 1968.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.arrays.UniformCircularArray">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">UniformCircularArray</code><span class="sig-paren">(</span><em>n</em>, <em>r</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#UniformCircularArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.UniformCircularArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a uniform circular array (UCA).</p>
+<p>The UCA is centered at the origin, in the xy-plane.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of elements.</li>
+<li><strong>r</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Radius of the circle.</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by <a class="reference internal" href="#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayDesign</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="doatools.model.arrays.UniformCircularArray.radius">
+<code class="descname">radius</code><a class="headerlink" href="#doatools.model.arrays.UniformCircularArray.radius" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the radius of the uniform circular array.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.arrays.UniformRectangularArray">
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">UniformRectangularArray</code><span class="sig-paren">(</span><em>m</em>, <em>n</em>, <em>d0</em>, <em>name=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#UniformRectangularArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.UniformRectangularArray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an m x n uniform rectangular array (URA).</p>
+<p>The URA is placed on the xy-plane, and the (0,0)-th sensor is placed
+at the origin.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of elements along the x-axis.</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of elements along the y-axis.</li>
+<li><strong>d0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Fundamental inter-element spacing. Can be either a
+scalar or a two-element list-like object.</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by <a class="reference internal" href="#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayDesign</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="doatools.model.arrays.UniformRectangularArray.shape">
+<code class="descname">shape</code><a class="headerlink" href="#doatools.model.arrays.UniformRectangularArray.shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the shape of this uniform rectangular array.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.model.html">Modeling</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Modeling arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.sources.html">Modeling source placements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.signals.html">Modeling source signals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.snapshots.html">Collecting snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.coarray.html">Difference coarrays</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.model.html">Modeling</a><ul>
+      <li>Previous: <a href="doatools.model.html" title="previous chapter">Modeling</a></li>
+      <li>Next: <a href="doatools.model.sources.html" title="next chapter">Modeling source placements</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.model.arrays.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

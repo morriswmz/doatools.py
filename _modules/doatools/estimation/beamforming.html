@@ -1,0 +1,267 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.estimation.beamforming &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.estimation.beamforming</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">SpectrumBasedEstimatorBase</span><span class="p">,</span> <span class="n">ensure_covariance_size</span>
+
+<div class="viewcode-block" id="f_bartlett"><a class="viewcode-back" href="../../../references/doatools.estimation.beamforming.html#doatools.estimation.beamforming.f_bartlett">[docs]</a><span class="k">def</span> <span class="nf">f_bartlett</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the spectrum output of the Bartlett beamformer.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        P_{\mathrm{Bartlett}}(\theta)</span>
+<span class="sd">        = \mathbf{a}(\theta)^H \mathbf{R} \mathbf{a}(\theta)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        A: m x k steering matrix of candidate direction-of-arrivals, where</span>
+<span class="sd">            m is the number of sensors and k is the number of candidate</span>
+<span class="sd">            direction-of-arrivals.</span>
+<span class="sd">        R: m x m covariance matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span> <span class="o">*</span> <span class="p">(</span><span class="n">R</span> <span class="o">@</span> <span class="n">A</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">real</span></div>
+
+<div class="viewcode-block" id="f_mvdr"><a class="viewcode-back" href="../../../references/doatools.estimation.beamforming.html#doatools.estimation.beamforming.f_mvdr">[docs]</a><span class="k">def</span> <span class="nf">f_mvdr</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Compute the spectrum output of the Bartlett beamformer.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        P_{\mathrm{MVDR}}(\theta)</span>
+<span class="sd">        = \frac{1}{\mathbf{a}(\theta)^H \mathbf{R}^{-1} \mathbf{a}(\theta)}</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        A: m x k steering matrix of candidate direction-of-arrivals, where</span>
+<span class="sd">            m is the number of sensors and k is the number of candidate</span>
+<span class="sd">            direction-of-arrivals.</span>
+<span class="sd">        R: m x m covariance matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">real</span></div>
+
+<div class="viewcode-block" id="BartlettBeamformer"><a class="viewcode-back" href="../../../references/doatools.estimation.beamforming.html#doatools.estimation.beamforming.BartlettBeamformer">[docs]</a><span class="k">class</span> <span class="nc">BartlettBeamformer</span><span class="p">(</span><span class="n">SpectrumBasedEstimatorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Barlett-beamformer based estimator.</span>
+
+<span class="sd">    This estimator is also named beamscan based estimator.</span>
+<span class="sd">    </span>
+<span class="sd">    The spectrum is computed on a predefined-grid using</span>
+<span class="sd">    :meth:`~doatools.estimation.beamforming.f_bartlett`, and the source</span>
+<span class="sd">    locations are estimated by identifying the peaks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array (~doatools.model.arrays.ArrayDesign): Array design.</span>
+<span class="sd">        wavelength (float): Wavelength of the carrier wave.</span>
+<span class="sd">        search_grid (~doatools.estimation.grid.SearchGrid): The search grid</span>
+<span class="sd">            used to locate the sources.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by</span>
+<span class="sd">            :class:`~doatools.estimation.core.SpectrumBasedEstimatorBase`.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">search_grid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">search_grid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="BartlettBeamformer.estimate"><a class="viewcode-back" href="../../../references/doatools.estimation.beamforming.html#doatools.estimation.beamforming.BartlettBeamformer.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Estimates the source locations from the given covariance matrix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            R (~numpy.ndarray): Covariance matrix input. The size of R must</span>
+<span class="sd">                match that of the array design used when creating this</span>
+<span class="sd">                estimator.</span>
+<span class="sd">            k (int): Expected number of sources.</span>
+<span class="sd">            return_spectrum (bool): Set to ``True`` to also output the spectrum</span>
+<span class="sd">                for visualization. Default value if ``False``.</span>
+<span class="sd">            refine_estimates (bool): Set to True to enable grid refinement to</span>
+<span class="sd">                obtain potentially more accurate estimates.</span>
+<span class="sd">            refinement_density (int): Density of the refinement grids. Higher</span>
+<span class="sd">                density values lead to denser refinement grids and increased</span>
+<span class="sd">                computational complexity. Default value is 10.</span>
+<span class="sd">            refinement_iters (int): Number of refinement iterations. More</span>
+<span class="sd">                iterations generally lead to better results, at the cost of</span>
+<span class="sd">                increased computational complexity. Default value is 3.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple with the following elements.</span>
+
+<span class="sd">            * resolved (:class:`bool`): A boolean indicating if the desired</span>
+<span class="sd">              number of sources are found. This flag does **not** guarantee that</span>
+<span class="sd">              the estimated source locations are correct. The estimated source</span>
+<span class="sd">              locations may be completely wrong!</span>
+<span class="sd">              If resolved is False, both ``estimates`` and ``spectrum`` will be</span>
+<span class="sd">              ``None``.</span>
+<span class="sd">            * estimates (:class:`~doatools.model.sources.SourcePlacement`):</span>
+<span class="sd">              A :class:`~doatools.model.sources.SourcePlacement` instance of the</span>
+<span class="sd">              same type as the one used in the search grid, represeting the</span>
+<span class="sd">              estimated source locations. Will be ``None`` if resolved is</span>
+<span class="sd">              ``False``.</span>
+<span class="sd">            * spectrum (:class:`~numpy.ndarray`): An numpy array of the same</span>
+<span class="sd">              shape of the specified search grid, consisting of values evaluated</span>
+<span class="sd">              at the grid points. Only present if ``return_spectrum`` is</span>
+<span class="sd">              ``True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ensure_covariance_size</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimate</span><span class="p">(</span><span class="k">lambda</span> <span class="n">A</span><span class="p">:</span> <span class="n">f_bartlett</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">R</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="MVDRBeamformer"><a class="viewcode-back" href="../../../references/doatools.estimation.beamforming.html#doatools.estimation.beamforming.MVDRBeamformer">[docs]</a><span class="k">class</span> <span class="nc">MVDRBeamformer</span><span class="p">(</span><span class="n">SpectrumBasedEstimatorBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a MVDR-beamformer based estimator.</span>
+<span class="sd">    </span>
+<span class="sd">    The spectrum is computed on a predefined-grid using</span>
+<span class="sd">    :meth:`~doatools.estimation.beamforming.f_mvdr`, and the source locations</span>
+<span class="sd">    are estimated by identifying the peaks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array (~doatools.model.arrays.ArrayDesign): Array design.</span>
+<span class="sd">        wavelength (float): Wavelength of the carrier wave.</span>
+<span class="sd">        search_grid (~doatools.estimation.grid.SearchGrid): The search grid</span>
+<span class="sd">            used to locate the sources.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by</span>
+<span class="sd">            :class:`~doatools.estimation.core.SpectrumBasedEstimatorBase`.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">search_grid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">search_grid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        
+<div class="viewcode-block" id="MVDRBeamformer.estimate"><a class="viewcode-back" href="../../../references/doatools.estimation.beamforming.html#doatools.estimation.beamforming.MVDRBeamformer.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimates the source locations from the given covariance matrix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            R (~numpy.ndarray): Covariance matrix input. The size of R must</span>
+<span class="sd">                match that of the array design used when creating this</span>
+<span class="sd">                estimator.</span>
+<span class="sd">            k (int): Expected number of sources.</span>
+<span class="sd">            return_spectrum (bool): Set to ``True`` to also output the spectrum</span>
+<span class="sd">                for visualization. Default value if ``False``.</span>
+<span class="sd">            refine_estimates (bool): Set to True to enable grid refinement to</span>
+<span class="sd">                obtain potentially more accurate estimates.</span>
+<span class="sd">            refinement_density (int): Density of the refinement grids. Higher</span>
+<span class="sd">                density values lead to denser refinement grids and increased</span>
+<span class="sd">                computational complexity. Default value is 10.</span>
+<span class="sd">            refinement_iters (int): Number of refinement iterations. More</span>
+<span class="sd">                iterations generally lead to better results, at the cost of</span>
+<span class="sd">                increased computational complexity. Default value is 3.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple with the following elements.</span>
+
+<span class="sd">            * resolved (:class:`bool`): A boolean indicating if the desired</span>
+<span class="sd">              number of sources are found. This flag does **not** guarantee that</span>
+<span class="sd">              the estimated source locations are correct. The estimated source</span>
+<span class="sd">              locations may be completely wrong!</span>
+<span class="sd">              If resolved is False, both ``estimates`` and ``spectrum`` will be</span>
+<span class="sd">              ``None``.</span>
+<span class="sd">            * estimates (:class:`~doatools.model.sources.SourcePlacement`):</span>
+<span class="sd">              A :class:`~doatools.model.sources.SourcePlacement` instance of the</span>
+<span class="sd">              same type as the one used in the search grid, represeting the</span>
+<span class="sd">              estimated source locations. Will be ``None`` if resolved is</span>
+<span class="sd">              ``False``.</span>
+<span class="sd">            * spectrum (:class:`~numpy.ndarray`): An numpy array of the same</span>
+<span class="sd">              shape of the specified search grid, consisting of values evaluated</span>
+<span class="sd">              at the grid points. Only present if ``return_spectrum`` is</span>
+<span class="sd">              ``True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ensure_covariance_size</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimate</span><span class="p">(</span><span class="k">lambda</span> <span class="n">A</span><span class="p">:</span> <span class="n">f_mvdr</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">R</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,162 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.model.snapshots &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.model.snapshots</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="get_narrowband_snapshots"><a class="viewcode-back" href="../../../references/doatools.model.snapshots.html#doatools.model.snapshots.get_narrowband_snapshots">[docs]</a><span></span><span class="k">def</span> <span class="nf">get_narrowband_snapshots</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">source_signal</span><span class="p">,</span>
+                             <span class="n">noise_signal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">return_covariance</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates snapshots based on the narrowband snapshot model (see</span>
+<span class="sd">    Chapter 8.1 of [1]).</span>
+
+<span class="sd">    Let :math:`\mathbf{A}` be the steering matrix, :math:`\mathbf{s}(t)` be the</span>
+<span class="sd">    source signal vector, and :math:`\mathbf{n}(t)` be the noise signal matrix.</span>
+<span class="sd">    Then the snapshots received at the array is given by</span>
+<span class="sd">    </span>
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbf{y}(t) = \mathbf{A}\mathbf{s}(t) + \mathbf{n}(t),</span>
+<span class="sd">        t = 1, 2, ..., N,</span>
+<span class="sd">        </span>
+<span class="sd">    where :math:`N` denotes the number of snapshots.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array (~doatools.model.arrays.ArrayDesign): The array receiving the</span>
+<span class="sd">            snapshots.</span>
+<span class="sd">        sources (~doatools.model.sources.SourcePlacement): Source placement.</span>
+<span class="sd">        wavelength (float): Wavelength of the carrier wave.</span>
+<span class="sd">        source_signal (~doatools.model.signals.SignalGenerator):</span>
+<span class="sd">            Source signal generator.</span>
+<span class="sd">        noise_signal (~doatools.model.signals.SignalGenerator):</span>
+<span class="sd">            Noise signal generator. Default value is ``None``, meaning no</span>
+<span class="sd">            additive noise.</span>
+<span class="sd">        n_snapshots (int): Number of snapshots. Default value is 1.</span>
+<span class="sd">        return_covariance (bool): If set to ``True``, also returns the sample</span>
+<span class="sd">            covariance matrix. Default value is ``False``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Depending on ``return_covariance``.</span>
+
+<span class="sd">        * If ``return_covariance`` is ``False``, returns the snapshots matrix,</span>
+<span class="sd">          :math:`\mathbf{Y}`, where each column represents a snapshot.</span>
+<span class="sd">        * If ``return_covariance`` is ``True``, also returns sample covariance</span>
+<span class="sd">          matrix, which is computed by</span>
+
+<span class="sd">          .. math::</span>
+<span class="sd">              \mathbf{R} = \frac{1}{N} \mathbf{Y} \mathbf{Y}^H. </span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">steering_matrix</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">)</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">source_signal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">n_snapshots</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">A</span> <span class="o">@</span> <span class="n">S</span>
+    <span class="k">if</span> <span class="n">noise_signal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">noise_signal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">n_snapshots</span><span class="p">)</span>
+        <span class="n">Y</span> <span class="o">+=</span> <span class="n">N</span>
+    <span class="k">if</span> <span class="n">return_covariance</span><span class="p">:</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="p">(</span><span class="n">Y</span> <span class="o">@</span> <span class="n">Y</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_snapshots</span>
+        <span class="k">return</span> <span class="n">Y</span><span class="p">,</span> <span class="n">R</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Y</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

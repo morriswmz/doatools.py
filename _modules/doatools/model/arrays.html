@@ -1,0 +1,703 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.model.arrays &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.model.arrays</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">gcd</span>
+<span class="kn">from</span> <span class="nn">..utils.math</span> <span class="k">import</span> <span class="n">cartesian</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="n">PERTURBATION_TYPES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;location_errors&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;gain_errors&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;phase_errors&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mutual_coupling&#39;</span>
+<span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">validate_location_errors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 2D array.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Locations errors cannot be more than 3-dimensional.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The shape of the location errors matrix does not much the array size.&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">validate_gain_and_phase_errors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting an 1D array.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">m</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The size of the gain/phase errors vector does not much the array size.&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">validate_mutual_coupling</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 2D array.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span> <span class="ow">or</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The mutual coupling matrix must be </span><span class="si">{0}</span><span class="s1">x</span><span class="si">{0}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+
+<span class="n">PERTURBATION_VALIDATORS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;location_errors&#39;</span><span class="p">:</span> <span class="n">validate_location_errors</span><span class="p">,</span>
+    <span class="s1">&#39;gain_errors&#39;</span><span class="p">:</span> <span class="n">validate_gain_and_phase_errors</span><span class="p">,</span>
+    <span class="s1">&#39;phase_errors&#39;</span><span class="p">:</span> <span class="n">validate_gain_and_phase_errors</span><span class="p">,</span>
+    <span class="s1">&#39;mutual_coupling&#39;</span><span class="p">:</span> <span class="n">validate_mutual_coupling</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="ArrayDesign"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign">[docs]</a><span class="k">class</span> <span class="nc">ArrayDesign</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all array designs.</span>
+
+<span class="sd">    Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate</span>
+<span class="sd">    system. We define 1D, 2D, and 3D arrays as follows:</span>
+
+<span class="sd">    * 1D arrays are linear arrays along the x-axis.</span>
+<span class="sd">    * 2D arrays are planar arrays lying within the xy-plane.</span>
+<span class="sd">    * 3D arrays are not restricted, whose element can exist anywhere in the 3D</span>
+<span class="sd">      space.</span>
+
+<span class="sd">    We store the element locations with an m x d array, where m denotes the</span>
+<span class="sd">    number of elements (size) of the array.</span>
+
+<span class="sd">    * For 1D arrays, d equals one, and the i-th row of the m x 1 array stores</span>
+<span class="sd">      the x coordinate of the i-th element.</span>
+<span class="sd">    * For 2D arrays, d equals two, and the i-th row of the m x 2 array stores</span>
+<span class="sd">      the x and y coordinates of the i-th element.</span>
+<span class="sd">    * For 3D arrays, d equals three, and the i-th row of the m x 3 array stores</span>
+<span class="sd">      the x, y, and z coordinates of the i-th element.</span>
+
+<span class="sd">    While this class is generally intended for internal use. You can also use</span>
+<span class="sd">    this class to create custom arrays. Just to make sure that you do not modify</span>
+<span class="sd">    ``locations`` after creating the array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        locations: A list or ndarray specifying the element locations. For</span>
+<span class="sd">            1D arrays, ``locations`` can be either a 1D list/ndarray, or</span>
+<span class="sd">            an m x 1 list/ndarray, where m is the number of elements. For 2D</span>
+<span class="sd">            or 3D arrays, ``locations`` must be a 2D list/ndarray of shape</span>
+<span class="sd">            m x d, where d is 2 or 3. If the input is an ndarray, it will</span>
+<span class="sd">            not be copied and should not be changed after creating the</span>
+<span class="sd">            array design.</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        perturbations (dict): A dictionary containing the perturbation </span>
+<span class="sd">            parameters. The keys should be among the following:</span>
+
+<span class="sd">            * ``&#39;location_errors&#39;``</span>
+<span class="sd">            * ``&#39;gain_errors&#39;`` (relative, -0.2 means 0.8 * original gain)</span>
+<span class="sd">            * ``&#39;phase_errors&#39;`` (in radians)</span>
+<span class="sd">            * ``&#39;mutual_coupling&#39;``</span>
+
+<span class="sd">            The values are two-element tuples where the first element is an</span>
+<span class="sd">            ndarray representing the parameters and the second element is</span>
+<span class="sd">            a bool specifying whether these parameters are known in prior.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        Array designs are supposed to be **immutable**. Because array</span>
+<span class="sd">        design objects are passed around when computing steering matrices,</span>
+<span class="sd">        weight functions, etc., having a mutable internal state leads to more</span>
+<span class="sd">        complexities and potential unexpected results. Although the internal</span>
+<span class="sd">        states are generally accessible in Python, please refrain from modifying</span>
+<span class="sd">        them.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">perturbations</span><span class="o">=</span><span class="p">{}):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">locations</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting an 1D vector or a 2D matrix.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">locations</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">locations</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Array can only be 1D, 2D or 3D.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="n">locations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="c1"># Validate perturbations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_copy_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the name of this array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">element_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;(Deprecated) Retrieves the number of elements in the array.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Use size instead of element_count in the future.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the number of elements in the array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">element_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the nominal element locations.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An M x d matrix, where M is the number of elements and d is the</span>
+<span class="sd">            number of dimensions of the nominal array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">actual_element_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the actual element locations, considering location errors.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An M x d matrix, where M is the number of elements and d is the</span>
+<span class="sd">            maximum of the following two:</span>
+<span class="sd">            </span>
+<span class="sd">            1. number of dimensions of the nominal array;</span>
+<span class="sd">            2. number of dimensions of the sensor location errors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_actual_locations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_locations</span>
+    
+    <span class="k">def</span> <span class="nf">_compute_actual_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_errors</span><span class="p">):</span>
+        <span class="n">actual_ndim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="n">loc_err_dim</span> <span class="o">=</span> <span class="n">location_errors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">loc_err_dim</span> <span class="o">&lt;=</span> <span class="n">actual_ndim</span><span class="p">:</span>
+            <span class="c1"># It is possible that the location errors only exist along the</span>
+            <span class="c1"># first one or two axis.</span>
+            <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">actual_locations</span><span class="p">[:,</span> <span class="p">:</span><span class="n">loc_err_dim</span><span class="p">]</span> <span class="o">+=</span> <span class="n">location_errors</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Actual dimension is higher. This happens if a linear array,</span>
+            <span class="c1"># which is 1D, has location errors along both x- and y-axis.</span>
+            <span class="n">actual_locations</span> <span class="o">=</span> <span class="n">location_errors</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">actual_locations</span><span class="p">[:,</span> <span class="p">:</span><span class="n">actual_ndim</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        <span class="k">return</span> <span class="n">actual_locations</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_perturbed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns if the array contains perturbations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the number of dimensions of the nominal array.</span>
+
+<span class="sd">        The number of dimensions is defined as the number of columns of the</span>
+<span class="sd">        ndarray storing the nominal array element locations. It does not</span>
+<span class="sd">        reflect the number of dimensions of the minimal subspace in which the</span>
+<span class="sd">        nominal array lies. For instance, if the element locations are given by</span>
+<span class="sd">        ``[[0, 0], [1, 1], [2, 2]]``, ``ndim`` equals to 2 instead of 1, despite</span>
+<span class="sd">        the fact that this array is a linear array.</span>
+
+<span class="sd">        Perturbations do not affect this value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">actual_ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the number of dimensions of the array, considering location errors.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span>
+    
+<div class="viewcode-block" id="ArrayDesign.has_perturbation"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.has_perturbation">[docs]</a>    <span class="k">def</span> <span class="nf">has_perturbation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the array has the given type of perturbation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ptype</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span></div>
+    
+<div class="viewcode-block" id="ArrayDesign.is_perturbation_known"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.is_perturbation_known">[docs]</a>    <span class="k">def</span> <span class="nf">is_perturbation_known</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the specified perturbation is known in prior.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">ptype</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span></div>
+    
+<div class="viewcode-block" id="ArrayDesign.get_perturbation_params"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.get_perturbation_params">[docs]</a>    <span class="k">def</span> <span class="nf">get_perturbation_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the parameters for the specified perturbation type.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">ptype</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">perturbations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves a copy of the dictionary of all perturbations.&quot;&quot;&quot;</span>
+        <span class="c1"># Here we have a deep copy.</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">_validate_and_copy_perturbations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbations</span><span class="p">):</span>
+        <span class="n">p_copy</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">perturbations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PERTURBATION_TYPES</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unsupported perturbation type &quot;</span><span class="si">{0}</span><span class="s1">&quot;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Perturbation details should be specified by a two-element tuple.&#39;</span><span class="p">)</span>
+            <span class="c1"># Validate and copy</span>
+            <span class="n">PERTURBATION_VALIDATORS</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">params_copy</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">params_copy</span><span class="o">.</span><span class="n">setflags</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">p_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">params_copy</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">p_copy</span>
+
+<div class="viewcode-block" id="ArrayDesign.get_perturbed_copy"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.get_perturbed_copy">[docs]</a>    <span class="k">def</span> <span class="nf">get_perturbed_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbations</span><span class="p">,</span> <span class="n">new_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a copy of this array design but with the specified</span>
+<span class="sd">        perturbations.</span>
+<span class="sd">        </span>
+<span class="sd">        The specified perturbations will replace the existing ones.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            perturbations (dict): A dictionary containing the perturbation</span>
+<span class="sd">                parameters. The keys should be among the following:</span>
+
+<span class="sd">                * &#39;location_errors&#39;</span>
+<span class="sd">                * &#39;gain_errors&#39; (relative, -0.2 means 0.8 * original gain)</span>
+<span class="sd">                * &#39;phase_errors&#39; (in radians)</span>
+<span class="sd">                * &#39;mutual_coupling&#39;</span>
+
+<span class="sd">                The values are two-element tuples where the first element is an</span>
+<span class="sd">                ndarray representing the parameters and the second element is</span>
+<span class="sd">                a bool specifying whether these parameters are known in prior.</span>
+<span class="sd">            new_name (str): An optional new name for the resulting array design.</span>
+<span class="sd">                If not provided, the name of the original array design will be</span>
+<span class="sd">                used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_perturbation_free_copy</span><span class="p">(</span><span class="n">new_name</span><span class="p">)</span>
+        <span class="c1"># Merge perturbation parameters.</span>
+        <span class="n">perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_copy_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">)</span>
+        <span class="n">array</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">,</span> <span class="o">**</span><span class="n">perturbations</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">array</span></div>
+
+<div class="viewcode-block" id="ArrayDesign.get_perturbation_free_copy"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.get_perturbation_free_copy">[docs]</a>    <span class="k">def</span> <span class="nf">get_perturbation_free_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a perturbation-free copy of this array design.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_name (str): An optional new name for the resulting array design.</span>
+<span class="sd">                If not provided, the name of the original array design will be</span>
+<span class="sd">                used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">new_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+        <span class="n">array</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">array</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">array</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">new_name</span>
+        <span class="k">return</span> <span class="n">array</span></div>
+
+<div class="viewcode-block" id="ArrayDesign.steering_matrix"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.steering_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">steering_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">compute_derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">perturbations</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Creates the steering matrix for the given DOAs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sources: An instance of :class:`~doatools.model.sources.SourcePlacement`.</span>
+
+<span class="sd">                1. 1D arrays are placed along the x-axis. 2D arrays are placed</span>
+<span class="sd">                   within the xy-plane.</span>
+<span class="sd">                2. If you pass in 1D DOAs for an 2D or 3D array, these DOAs will</span>
+<span class="sd">                   be assumed to be within the xy-plane. The azimuth angles are</span>
+<span class="sd">                   calculated as :math:`\pi/2` minus the original 1D DOA values</span>
+<span class="sd">                   (broadside -&gt; azimuth). The elevation angles are set to zeros</span>
+<span class="sd">                   (within the xy-plane).</span>
+<span class="sd">            </span>
+<span class="sd">            wavelength: Wavelength of the carrier wave.</span>
+<span class="sd">            compute_derivatives: If set to True, also outputs the derivative</span>
+<span class="sd">                matrix DA with respect to the DOAs, where the k-th column of</span>
+<span class="sd">                DA is the derivative of the k-th column of A with respect to the</span>
+<span class="sd">                k-th DOA. DA is used when computing the CRBs. Only available to</span>
+<span class="sd">                1D DOAs.</span>
+<span class="sd">            perturbations: Specifies which perturbations are considered when</span>
+<span class="sd">                constructing the steering matrix:</span>
+
+<span class="sd">                * ``&#39;all&#39;`` - All perturbations are considered. This is the</span>
+<span class="sd">                  default value.</span>
+<span class="sd">                * ``&#39;known&#39;`` - Only known perturbations (we have prior</span>
+<span class="sd">                  knowledge of the perturbation parameters) are considered. This</span>
+<span class="sd">                  option is used by DOA estimators when the exact knowledge of</span>
+<span class="sd">                  these perturbations are known in prior.</span>
+<span class="sd">                * ``&#39;none&#39;`` - None of the perturbations are considered.</span>
+<span class="sd">        </span>
+<span class="sd">        Notes:</span>
+<span class="sd">            The steering matrix calculation is bound to array designs. This is</span>
+<span class="sd">            a generic implementation, which can be overridden for special types</span>
+<span class="sd">            of arrays.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Filter perturbations.</span>
+        <span class="k">if</span> <span class="n">perturbations</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+            <span class="n">perturb_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span>
+        <span class="k">elif</span> <span class="n">perturbations</span> <span class="o">==</span> <span class="s1">&#39;known&#39;</span><span class="p">:</span>
+            <span class="n">perturb_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+        <span class="k">elif</span> <span class="n">perturbations</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="n">perturb_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Perturbation can only be &quot;all&quot;, &quot;known&quot;, or &quot;none&quot;.&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
+            <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_actual_locations</span><span class="p">(</span><span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+
+        <span class="c1"># Compute the steering matrix</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">phase_delay_matrix</span><span class="p">(</span><span class="n">actual_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">compute_derivatives</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">A</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span>
+        
+        <span class="c1"># Apply other perturbations</span>
+        <span class="k">if</span> <span class="s1">&#39;gain_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
+            <span class="n">gain_coeff</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;gain_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">gain_coeff</span> <span class="o">*</span> <span class="n">A</span>
+            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">gain_coeff</span> <span class="o">*</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;phase_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
+            <span class="n">phase_coeff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;phase_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">phase_coeff</span> <span class="o">*</span> <span class="n">A</span>
+            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">phase_coeff</span> <span class="o">*</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;mutual_coupling&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;mutual_coupling&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">A</span>
+            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;mutual_coupling&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">DA</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">A</span></div></div>
+
+<span class="k">class</span> <span class="nc">GridBasedArrayDesign</span><span class="p">(</span><span class="n">ArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all grid-based array designs.</span>
+<span class="sd">    </span>
+<span class="sd">    For grid based arrays, each elements is placed on a predefined grid.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        indices (ndarray): m x d matrix denoting the grid indices</span>
+<span class="sd">            of each element. e.g., if indices is ``[1, 2, 3,]``, then the</span>
+<span class="sd">            actual locations will be ``[d0, 2*d0, 3*d0]``. The input ndarray is</span>
+<span class="sd">            not copied and should never be changed after creating this array</span>
+<span class="sd">            design.</span>
+<span class="sd">        d0 (float): Grid size (or base inter-element spacing). For 2D and 3D</span>
+<span class="sd">            arrays, d0 can either be a scalar (if the base inter-element</span>
+<span class="sd">            spacing remains the same along all axes), or a list-like object</span>
+<span class="sd">            such that d0[i] specifies the base inter-element spacing along</span>
+<span class="sd">            the i-th axis.</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">d0</span><span class="p">):</span>
+            <span class="n">d0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">d0</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;d0 must be a scalar, or a 1D ndarray of size 1 or </span><span class="si">{0}</span><span class="s1">.&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">indices</span> <span class="o">*</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_element_indices</span> <span class="o">=</span> <span class="n">indices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_d0</span> <span class="o">=</span> <span class="n">d0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">d0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the base inter-element spacing.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_d0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">element_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the element indices.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element_indices</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+<div class="viewcode-block" id="UniformLinearArray"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.UniformLinearArray">[docs]</a><span class="k">class</span> <span class="nc">UniformLinearArray</span><span class="p">(</span><span class="n">GridBasedArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an n-element uniform linear array (ULA).</span>
+<span class="sd">        </span>
+<span class="sd">    The ULA is placed along the x-axis, whose the first sensor is placed at</span>
+<span class="sd">    the origin.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (int): Number of elements.</span>
+<span class="sd">        d0 (float): Fundamental inter-element spacing (usually smallest).</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ULA &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NestedArray"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.NestedArray">[docs]</a><span class="k">class</span> <span class="nc">NestedArray</span><span class="p">(</span><span class="n">GridBasedArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an 1D nested array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n1 (int): Parameter N1.</span>
+<span class="sd">        n2 (int): Parameter N2.</span>
+<span class="sd">        d0 (float): Fundamental inter-element spacing (usually smallest).</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] P. Pal and P. P. Vaidyanathan, &quot;Nested arrays: A novel approach to</span>
+<span class="sd">        array processing with enhanced degrees of freedom,&quot; IEEE Transactions on</span>
+<span class="sd">        Signal Processing, vol. 58, no. 8, pp. 4167-4181, Aug. 2010.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Nested (</span><span class="si">{0}</span><span class="s1">,</span><span class="si">{1}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n1</span><span class="p">),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">n1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n1</span> <span class="o">=</span> <span class="n">n1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n2</span> <span class="o">=</span> <span class="n">n2</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the parameter, N1, used when creating this nested array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n1</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the parameter, N2, used when creating this nested array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n2</span></div>
+
+<div class="viewcode-block" id="CoPrimeArray"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.CoPrimeArray">[docs]</a><span class="k">class</span> <span class="nc">CoPrimeArray</span><span class="p">(</span><span class="n">GridBasedArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an 1D co-prime array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m (int): The smaller number in the co-prime pair.</span>
+<span class="sd">        n (int): The larger number in the co-prime pair.</span>
+<span class="sd">        d0 (float): Fundamental inter-element spacing (usually smallest).</span>
+<span class="sd">        mode (str): Either ``&#39;m&#39;`` or ``&#39;2m&#39;``.</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+<span class="sd">    </span>
+<span class="sd">    References:</span>
+<span class="sd">        [1] P. Pal and P. P. Vaidyanathan, &quot;Coprime sampling and the music</span>
+<span class="sd">        algorithm,&quot; in 2011 Digital Signal Processing and Signal Processing</span>
+<span class="sd">        Education Meeting (DSP/SPE), 2011, pp. 289-294.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;2m&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Co-prime (</span><span class="si">{0}</span><span class="s1">,</span><span class="si">{1}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;m &gt; n. Swapped.&#39;</span><span class="p">)</span>
+            <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">n</span><span class="p">,</span> <span class="n">m</span>
+        <span class="k">if</span> <span class="n">gcd</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1"> and </span><span class="si">{1}</span><span class="s1"> are not co-prime.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coprime_pair</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;2m&#39;</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">m</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">m</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span>
+            <span class="p">))</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;m&#39;</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">m</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span>
+            <span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown mode &quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">indices</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">coprime_pair</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the co-prime pair used when creating this co-prime array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coprime_pair</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the mode used when creating this co-prime array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span></div>
+
+<span class="n">_MRLA_PRESETS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">17</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">23</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">29</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">37</span><span class="p">,</span> <span class="mi">39</span><span class="p">,</span> <span class="mi">41</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">47</span><span class="p">,</span> <span class="mi">49</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">46</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">55</span><span class="p">,</span> <span class="mi">57</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">46</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">56</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">61</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">65</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">46</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">62</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">66</span><span class="p">,</span> <span class="mi">69</span><span class="p">,</span> <span class="mi">71</span><span class="p">,</span> <span class="mi">73</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">72</span><span class="p">,</span> <span class="mi">74</span><span class="p">,</span> <span class="mi">77</span><span class="p">,</span> <span class="mi">79</span><span class="p">,</span> <span class="mi">81</span><span class="p">,</span> <span class="mi">83</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">78</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">82</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="mi">87</span><span class="p">,</span> <span class="mi">89</span><span class="p">,</span> <span class="mi">91</span><span class="p">,</span> <span class="mi">93</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">78</span><span class="p">,</span> <span class="mi">88</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">92</span><span class="p">,</span> <span class="mi">94</span><span class="p">,</span> <span class="mi">97</span><span class="p">,</span> <span class="mi">99</span><span class="p">,</span> <span class="mi">101</span><span class="p">,</span> <span class="mi">103</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">38</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">78</span><span class="p">,</span> <span class="mi">88</span><span class="p">,</span> <span class="mi">98</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">102</span><span class="p">,</span> <span class="mi">104</span><span class="p">,</span> <span class="mi">107</span><span class="p">,</span> <span class="mi">109</span><span class="p">,</span> <span class="mi">111</span><span class="p">,</span> <span class="mi">113</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">46</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">82</span><span class="p">,</span> <span class="mi">94</span><span class="p">,</span> <span class="mi">106</span><span class="p">,</span> <span class="mi">108</span><span class="p">,</span> <span class="mi">110</span><span class="p">,</span> <span class="mi">112</span><span class="p">,</span> <span class="mi">114</span><span class="p">,</span> <span class="mi">117</span><span class="p">,</span> <span class="mi">119</span><span class="p">,</span> <span class="mi">121</span><span class="p">,</span> <span class="mi">123</span><span class="p">,</span> <span class="mi">125</span><span class="p">]</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="MinimumRedundancyLinearArray"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.MinimumRedundancyLinearArray">[docs]</a><span class="k">class</span> <span class="nc">MinimumRedundancyLinearArray</span><span class="p">(</span><span class="n">GridBasedArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an n-element minimum redundancy linear array (MRLA).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (int): Number of elements. Up to 20.</span>
+<span class="sd">        d0 (float): Fundamental inter-element spacing (usually smallest).</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+<span class="sd">    </span>
+<span class="sd">    References:</span>
+<span class="sd">        [1] M. Ishiguro, &quot;Minimum redundancy linear arrays for a large number of</span>
+<span class="sd">        antennas,&quot; Radio Sci., vol. 15, no. 6, pp. 1163-1170, Nov. 1980.</span>
+<span class="sd">        </span>
+<span class="sd">        [2] A. Moffet, &quot;Minimum-redundancy linear arrays,&quot; IEEE Transactions on</span>
+<span class="sd">        Antennas and Propagation, vol. 16, no. 2, pp. 172-175, Mar. 1968.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_MRLA_PRESETS</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The MRLA presets only support up to 20 elements.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;MRLA </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">_MRLA_PRESETS</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="UniformCircularArray"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.UniformCircularArray">[docs]</a><span class="k">class</span> <span class="nc">UniformCircularArray</span><span class="p">(</span><span class="n">ArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a uniform circular array (UCA).</span>
+<span class="sd">    </span>
+<span class="sd">    The UCA is centered at the origin, in the xy-plane.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (int): Number of elements.</span>
+<span class="sd">        r (float): Radius of the circle.</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;UCA &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_r</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">n</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span><span class="o">.</span><span class="n">T</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">radius</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the radius of the uniform circular array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_r</span></div>
+
+<div class="viewcode-block" id="UniformRectangularArray"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.UniformRectangularArray">[docs]</a><span class="k">class</span> <span class="nc">UniformRectangularArray</span><span class="p">(</span><span class="n">GridBasedArrayDesign</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates an m x n uniform rectangular array (URA).</span>
+<span class="sd">    </span>
+<span class="sd">    The URA is placed on the xy-plane, and the (0,0)-th sensor is placed</span>
+<span class="sd">    at the origin.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m (int): Number of elements along the x-axis.</span>
+<span class="sd">        n (int): Number of elements along the y-axis.</span>
+<span class="sd">        d0 (float): Fundamental inter-element spacing. Can be either a</span>
+<span class="sd">            scalar or a two-element list-like object.</span>
+<span class="sd">        name (str): Name of the array design.</span>
+<span class="sd">        **kwargs: Other keyword arguments supported by :class:`ArrayDesign`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;URA </span><span class="si">{0}</span><span class="s1">x</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">cartesian</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">m</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the shape of this uniform rectangular array.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

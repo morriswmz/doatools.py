@@ -1,0 +1,500 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.model.sources &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.model.sources</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">enum</span> <span class="k">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="k">import</span> <span class="n">cdist</span>
+<span class="kn">from</span> <span class="nn">..utils.conversion</span> <span class="k">import</span> <span class="n">convert_angles</span>
+
+<span class="k">def</span> <span class="nf">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Sensor locations can only consists of 1D, 2D or 3D coordinates.&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SourcePlacement"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement">[docs]</a><span class="k">class</span> <span class="nc">SourcePlacement</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents the placement of several sources.</span>
+<span class="sd">    </span>
+<span class="sd">    This the base abstract class and should not be directly instantiated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">units</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="n">locations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_units</span> <span class="o">=</span> <span class="n">units</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of sources.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<div class="viewcode-block" id="SourcePlacement.__getitem__"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement.__getitem__">[docs]</a>    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses a specific source location or obtains a subset of source</span>
+<span class="sd">        placement via slicing.</span>
+
+<span class="sd">        For instance, ``sources[i]`` and ``sources.locations[i]`` are</span>
+<span class="sd">        equivalent, and ``sources[:]`` will return a full copy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            key : An integer, slice, or 1D numpy array of indices/boolean masks.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            This is a generic implementation. When ``key`` is a scalar, key is</span>
+<span class="sd">            treated as an index and normal indexing operation follows. When</span>
+<span class="sd">            ``key`` is not a scalar, we need to return a new instance with</span>
+<span class="sd">            source locations specified by ``key``. First, a shallow copy is</span>
+<span class="sd">            made with :meth:`~copy.copy`. Then the shallow copy&#39;s</span>
+<span class="sd">            location data are set to the source locations specified by</span>
+<span class="sd">            ``key``. Finally, the shallow copy is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="c1"># Slicing results a view. We force a copy here.</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;1D array expected.&#39;</span><span class="p">)</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Unsupported index.&#39;</span><span class="p">)</span>
+        <span class="n">new_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_copy</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="n">locations</span>
+        <span class="k">return</span> <span class="n">new_copy</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the number of sources.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">locations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the source locations.</span>
+<span class="sd">        </span>
+<span class="sd">        While this property provides read/write access to the underlying ndarray</span>
+<span class="sd">        storing the source locations. Modifying the underlying ndarray is</span>
+<span class="sd">        discourage because modified values are not checked for validity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves a tuple consisting of units used for each dimension.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the valid ranges for each dimension.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ((min_1, max_1), ...): A tuple of 2-element tuples of min-max pairs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="SourcePlacement.as_unit"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement.as_unit">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">as_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a copy with the source locations converted to the new unit.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement.phase_delay_matrix">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix.</span>
+
+<span class="sd">        The phase delay matrix D is an m x k matrix, where D[i,j] is the</span>
+<span class="sd">        relative phase difference between the i-th sensor and the j-th source</span>
+<span class="sd">        (usually using the first sensor as the reference). By convention,</span>
+<span class="sd">        a positive value means that the corresponding signal arrives earlier</span>
+<span class="sd">        than the referenced one.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sensor_locations: An m x d (d = 1, 2, 3) matrix representing the</span>
+<span class="sd">                sensor locations using the Cartesian coordinate system.</span>
+<span class="sd">            wavelength: Wavelength of the carrier wave.</span>
+<span class="sd">            derivatives: If set to true, also outputs the derivative matrix (or</span>
+<span class="sd">                matrices) with respect to the source locations. Default value</span>
+<span class="sd">                is False.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            * When ``derivatives`` is ``False``, returns the steering matrix.</span>
+<span class="sd">            * When ``derivatives`` is ``True``, returns both the steering matrix</span>
+<span class="sd">              and the derivative matrix (or matrices if possible) with a tuple.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            The phase delay matrix is used in constructing the steering</span>
+<span class="sd">            matrix. This method is decoupled from the steering matrix method</span>
+<span class="sd">            because the phase delays are calculated differently for different</span>
+<span class="sd">            types of sources (e.g. far-field vs. near-field).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+<div class="viewcode-block" id="FarField1DSourcePlacement"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement">[docs]</a><span class="k">class</span> <span class="nc">FarField1DSourcePlacement</span><span class="p">(</span><span class="n">SourcePlacement</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a far-field 1D source placement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        locations: A list or 1D numpy array representing the source locations.</span>
+<span class="sd">        unit (str): Can be ``&#39;rad&#39;``, ``&#39;deg&#39;`` or ``&#39;sin&#39;``. ``&#39;sin&#39;`` is a</span>
+<span class="sd">            special unit where sine value of the broadside angle is used instead</span>
+<span class="sd">            of the broadside angle itself. Default value is ``&#39;rad&#39;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">VALID_RANGES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;rad&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span>
+        <span class="s1">&#39;deg&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">90.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">),</span>
+        <span class="s1">&#39;sin&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;rad&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">locations</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;1D numpy array expected.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FarField1DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Unit can only be one of the following: </span><span class="si">{0}</span><span class="s1">.&#39;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FarField1DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="p">)</span>
+        <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span> <span class="o">=</span> <span class="n">FarField1DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">[</span><span class="n">unit</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">locations</span> <span class="o">&lt;</span> <span class="n">lb</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">locations</span> <span class="o">&gt;</span> <span class="n">ub</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;When unit is &#39;</span><span class="si">{0}</span><span class="s2">&#39;, source locations must be within [</span><span class="si">{0}</span><span class="s2">, </span><span class="si">{1}</span><span class="s2">].&quot;</span>
+                <span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="p">(</span><span class="n">unit</span><span class="p">,))</span>
+
+<div class="viewcode-block" id="FarField1DSourcePlacement.from_z"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement.from_z">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_z</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">d0</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;rad&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a far-field 1D source placement from complex roots.</span>
+<span class="sd">        </span>
+<span class="sd">        Used in rooting based DOA estimators such as root-MUSIC and ESPRIT.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            z: A ndarray of complex roots.</span>
+<span class="sd">            wavelength (float): Wavelength of the carrier wave.</span>
+<span class="sd">            d0 (float): Inter-element spacing of the uniform linear array.</span>
+<span class="sd">            unit (str): Can be ``&#39;rad&#39;``, ``&#39;deg&#39;`` or ``&#39;sin&#39;``. Default value</span>
+<span class="sd">                is ``&#39;rad&#39;``.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An instance of</span>
+<span class="sd">            :class:`~doatools.model.sources.FarField1DSourcePlacement`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">d0</span> <span class="o">/</span> <span class="n">wavelength</span>
+        <span class="n">sin_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="n">c</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;sin&#39;</span><span class="p">:</span>
+            <span class="n">sin_vals</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="p">(</span><span class="n">sin_vals</span><span class="p">,</span> <span class="s1">&#39;sin&#39;</span><span class="p">)</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">sin_vals</span><span class="p">)</span>
+        <span class="n">locations</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>        
+        <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="s1">&#39;rad&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">locations</span><span class="p">),</span> <span class="s1">&#39;deg&#39;</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+
+<div class="viewcode-block" id="FarField1DSourcePlacement.as_unit"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement.as_unit">[docs]</a>    <span class="k">def</span> <span class="nf">as_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="p">(</span>
+            <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_unit</span><span class="p">),</span>
+            <span class="n">new_unit</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="FarField1DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 1D far-field sources.&quot;&quot;&quot;</span>
+        <span class="n">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;sin&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_delay_matrix_sin</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phase_delay_matrix_rad</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="p">)</span></div>
+        
+    <span class="k">def</span> <span class="nf">_phase_delay_matrix_rad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># Unit can only be &#39;rad&#39; or &#39;deg&#39;.</span>
+        <span class="c1"># Unify to radians.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;deg&#39;</span><span class="p">:</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">locations</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span>
+        <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># D[i,k] = sensor_location[i] * sin(doa[k])</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+                <span class="n">DD</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># The sources are assumed to be within the xy-plane. The offset</span>
+            <span class="c1"># along the z-axis of the sensors does not affect the delays.</span>
+            <span class="c1"># D[i,k] = sensor_location_x[i] * sin(doa[k])</span>
+            <span class="c1">#          + sensor_location_y[i] * cos(doa[k])</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span> <span class="o">+</span>
+                     <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+                <span class="n">DD</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span> <span class="o">-</span>
+                          <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">locations</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;deg&#39;</span> <span class="ow">and</span> <span class="n">derivatives</span><span class="p">:</span>
+            <span class="n">DD</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span> <span class="c1"># Do not forget the scaling when unit is &#39;deg&#39;.</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">DD</span><span class="p">)</span> <span class="k">if</span> <span class="n">derivatives</span> <span class="k">else</span> <span class="n">D</span>
+
+    <span class="k">def</span> <span class="nf">_phase_delay_matrix_sin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">sin_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span>
+        <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># D[i,k] = sensor_location[i] * sin_val[k]</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">sensor_locations</span> <span class="o">*</span> <span class="n">sin_vals</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+                <span class="c1"># Note that if x = \sin\theta then</span>
+                <span class="c1"># \frac{\partial cx}{\partial x} = c</span>
+                <span class="c1"># This is different from the derivative w.r.t. \theta:</span>
+                <span class="c1"># \frac{\partial cx}{\partial \theta} = c\cos\theta</span>
+                <span class="n">DD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">s</span> <span class="o">*</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># The sources are assumed to be within the xy-plane. The offset</span>
+            <span class="c1"># along the z-axis of the sensors does not affect the delays.</span>
+            <span class="n">cos_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sin_vals</span> <span class="o">*</span> <span class="n">sin_vals</span><span class="p">)</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">sin_vals</span><span class="p">)</span> <span class="o">+</span>
+                     <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">cos_vals</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+                <span class="c1"># If x = \sin\theta, \theta \in (-\pi/2, \pi/2)</span>
+                <span class="c1"># a \sin\theta + b \cos\theta = ax + b\sqrt{1-x^2}</span>
+                <span class="c1"># d/dx(ax + b\sqrt{1-x^2}) = a - bx/\sqrt{1-x^2}</span>
+                <span class="c1"># sensor_locations[:, 0, np.newaxis] will be a column</span>
+                <span class="c1"># vector and broadcasting will be utilized.</span>
+                <span class="n">DD</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">-</span>
+                          <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sin_vals</span> <span class="o">/</span> <span class="n">cos_vals</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">DD</span><span class="p">)</span> <span class="k">if</span> <span class="n">derivatives</span> <span class="k">else</span> <span class="n">D</span></div>
+
+
+<div class="viewcode-block" id="FarField2DSourcePlacement"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField2DSourcePlacement">[docs]</a><span class="k">class</span> <span class="nc">FarField2DSourcePlacement</span><span class="p">(</span><span class="n">SourcePlacement</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a far-field 2D source placement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        locations: An k x 2 numpy array representing the source locations,</span>
+<span class="sd">            where k is the number of sources, and the k-th row consists of</span>
+<span class="sd">            the azimuth and elevation angles of the k-th source. Should never</span>
+<span class="sd">            be modified after creation.</span>
+<span class="sd">        unit: Can be ``&#39;rad&#39;`` or ``&#39;deg&#39;``. Default value is ``&#39;rad&#39;``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">VALID_RANGES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;rad&#39;</span><span class="p">:</span> <span class="p">((</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span>
+        <span class="s1">&#39;deg&#39;</span><span class="p">:</span> <span class="p">((</span><span class="o">-</span><span class="mf">180.0</span><span class="p">,</span> <span class="mf">180.0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mf">90.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">))</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;rad&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">locations</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting an K x 2 numpy array.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FarField2DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Unit can only be one of the following: </span><span class="si">{0}</span><span class="s1">.&#39;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FarField2DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="p">)</span>
+        <span class="p">(</span><span class="n">min_az</span><span class="p">,</span> <span class="n">max_az</span><span class="p">),</span> <span class="p">(</span><span class="n">min_el</span><span class="p">,</span> <span class="n">max_el</span><span class="p">)</span> <span class="o">=</span> <span class="n">FarField2DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">[</span><span class="n">unit</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">min_az</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_az</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;When unit is &#39;</span><span class="si">{0}</span><span class="s2">&#39;, azimuth angles must be within [</span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">].&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">min_az</span><span class="p">,</span> <span class="n">max_az</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">min_el</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_el</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;When unit is &#39;</span><span class="si">{0}</span><span class="s2">&#39;, elevation angles must be within [</span><span class="si">{1}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2">].&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">min_el</span><span class="p">,</span> <span class="n">max_el</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">unit</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FarField2DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+<div class="viewcode-block" id="FarField2DSourcePlacement.as_unit"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField2DSourcePlacement.as_unit">[docs]</a>    <span class="k">def</span> <span class="nf">as_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FarField2DSourcePlacement</span><span class="p">(</span>
+            <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_unit</span><span class="p">),</span>
+            <span class="n">new_unit</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="FarField2DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField2DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 2D far-field sources.&quot;&quot;&quot;</span>
+        <span class="n">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Derivative matrix computation is not supported for far-field 2D DOAs.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Unify to radians.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;deg&#39;</span><span class="p">:</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        
+        <span class="n">s</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span>
+        <span class="n">cos_el</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Linear arrays are assumed to be placed along the x-axis</span>
+            <span class="c1"># Need to convert azimuth-elevation pairs to broadside angles.</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">cos_el</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cc</span> <span class="o">=</span> <span class="n">cos_el</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">cs</span> <span class="o">=</span> <span class="n">cos_el</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cc</span><span class="p">)</span> <span class="o">+</span>
+                         <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">cs</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cc</span><span class="p">)</span> <span class="o">+</span>
+                         <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">cs</span><span class="p">)</span> <span class="o">+</span>
+                         <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])))</span>
+        
+        <span class="k">return</span> <span class="n">D</span></div></div>
+
+<div class="viewcode-block" id="NearField2DSourcePlacement"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.NearField2DSourcePlacement">[docs]</a><span class="k">class</span> <span class="nc">NearField2DSourcePlacement</span><span class="p">(</span><span class="n">SourcePlacement</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a near-field 2D source placement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        locations: An k x 2 numpy array representing the source locations,</span>
+<span class="sd">            where k is the number of sources and the k-th row consists of</span>
+<span class="sd">            the x and y coordinates of the k-th source. Should never be</span>
+<span class="sd">            modified after creation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">locations</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting an K x 2 numpy array.&#39;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NearField2DSourcePlacement.as_unit"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.NearField2DSourcePlacement.as_unit">[docs]</a>    <span class="k">def</span> <span class="nf">as_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">new_unit</span> <span class="o">!=</span> <span class="s1">&#39;m&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;new_unit must be &#39;m&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">NearField2DSourcePlacement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="NearField2DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.NearField2DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 2D near-field sources.&quot;&quot;&quot;</span>
+        <span class="n">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Derivative matrix computation is not supported for near-field 2D DOAs.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Align the number of dimensions</span>
+        <span class="n">source_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># 1D arrays</span>
+            <span class="n">sensor_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="s1">&#39;constant&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># 3D arrays</span>
+            <span class="n">source_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">source_locations</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="s1">&#39;constant&#39;</span><span class="p">)</span>
+
+        <span class="n">s</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span>
+        <span class="c1"># Compute the pair-wise Euclidean distance.</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">source_locations</span><span class="p">,</span> <span class="s1">&#39;euclidean&#39;</span><span class="p">)</span>
+        <span class="n">M</span> <span class="o">-=</span> <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1"># Use the first sensor as the reference sensor.</span>
+        <span class="k">return</span> <span class="n">s</span> <span class="o">*</span> <span class="n">M</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

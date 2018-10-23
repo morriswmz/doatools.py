@@ -1,0 +1,468 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.estimation.ml &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.estimation.ml</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="k">import</span> <span class="n">minimize</span>
+<span class="kn">from</span> <span class="nn">..model.sources</span> <span class="k">import</span> <span class="n">FarField1DSourcePlacement</span>
+<span class="kn">from</span> <span class="nn">..utils.math</span> <span class="k">import</span> <span class="n">projm</span><span class="p">,</span> <span class="n">vec</span>
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">ensure_covariance_size</span><span class="p">,</span> <span class="n">ensure_n_resolvable_sources</span>
+
+<span class="k">def</span> <span class="nf">f_nll_stouc</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="c1"># log|S| + tr(S^{-1} R)</span>
+    <span class="c1"># S = A P A^H + sigma * I</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">steering_matrix</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">)</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="p">(</span><span class="n">A</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="o">@</span> <span class="n">A</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">sgn</span><span class="p">,</span> <span class="n">logdet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">slogdet</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sgn</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">logdet</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+    <span class="k">return</span> <span class="n">logdet</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">R</span><span class="p">))</span>
+
+<div class="viewcode-block" id="CovarianceBasedMLEstimator"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.CovarianceBasedMLEstimator">[docs]</a><span class="k">class</span> <span class="nc">CovarianceBasedMLEstimator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for covariance based maximum-likelihood estimators.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        array (~doatools.model.arrays.ArrayDesign): Sensor array design.</span>
+<span class="sd">        wavelength (float): Wavelength of the carrier wave.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_array</span> <span class="o">=</span> <span class="n">array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wavelength</span> <span class="o">=</span> <span class="n">wavelength</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="CovarianceBasedMLEstimator.get_last_estimates"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.CovarianceBasedMLEstimator.get_last_estimates">[docs]</a>    <span class="k">def</span> <span class="nf">get_last_estimates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the last estimates of source locations.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No estimation has been performed yet.&#39;</span><span class="p">)</span>
+        <span class="c1"># Returns a copy.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="p">[:]</span></div>
+
+<div class="viewcode-block" id="CovarianceBasedMLEstimator.get_max_resolvable_sources"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.CovarianceBasedMLEstimator.get_max_resolvable_sources">[docs]</a>    <span class="k">def</span> <span class="nf">get_max_resolvable_sources</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the maximum number of sources resolvable.</span>
+<span class="sd">        </span>
+<span class="sd">        This default implementation returns (array size - 1), which is suitable</span>
+<span class="sd">        for most ML based estimators because the projection matrix of the</span>
+<span class="sd">        steering matrix is not well-defined when the number of sources is</span>
+<span class="sd">        greater than or equal to the number of sensors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_eval_nll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluates the negative log-likelihood function for the given input.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x (~numpy.ndarray): A vector consisting of the variables being</span>
+<span class="sd">                optimized (e.g. DOAs, source powers, noise variance, etc.). The</span>
+<span class="sd">                first k*d elements of x are always for source locations,</span>
+<span class="sd">                where d is 1 for 1D sources and 2 for 2D sources. The remaining</span>
+<span class="sd">                elements of x correspond to other unknown parameters (such as</span>
+<span class="sd">                source powers, noise variance, etc.).</span>
+<span class="sd">            R (~numpy.ndarray): The sample covariance matrix.</span>
+<span class="sd">            k (int): The number of sources.</span>
+<span class="sd">        </span>
+<span class="sd">        Notes:</span>
+<span class="sd">            During the optimization process, the current estimation of the</span>
+<span class="sd">            source locations is stored in ``self._estimates``.</span>
+<span class="sd">            ``self._estimates`` is first initialized when :meth:`estimate` is</span>
+<span class="sd">            called, and then reused and modified in-placed during the</span>
+<span class="sd">            optimization process. How ``self._estimates`` is updated from the</span>
+<span class="sd">            current ``x`` is determined by :meth:`update_estimates_from_x`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: A real number, the value of the negative log-likelihood</span>
+<span class="sd">            function for the given input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_opt_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sources0</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepares the optimization problem.</span>
+
+<span class="sd">        More specifically, this method</span>
+
+<span class="sd">        1. Constructs the objective function.</span>
+<span class="sd">        2. Creates the starting point ``x0``.</span>
+<span class="sd">        3. Determines the bounds for the variables.</span>
+<span class="sd">        4. Precompute other required data and update relevant fields.</span>
+
+<span class="sd">        The first k*d elements of ``x0`` should correspond to the source</span>
+<span class="sd">        location estimates, where d is 1 for 1D sources and 2 for 2D sources.</span>
+<span class="sd">        The default implementation assumes that ``x0`` consists of only</span>
+<span class="sd">        the source locations. This is not necessarily true for every ML-based</span>
+<span class="sd">        optimization problems.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sources0 (~doatools.model.sources.SourcePlacement): The initial</span>
+<span class="sd">                guess of the source locations. Usually obtained from other</span>
+<span class="sd">                less accurate estimators.</span>
+<span class="sd">            R (~numpy.ndarray): The sample covariance matrix.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple of the following elements:</span>
+
+<span class="sd">            * f (:class:`abc.Callable`): The objective function.</span>
+<span class="sd">            * x0 (:class:`~numpy.ndarray`): The starting point for the  ML-based</span>
+<span class="sd">              optimization problem, whose size is equal to the number of</span>
+<span class="sd">              variables in the optimization problem.</span>
+<span class="sd">            * bounds (List[[float, float]]): A list of 2-element tuples</span>
+<span class="sd">              representing the bounds for the variables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">sources0</span><span class="o">.</span><span class="n">size</span>
+        <span class="c1"># Delegate the call to self.eval_nll</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_nll</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="c1"># Simply flatten the source location array:</span>
+        <span class="c1"># x0 = [\theta_{11} \theta_{12} ... \theta_{1d} \theta{21} ...]</span>
+        <span class="c1"># For instance, for far-field 2D sources</span>
+        <span class="c1"># x0 = [az1 el1 az2 el2 ...]</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">sources0</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+        <span class="c1"># Bounds for the source locations.</span>
+        <span class="c1"># Must correspond to the ordering of the elements in x0.</span>
+        <span class="n">bounds</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources0</span><span class="o">.</span><span class="n">valid_ranges</span><span class="p">)</span> <span class="o">*</span> <span class="n">k</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">bounds</span>
+
+    <span class="k">def</span> <span class="nf">_update_estimates_from_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the current source location estimates from ``x``.</span>
+<span class="sd">        </span>
+<span class="sd">        The default implementation reshapes the first k*d elements in ``x``</span>
+<span class="sd">        into a k by d matrix and assign it to ``self._estimates.locations``,</span>
+<span class="sd">        where k is the number of sources and d is the number of dimensions of</span>
+<span class="sd">        source locations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="o">.</span><span class="n">locations</span><span class="p">,</span>
+            <span class="n">x</span><span class="p">[:</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_eval_steering_matrix_from_x</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Evaluates the steering matrix from ``x``.</span>
+<span class="sd">        </span>
+<span class="sd">        The default implementation first calls :meth:`update_estimates_from_x`</span>
+<span class="sd">        to update ``self._estimates`` and then use it to evaluate the steering</span>
+<span class="sd">        matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_estimates_from_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="o">.</span><span class="n">steering_matrix</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wavelength</span><span class="p">,</span>
+            <span class="n">perturbations</span><span class="o">=</span><span class="s1">&#39;known&#39;</span>
+        <span class="p">)</span>
+    
+<div class="viewcode-block" id="CovarianceBasedMLEstimator.estimate"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.CovarianceBasedMLEstimator.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">sources0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Solves the ML problem for the given inputs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            R (~numpy.ndarray): The sample covariance matrix.</span>
+<span class="sd">            sources0 (~doatools.model.sources.SourcePlacement): The initial</span>
+<span class="sd">                guess of source locations. Its type determines the source type</span>
+<span class="sd">                and its size determines the number of sources.</span>
+
+<span class="sd">                Because the log-likelihood function is highly non-convex, the</span>
+<span class="sd">                initial guess of source locations will greatly affect the final</span>
+<span class="sd">                estimates. It is recommended to use the output of another</span>
+<span class="sd">                estimator (e.g. conventional beamformer) as the initial guess.</span>
+<span class="sd">                </span>
+<span class="sd">            **kwargs: Additional keyword arguments for the solver.</span>
+<span class="sd">        </span>
+<span class="sd">        Notes:</span>
+<span class="sd">            In general, ML estimates are computationally expensive to obtain</span>
+<span class="sd">            and sensitive to initialization. They are generally used in</span>
+<span class="sd">            theoretical performance analyses.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple containing the following elements:</span>
+
+<span class="sd">            * resolved (:class:`bool`): ``True`` if the optimizer exited</span>
+<span class="sd">              successfully. This flag does **not** guarantee that the estimated</span>
+<span class="sd">              source locations are correct. The estimated source locations may</span>
+<span class="sd">              be completely wrong!</span>
+<span class="sd">              If resolved is False, ``estimates`` will be ``None``.</span>
+<span class="sd">            * estimates (:class:`~doatools.model.sources.SourcePlacement`):</span>
+<span class="sd">              A :class:`~doatools.model.sources.SourcePlacement` instance of the</span>
+<span class="sd">              same type as that of ``sources0``, represeting the estimated</span>
+<span class="sd">              source locations. Will be ``None`` if resolved is ``False``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ensure_n_resolvable_sources</span><span class="p">(</span><span class="n">sources0</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_max_resolvable_sources</span><span class="p">())</span>
+        <span class="n">ensure_covariance_size</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="p">)</span>
+        <span class="c1"># Make a copy of the initial guess as a working variable for the</span>
+        <span class="c1"># optimization process.</span>
+        <span class="c1"># This is reused and modified in-place during the optimization process</span>
+        <span class="c1"># to avoid repeatedly creating new SourcePlacement instances.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span> <span class="o">=</span> <span class="n">sources0</span><span class="p">[:]</span>
+        <span class="c1"># Use scipy for numerical optimization.</span>
+        <span class="c1"># Subclasses should override this implementation if there exists faster</span>
+        <span class="c1"># optimization approaches.</span>
+        <span class="n">obj_func</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_opt_prob</span><span class="p">(</span><span class="n">sources0</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">minimize</span><span class="p">(</span>
+            <span class="n">obj_func</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span>
+            <span class="n">method</span><span class="o">=</span><span class="s1">&#39;L-BFGS-B&#39;</span><span class="p">,</span>
+            <span class="n">bounds</span><span class="o">=</span><span class="n">bounds</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_estimates_from_x</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_last_estimates</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span></div></div>
+
+<div class="viewcode-block" id="AMLEstimator"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.AMLEstimator">[docs]</a><span class="k">class</span> <span class="nc">AMLEstimator</span><span class="p">(</span><span class="n">CovarianceBasedMLEstimator</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Asymptotic maximum-likelihood (AML) estimator.</span>
+<span class="sd">    </span>
+<span class="sd">    The AML estimator maximizes the following log-likelihood function:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        </span>
+<span class="sd">        - \log\det \mathbf{S} - \mathrm{tr}(\mathbf{S}^{-1} \mathbf{R})</span>
+<span class="sd">    </span>
+<span class="sd">    where :math:`\mathbf{S} = \mathbf{A}\mathbf{P}\mathbf{A}^H + \sigma^2\mathbf{I}`,</span>
+<span class="sd">    :math:`\mathbf{A}` is the steering matrix, :math:`\mathbf{P}` is the source</span>
+<span class="sd">    covariance matrix, :math:`\sigma^2` is the noise variance, and</span>
+<span class="sd">    :math:`\hat{\mathbf{R}}` is the sample covariance matrix.</span>
+
+<span class="sd">    Here the unknown parameters include the source locations,</span>
+<span class="sd">    :math:`\mathbf{P}`, and :math:`\sigma^2`. The MLE of :math:`\mathbf{P}` and</span>
+<span class="sd">    :math:`\sigma^2` can be analytically obtained in terms of the source</span>
+<span class="sd">    locations. The final optimization problem only involves the source</span>
+<span class="sd">    locations, :math:`\mathbf{\theta}`, as unknown variables:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \min_{\mathbf{\theta}} \log\det\left\lbrack</span>
+<span class="sd">        \mathbf{P}_{\mathbf{A}} \hat{\mathbf{R}} \mathbf{P}_{\mathbf{A}}</span>
+<span class="sd">        + \frac{</span>
+<span class="sd">            \mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}} \hat{\mathbf{R}})</span>
+<span class="sd">            \mathbf{P}^\perp_{\mathbf{A}}</span>
+<span class="sd">        }{N-D}</span>
+<span class="sd">        \right\rbrack.</span>
+
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_eval_nll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="c1"># See 8.6.1 of the following:</span>
+        <span class="c1"># * H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_steering_matrix_from_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># Projection matrix of A</span>
+        <span class="n">PA</span> <span class="o">=</span> <span class="n">projm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Null projection matrix of A</span>
+        <span class="n">PPA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">-</span> <span class="n">PA</span>
+        <span class="c1"># Computing NLL</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">PA</span> <span class="o">@</span> <span class="n">R</span> <span class="o">@</span> <span class="n">PA</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">PPA</span> <span class="o">@</span> <span class="n">R</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">m</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">PPA</span>
+        <span class="c1"># Force Hermitian</span>
+        <span class="n">H</span> <span class="o">+=</span> <span class="n">H</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">H</span> <span class="o">*=</span> <span class="mf">0.5</span>
+        <span class="n">sgn</span><span class="p">,</span> <span class="n">nll_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">slogdet</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sgn</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">nll_val</span></div>
+
+<div class="viewcode-block" id="CMLEstimator"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.CMLEstimator">[docs]</a><span class="k">class</span> <span class="nc">CMLEstimator</span><span class="p">(</span><span class="n">CovarianceBasedMLEstimator</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Conditional maximum-likelihood (CML) estimator.</span>
+<span class="sd">    </span>
+<span class="sd">    Given the conditional observation model (the source signals are assumed to</span>
+<span class="sd">    be deterministic unknown):</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathbf{y}(t) = \mathbf{A}(\mathbf{\theta})\mathbf{x}(t) + \mathbf{n}(t),</span>
+<span class="sd">        t = 1,2,...,T,</span>
+<span class="sd">    </span>
+<span class="sd">    the CML estimator maximizes the following log-likelihood function:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        - TM\log\sigma^2</span>
+<span class="sd">        - \sigma^{-2} \sum_{t=1}^T</span>
+<span class="sd">          \| \mathbf{y}(t) - \mathbf{A}\mathbf{x}(t) \|^2,</span>
+
+<span class="sd">    where :math:`M` is the number of sensors, :math:`T` is the number of</span>
+<span class="sd">    snapshots, :math:`\mathbf{A}` is the steering matrix, :math:`\sigma^2` is</span>
+<span class="sd">    the noise variance.</span>
+<span class="sd">    </span>
+<span class="sd">    Here the unknown parameters include the source locations,</span>
+<span class="sd">    :math:`\mathbf{\theta}`, as well as :math:`\mathbf{x}(t)` and</span>
+<span class="sd">    :math:`\sigma^2`. With further computations, it can be shown that the final</span>
+<span class="sd">    optimization problem only involves the source locations:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}} \hat{\mathbf{R}}),</span>
+
+<span class="sd">    where</span>
+<span class="sd">    :math:`\hat{\mathbf{R}} = 1/T \sum_{t=1}^T \mathbf{x}(t)\mathbf{x}^H(t)`.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_eval_nll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="c1"># See 8.5.2 of the following:</span>
+        <span class="c1"># * H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+        <span class="c1"># tr(P^\perp_A R)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_steering_matrix_from_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">PPA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="n">projm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">PPA</span> <span class="o">@</span> <span class="n">R</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="WSFEstimator"><a class="viewcode-back" href="../../../references/doatools.estimation.ml.html#doatools.estimation.ml.WSFEstimator">[docs]</a><span class="k">class</span> <span class="nc">WSFEstimator</span><span class="p">(</span><span class="n">CovarianceBasedMLEstimator</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Weighted subspace fitting (WSF) estimator.</span>
+
+<span class="sd">    WSF is based on the CML estimator, with the objective function given by</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}}</span>
+<span class="sd">            \hat{\mathbf{U}}_\mathrm{s}</span>
+<span class="sd">            \hat{\mathbf{W}}</span>
+<span class="sd">            \hat{\mathbf{U}}_\mathrm{s}^H),</span>
+<span class="sd">    </span>
+<span class="sd">    where :math:`\hat{\mathbf{U}}_\mathrm{s}` consists of the eigenvectors of</span>
+<span class="sd">    the signal subspace of :math:`\hat{\mathbf{R}}`, and</span>
+<span class="sd">    :math:`\hat{\mathbf{W}}` is a diagonal matrix consists of asymptotically</span>
+<span class="sd">    optimal weights.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        [1] M. Viberg and B. Ottersten, &quot;Sensor array processing based on</span>
+<span class="sd">        subspace fitting,&quot; IEEE Transactions on Signal Processing, vol. 39,</span>
+<span class="sd">        no. 5, pp. 1110-1121, May 1991.</span>
+
+<span class="sd">        [2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+<span class="sd">        </span>
+<span class="sd">        [3] P. Stoica and K. Sharman, &quot;Maximum likelihood methods for</span>
+<span class="sd">        direction-of-arrival estimation,&quot; IEEE Trans. Acoust., Speech, Signal</span>
+<span class="sd">        Process., vol. 38, pp. 1132-1143, July 1990.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_m</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sources0</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepare the M matrix used in the optimization.&quot;&quot;&quot;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">sources0</span><span class="o">.</span><span class="n">size</span>
+        <span class="c1"># Pre-calculate optimal weights</span>
+        <span class="n">v</span><span class="p">,</span> <span class="n">E</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+        <span class="c1"># Signal subspace</span>
+        <span class="n">Es</span> <span class="o">=</span> <span class="n">E</span><span class="p">[:,</span><span class="o">-</span><span class="n">k</span><span class="p">:]</span>
+        <span class="n">vs</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="o">-</span><span class="n">k</span><span class="p">:]</span>
+        <span class="c1"># Noise variance estimate</span>
+        <span class="n">sigma_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">v</span><span class="p">[:</span><span class="o">-</span><span class="n">k</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span>
+        <span class="c1"># Asymptotically optimal weights</span>
+        <span class="n">vt</span> <span class="o">=</span> <span class="n">vs</span> <span class="o">-</span> <span class="n">sigma_est</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">vt</span> <span class="o">*</span> <span class="n">vt</span> <span class="o">/</span> <span class="n">vs</span>
+        <span class="c1"># M = Es diag(w) Es^H</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_M</span> <span class="o">=</span> <span class="p">(</span><span class="n">Es</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span> <span class="o">@</span> <span class="n">Es</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_opt_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sources0</span><span class="p">,</span> <span class="n">R</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_m</span><span class="p">(</span><span class="n">sources0</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_prepare_opt_prob</span><span class="p">(</span><span class="n">sources0</span><span class="p">,</span> <span class="n">R</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_eval_nll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="c1"># See 8.5.3 of the following:</span>
+        <span class="c1"># * H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_steering_matrix_from_x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">PPA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_array</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">-</span> <span class="n">projm</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># tr(P^\perp_A M)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">PPA</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">_M</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

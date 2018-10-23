@@ -1,0 +1,213 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Mean-squared errors &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Cramér-Rao bounds" href="doatools.performance.crb.html" />
+    <link rel="prev" title="Performance analysis" href="doatools.performance.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="mean-squared-errors">
+<h1>Mean-squared errors<a class="headerlink" href="#mean-squared-errors" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-doatools.performance.mse">
+<span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.performance.mse" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="doatools.performance.mse.ecov_music_1d">
+<code class="descclassname">doatools.performance.mse.</code><code class="descname">ecov_music_1d</code><span class="sig-paren">(</span><em>array</em>, <em>sources</em>, <em>wavelength</em>, <em>P</em>, <em>sigma</em>, <em>n_snapshots=1</em>, <em>perturbations='all'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/performance/mse.html#ecov_music_1d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.performance.mse.ecov_music_1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the asymptotic covariance matrix of the estimation errors of
+the classical MUSIC algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>array</strong> (<a class="reference internal" href="doatools.model.arrays.html#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><em>ArrayDesign</em></a>) – Array design.</li>
+<li><strong>wavelength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Wavelength of the carrier wave.</li>
+<li><strong>sources</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement" title="doatools.model.sources.FarField1DSourcePlacement"><em>FarField1DSourcePlacement</em></a>) – Source locations.</li>
+<li><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – <p>The power of the source signals. Can be</p>
+<ol class="arabic">
+<li>A scalar if all sources are uncorrelated and share the same
+power.</li>
+<li>An 1D numpy array if all sources are uncorrelated but have
+different powers.</li>
+<li>A 2D numpy array representing the source covariance matrix.</li>
+</ol>
+</li>
+<li><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Variance of the additive noise.</li>
+<li><strong>n_snapshots</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of snapshots. Default value is 1.</li>
+<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Specifies which perturbations are considered when
+constructing the steering matrix. Possible values include <code class="docutils literal notranslate"><span class="pre">'all'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'known'</span></code>, and <code class="docutils literal notranslate"><span class="pre">'none'</span></code>. Default value is <code class="docutils literal notranslate"><span class="pre">'all'</span></code>.
+See <a class="reference internal" href="doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.steering_matrix" title="doatools.model.arrays.ArrayDesign.steering_matrix"><code class="xref py py-meth docutils literal notranslate"><span class="pre">steering_matrix()</span></code></a>
+for more details.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The asymptotic error covariance matrix.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)">ndarray</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] P. Stoica and A. Nehorai, “MUSIC, maximum likelihood, and Cramér-Rao
+bound: further results and comparisons,” IEEE Transactions on Acoustics,
+Speech and Signal Processing, vol. 38, no. 12, pp. 2140-2150, Dec. 1990.</p>
+<p>[2] P. Stoica and A. Nehorai, “MUSIC, maximum likelihood, and Cramér-Rao
+bound,” IEEE Transactions on Acoustics, Speech and Signal Processing,
+vol. 37, no. 5, pp. 720-741, May 1989.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.performance.mse.ecov_coarray_music_1d">
+<code class="descclassname">doatools.performance.mse.</code><code class="descname">ecov_coarray_music_1d</code><span class="sig-paren">(</span><em>array</em>, <em>sources</em>, <em>wavelength</em>, <em>p</em>, <em>sigma</em>, <em>n_snapshots=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/performance/mse.html#ecov_coarray_music_1d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.performance.mse.ecov_coarray_music_1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the asymptotic covariance matrix of the estimation errors of the
+coarray-based MUSIC algorithm, SS-MUSIC or DA-MUSIC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>array</strong> (<a class="reference internal" href="doatools.model.arrays.html#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><em>ArrayDesign</em></a>) – Array design.</li>
+<li><strong>wavelength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Wavelength of the carrier wave.</li>
+<li><strong>sources</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement" title="doatools.model.sources.FarField1DSourcePlacement"><em>FarField1DSourcePlacement</em></a>) – Source locations.</li>
+<li><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – <p>The power of the source signals. Can be</p>
+<ol class="arabic">
+<li>A scalar if all sources are uncorrelated and share the same
+power.</li>
+<li>An 1D numpy array if all sources are uncorrelated but have
+different powers.</li>
+<li>A 2D numpy array representing the source covariance matrix.
+Only the diagonal elements will be used.</li>
+</ol>
+</li>
+<li><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Variance of the additive noise.</li>
+<li><strong>n_snapshots</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of snapshots. Default value is 1.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The asymptotic error covariance matrix.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)">ndarray</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] M. Wang and A. Nehorai, “Coarrays, MUSIC, and the Cramér-Rao Bound,”
+IEEE Transactions on Signal Processing, vol. 65, no. 4, pp. 933-946,
+Feb. 2017.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.performance.html">Performance analysis</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Mean-squared errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.performance.crb.html">Cramér-Rao bounds</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.performance.html">Performance analysis</a><ul>
+      <li>Previous: <a href="doatools.performance.html" title="previous chapter">Performance analysis</a></li>
+      <li>Next: <a href="doatools.performance.crb.html" title="next chapter">Cramér-Rao bounds</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.performance.mse.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

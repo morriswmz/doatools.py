@@ -1,0 +1,333 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Beamforming based estimators &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MUSIC-based Estimators" href="doatools.estimation.music.html" />
+    <link rel="prev" title="Source number detection" href="doatools.estimation.source_number.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="beamforming-based-estimators">
+<h1>Beamforming based estimators<a class="headerlink" href="#beamforming-based-estimators" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-doatools.estimation.beamforming">
+<span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.estimation.beamforming" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="doatools.estimation.beamforming.f_bartlett">
+<code class="descclassname">doatools.estimation.beamforming.</code><code class="descname">f_bartlett</code><span class="sig-paren">(</span><em>A</em>, <em>R</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#f_bartlett"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.f_bartlett" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the spectrum output of the Bartlett beamformer.</p>
+<div class="math notranslate nohighlight">
+\[P_{\mathrm{Bartlett}}(\theta)
+= \mathbf{a}(\theta)^H \mathbf{R} \mathbf{a}(\theta)\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> – m x k steering matrix of candidate direction-of-arrivals, where
+m is the number of sensors and k is the number of candidate
+direction-of-arrivals.</li>
+<li><strong>R</strong> – m x m covariance matrix.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.estimation.beamforming.f_mvdr">
+<code class="descclassname">doatools.estimation.beamforming.</code><code class="descname">f_mvdr</code><span class="sig-paren">(</span><em>A</em>, <em>R</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#f_mvdr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.f_mvdr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the spectrum output of the Bartlett beamformer.</p>
+<div class="math notranslate nohighlight">
+\[P_{\mathrm{MVDR}}(\theta)
+= \frac{1}{\mathbf{a}(\theta)^H \mathbf{R}^{-1} \mathbf{a}(\theta)}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> – m x k steering matrix of candidate direction-of-arrivals, where
+m is the number of sensors and k is the number of candidate
+direction-of-arrivals.</li>
+<li><strong>R</strong> – m x m covariance matrix.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.estimation.beamforming.BartlettBeamformer">
+<em class="property">class </em><code class="descclassname">doatools.estimation.beamforming.</code><code class="descname">BartlettBeamformer</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#BartlettBeamformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.BartlettBeamformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Barlett-beamformer based estimator.</p>
+<p>This estimator is also named beamscan based estimator.</p>
+<p>The spectrum is computed on a predefined-grid using
+<a class="reference internal" href="#doatools.estimation.beamforming.f_bartlett" title="doatools.estimation.beamforming.f_bartlett"><code class="xref py py-meth docutils literal notranslate"><span class="pre">f_bartlett()</span></code></a>, and the source
+locations are estimated by identifying the peaks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>array</strong> (<a class="reference internal" href="doatools.model.arrays.html#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><em>ArrayDesign</em></a>) – Array design.</li>
+<li><strong>wavelength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Wavelength of the carrier wave.</li>
+<li><strong>search_grid</strong> (<a class="reference internal" href="doatools.estimation.grid.html#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><em>SearchGrid</em></a>) – The search grid
+used to locate the sources.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumBasedEstimatorBase</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+<dl class="method">
+<dt id="doatools.estimation.beamforming.BartlettBeamformer.estimate">
+<code class="descname">estimate</code><span class="sig-paren">(</span><em>R</em>, <em>k</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#BartlettBeamformer.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.BartlettBeamformer.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the source locations from the given covariance matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>R</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Covariance matrix input. The size of R must
+match that of the array design used when creating this
+estimator.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Expected number of sources.</li>
+<li><strong>return_spectrum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> to also output the spectrum
+for visualization. Default value if <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>refine_estimates</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set to True to enable grid refinement to
+obtain potentially more accurate estimates.</li>
+<li><strong>refinement_density</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Density of the refinement grids. Higher
+density values lead to denser refinement grids and increased
+computational complexity. Default value is 10.</li>
+<li><strong>refinement_iters</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of refinement iterations. More
+iterations generally lead to better results, at the cost of
+increased computational complexity. Default value is 3.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>A tuple with the following elements.</p>
+<ul class="simple">
+<li>resolved (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>): A boolean indicating if the desired
+number of sources are found. This flag does <strong>not</strong> guarantee that
+the estimated source locations are correct. The estimated source
+locations may be completely wrong!
+If resolved is False, both <code class="docutils literal notranslate"><span class="pre">estimates</span></code> and <code class="docutils literal notranslate"><span class="pre">spectrum</span></code> will be
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li>estimates (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a>):
+A <a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a> instance of the
+same type as the one used in the search grid, represeting the
+estimated source locations. Will be <code class="docutils literal notranslate"><span class="pre">None</span></code> if resolved is
+<code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li>spectrum (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>): An numpy array of the same
+shape of the specified search grid, consisting of values evaluated
+at the grid points. Only present if <code class="docutils literal notranslate"><span class="pre">return_spectrum</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.estimation.beamforming.MVDRBeamformer">
+<em class="property">class </em><code class="descclassname">doatools.estimation.beamforming.</code><code class="descname">MVDRBeamformer</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#MVDRBeamformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.MVDRBeamformer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a MVDR-beamformer based estimator.</p>
+<p>The spectrum is computed on a predefined-grid using
+<a class="reference internal" href="#doatools.estimation.beamforming.f_mvdr" title="doatools.estimation.beamforming.f_mvdr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">f_mvdr()</span></code></a>, and the source locations
+are estimated by identifying the peaks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>array</strong> (<a class="reference internal" href="doatools.model.arrays.html#doatools.model.arrays.ArrayDesign" title="doatools.model.arrays.ArrayDesign"><em>ArrayDesign</em></a>) – Array design.</li>
+<li><strong>wavelength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Wavelength of the carrier wave.</li>
+<li><strong>search_grid</strong> (<a class="reference internal" href="doatools.estimation.grid.html#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><em>SearchGrid</em></a>) – The search grid
+used to locate the sources.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments supported by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumBasedEstimatorBase</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+<dl class="method">
+<dt id="doatools.estimation.beamforming.MVDRBeamformer.estimate">
+<code class="descname">estimate</code><span class="sig-paren">(</span><em>R</em>, <em>k</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#MVDRBeamformer.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.MVDRBeamformer.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the source locations from the given covariance matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>R</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Covariance matrix input. The size of R must
+match that of the array design used when creating this
+estimator.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Expected number of sources.</li>
+<li><strong>return_spectrum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> to also output the spectrum
+for visualization. Default value if <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>refine_estimates</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set to True to enable grid refinement to
+obtain potentially more accurate estimates.</li>
+<li><strong>refinement_density</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Density of the refinement grids. Higher
+density values lead to denser refinement grids and increased
+computational complexity. Default value is 10.</li>
+<li><strong>refinement_iters</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of refinement iterations. More
+iterations generally lead to better results, at the cost of
+increased computational complexity. Default value is 3.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>A tuple with the following elements.</p>
+<ul class="simple">
+<li>resolved (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>): A boolean indicating if the desired
+number of sources are found. This flag does <strong>not</strong> guarantee that
+the estimated source locations are correct. The estimated source
+locations may be completely wrong!
+If resolved is False, both <code class="docutils literal notranslate"><span class="pre">estimates</span></code> and <code class="docutils literal notranslate"><span class="pre">spectrum</span></code> will be
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li>estimates (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a>):
+A <a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a> instance of the
+same type as the one used in the search grid, represeting the
+estimated source locations. Will be <code class="docutils literal notranslate"><span class="pre">None</span></code> if resolved is
+<code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li>spectrum (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>): An numpy array of the same
+shape of the specified search grid, consisting of values evaluated
+at the grid points. Only present if <code class="docutils literal notranslate"><span class="pre">return_spectrum</span></code> is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="doatools.model.html">Modeling</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.estimation.html">Estimation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.grid.html">Creating search grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.preprocessing.html">Data preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.source_number.html">Source number detection</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Beamforming based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.music.html">MUSIC-based Estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.min_norm.html">Min-Norm based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.esprit.html">ESPRIT based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.sparse.html">Sparsity-based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.ml.html">Maximum-likelihood based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.coarray.html">Augmented covariance matrices for difference coarrays</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.estimation.html">Estimation</a><ul>
+      <li>Previous: <a href="doatools.estimation.source_number.html" title="previous chapter">Source number detection</a></li>
+      <li>Next: <a href="doatools.estimation.music.html" title="next chapter">MUSIC-based Estimators</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.estimation.beamforming.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

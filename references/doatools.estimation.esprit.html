@@ -1,0 +1,214 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>ESPRIT based estimators &#8212; doatools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Sparsity-based estimators" href="doatools.estimation.sparse.html" />
+    <link rel="prev" title="Min-Norm based estimators" href="doatools.estimation.min_norm.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="esprit-based-estimators">
+<h1>ESPRIT based estimators<a class="headerlink" href="#esprit-based-estimators" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-doatools.estimation.esprit">
+<span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.estimation.esprit" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="doatools.estimation.esprit.Esprit1D">
+<em class="property">class </em><code class="descclassname">doatools.estimation.esprit.</code><code class="descname">Esprit1D</code><span class="sig-paren">(</span><em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/esprit.html#Esprit1D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.esprit.Esprit1D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an ESPRIT estimator for 1D uniform linear arrays.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>wavelength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Wavelength of the carrier wave.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<p>[1] R. Roy and T. Kailath, “ESPRIT-estimation of signal parameters via
+rotational invariance techniques,” IEEE Transactions on Acoustics,
+Speech and Signal Processing, vol. 37, no. 7, pp. 984–995,
+Jul. 1989.</p>
+<p>[2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+<dl class="method">
+<dt id="doatools.estimation.esprit.Esprit1D.estimate">
+<code class="descname">estimate</code><span class="sig-paren">(</span><em>R</em>, <em>k</em>, <em>d0=None</em>, <em>displacement=1</em>, <em>formulation='ls'</em>, <em>row_weights='default'</em>, <em>unit='rad'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/esprit.html#Esprit1D.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.esprit.Esprit1D.estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the direction-of-arrivals (DOAs) using ESPRIT.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>R</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Covariance matrix input. This covariance matrix
+must be obtained using a uniform linear array.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Expected number of sources.</li>
+<li><strong>d0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Inter-element spacing of the uniform linear array used
+to obtain <code class="docutils literal notranslate"><span class="pre">R</span></code>. If not specified, it will be set to one half
+of the <code class="docutils literal notranslate"><span class="pre">wavelength</span></code> used when creating this estimator.
+Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>displacement</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – <p>The displacement between the two overlapping
+subarrays measured in number of minimal inter-element spacings.
+Default value is 1.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Increasing this value will lead to smaller unambiguous
+range and number of resolvable sources. Make sure your DOAs
+falls within the unambiguous range.</p>
+</div>
+</li>
+<li><strong>formulation</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Method used to estimate the rotation matrix.
+Either <code class="docutils literal notranslate"><span class="pre">'tls'</span></code> (Total Lease Squares) or <code class="docutils literal notranslate"><span class="pre">'ls'</span></code>
+(Least Squares). Default value is <code class="docutils literal notranslate"><span class="pre">'tls'</span></code>.</li>
+<li><strong>row_weights</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – <p>Specifies the row weights
+with a vector or a string. Default value is <code class="docutils literal notranslate"><span class="pre">'default'</span></code>, which
+generates the following weight vector:</p>
+<div class="math notranslate nohighlight">
+\[\lbrack
+1\ \sqrt{2}\ \sqrt{3}\ \cdots\ \sqrt{3}\ \sqrt{2}\ 1
+\rbrack\]</div>
+<p>You can disable row weighting by passing in <code class="docutils literal notranslate"><span class="pre">'none'</span></code>, or
+specify your own row weights with a 1D <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>.</p>
+</li>
+<li><strong>unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Unit of the estimates. Default value is <code class="docutils literal notranslate"><span class="pre">'rad'</span></code>. See
+<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement" title="doatools.model.sources.FarField1DSourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">FarField1DSourcePlacement</span></code></a> for
+more details on valid units.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>A tuple with the following elements.</p>
+<ul class="simple">
+<li>resolved (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>): <code class="docutils literal notranslate"><span class="pre">True</span></code> only if the rooting algorithm
+successfully finds <code class="docutils literal notranslate"><span class="pre">k</span></code> roots inside the unit circle. This flag
+does <strong>not</strong> guarantee that the estimated source locations are
+correct. The estimated source locations may be completely wrong!
+If resolved is False, <code class="docutils literal notranslate"><span class="pre">estimates</span></code> will be <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li>estimates (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement" title="doatools.model.sources.FarField1DSourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">FarField1DSourcePlacement</span></code></a>):
+A <a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement" title="doatools.model.sources.FarField1DSourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">FarField1DSourcePlacement</span></code></a>
+recording the estimated source locations. Will be <code class="docutils literal notranslate"><span class="pre">None</span></code> if
+resolved is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">doatools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="doatools.model.html">Modeling</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.estimation.html">Estimation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.grid.html">Creating search grids</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.preprocessing.html">Data preprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.source_number.html">Source number detection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.beamforming.html">Beamforming based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.music.html">MUSIC-based Estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.min_norm.html">Min-Norm based estimators</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ESPRIT based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.sparse.html">Sparsity-based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.ml.html">Maximum-likelihood based estimators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.estimation.coarray.html">Augmented covariance matrices for difference coarrays</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.estimation.html">Estimation</a><ul>
+      <li>Previous: <a href="doatools.estimation.min_norm.html" title="previous chapter">Min-Norm based estimators</a></li>
+      <li>Next: <a href="doatools.estimation.sparse.html" title="next chapter">Sparsity-based estimators</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.estimation.esprit.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
