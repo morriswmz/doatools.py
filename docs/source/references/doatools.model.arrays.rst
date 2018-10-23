@@ -13,7 +13,7 @@ direction-of-arrival (DOA) estimation.
     # Create a 10-element ULA with inter-element spacing 0.5.
     ula = model.UniformLinearArray(10, 0.5)
 
-API References
+API references
 ~~~~~~~~~~~~~~
 
 .. automodule:: doatools.model.arrays

@@ -1,7 +1,7 @@
 Collecting snapshots
 ====================
 
-API References
+API references
 ~~~~~~~~~~~~~~
 
 .. automodule:: doatools.model.snapshots

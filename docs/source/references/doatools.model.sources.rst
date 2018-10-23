@@ -28,7 +28,7 @@ be far-field. We provide two basic types of far-field source placements:
         unit='deg'
     )
 
-API References
+API references
 ~~~~~~~~~~~~~~
 
 .. automodule:: doatools.model.sources

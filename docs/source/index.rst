@@ -7,6 +7,8 @@ Welcome to doatools's documentation!
    :maxdepth: 2
    
    references/doatools.model
+   references/doatools.estimation
+   references/doatools.performance
 
 Indices and tables
 ==================

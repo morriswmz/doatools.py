@@ -1,7 +1,7 @@
 Difference coarrays
 ===================
 
-API References
+API references
 ~~~~~~~~~~~~~~
 
 .. automodule:: doatools.model.coarray

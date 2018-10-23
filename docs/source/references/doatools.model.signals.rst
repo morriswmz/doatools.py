@@ -1,7 +1,7 @@
 Modeling source signals
 =======================
 
-API References
+API references
 ~~~~~~~~~~~~~~
 
 .. automodule:: doatools.model.signals
