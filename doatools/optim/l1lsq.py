@@ -130,6 +130,10 @@ class L21RegularizedLeastSquaresProblem:
         l = cvx.Parameter(nonneg=True)
         X = cvx.Variable((k, n), complex=complex)
         # Create the problem
+        # CVXPY issue:
+        #   cvx.norm does not work if axis is not 0.
+        # Workaround:
+        #   use cvx.norm(X.T, 2, axis=0) instead of cvx.norm(X, 2, axis=1)
         obj_func = 0.5 * cvx.norm(cvx.matmul(A, X) - B, 'fro')**2 + \
                    l * cvx.sum(cvx.norm(X.T, 2, axis=0))
         self._problem = cvx.Problem(cvx.Minimize(obj_func))

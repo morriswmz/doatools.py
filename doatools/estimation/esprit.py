@@ -20,59 +20,81 @@ def get_default_row_weights(m):
     return np.sqrt(w)
 
 class Esprit1D:
+    """Creates an ESPRIT estimator for 1D uniform linear arrays.
+    
+    Args:
+        wavelength (float): Wavelength of the carrier wave.
+
+    References:
+        [1] R. Roy and T. Kailath, "ESPRIT-estimation of signal parameters via
+        rotational invariance techniques," IEEE Transactions on Acoustics,
+        Speech and Signal Processing, vol. 37, no. 7, pp. 984–995,
+        Jul. 1989.
+        
+        [2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
+    """
 
     def __init__(self, wavelength):
-        """Creates an ESPRIT estimator for 1D ULAs.
-        
-        Args:
-            wavelength (float): Wavelength of the carrier wave.
-
-        References:
-        [1] R. Roy and T. Kailath, "ESPRIT-estimation of signal parameters via
-            rotational invariance techniques," IEEE Transactions on Acoustics,
-            Speech and Signal Processing, vol. 37, no. 7, pp. 984–995,
-            Jul. 1989.
-        [2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-        """
         self._wavelength = wavelength
 
     def estimate(self, R, k, d0=None, displacement=1, formulation='ls',
                  row_weights='default', unit='rad'):
-        """Estimate the DOAs using ESPRIT.
+        r"""Estimate the direction-of-arrivals (DOAs) using ESPRIT.
 
         Args:
-            R (ndarray): Covariance matrix input. The size of R determines
-                the size of the uniform linear array.
+            R (~numpy.ndarray): Covariance matrix input. This covariance matrix
+                must be obtained using a uniform linear array.
+            
             k (int): Expected number of sources.
-            d0 (float): Inter-element spacing of the uniform linear array.
-                If not specified, it will be set to one half of the wavelength.
+
+            d0 (float): Inter-element spacing of the uniform linear array used
+                to obtain ``R``. If not specified, it will be set to one half
+                of the ``wavelength`` used when creating this estimator.
+                Default value is ``None``.
+            
             displacement (int): The displacement between the two overlapping 
                 subarrays measured in number of minimal inter-element spacings.
                 Default value is 1.
-                Note: increasing this value will lead to smaller unambiguous
-                range and number of resolvable sources. Make sure your DOAs
-                falls within the unambiguous range.
-            formulation (str): Either 'tls' (Total Lease Squares) or 'ls'
-                (Least Squares). Default value is 'tls'.
-            row_weights (Union[str, ndarray]): Specifies the row weights with a
-                vector or a string. Default value is 'default', which generates
-                the following weight vector:
-                    [1 sqrt(2) sqrt(3) ... sqrt(3) sqrt(2) 1]
-                You can disable row weighting by passing in 'none', or specify
-                your own row weights with a 1D ndarray.
-            unit (str): Unit of the estimates. Default value is 'rad'. See
-                FarField1DSourcePlacement for valid units.
+
+                .. note::
+
+                    Increasing this value will lead to smaller unambiguous
+                    range and number of resolvable sources. Make sure your DOAs
+                    falls within the unambiguous range.
+            
+            formulation (str): Method used to estimate the rotation matrix.
+                Either ``'tls'`` (Total Lease Squares) or ``'ls'``
+                (Least Squares). Default value is ``'tls'``.
+            
+            row_weights (str or ~numpy.ndarray): Specifies the row weights
+                with a vector or a string. Default value is ``'default'``, which
+                generates the following weight vector:
+
+                .. math::
+
+                    \lbrack
+                    1\ \sqrt{2}\ \sqrt{3}\ \cdots\ \sqrt{3}\ \sqrt{2}\ 1
+                    \rbrack
+                
+                You can disable row weighting by passing in ``'none'``, or
+                specify your own row weights with a 1D :class:`~numpy.ndarray`.
+            
+            unit (str): Unit of the estimates. Default value is ``'rad'``. See
+                :class:`~doatools.model.sources.FarField1DSourcePlacement` for
+                more details on valid units.
 
         Returns:
-            resolved (bool): A boolean indicating if the desired number of
-                sources are found. This flag does not guarantee that the
-                estimated source locations are correct. The estimated source
-                locations may be completely wrong!
-                If resolved is False, both `estimates` and `spectrum` will be
-                None.
-            estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
-                instance represeting the estimated DOAs. Will be `None` if
-                resolved is False.
+            A tuple with the following elements.
+
+            * resolved (:class:`bool`): ``True`` only if the rooting algorithm
+              successfully finds ``k`` roots inside the unit circle. This flag
+              does **not** guarantee that the estimated source locations are
+              correct. The estimated source locations may be completely wrong!
+              If resolved is False, ``estimates`` will be ``None``.
+            * estimates (:class:`~doatools.model.sources.FarField1DSourcePlacement`):
+              A :class:`~doatools.model.sources.FarField1DSourcePlacement`
+              recording the estimated source locations. Will be ``None`` if
+              resolved is ``False``.
         """
         m = R.shape[0]
         if displacement < 1:

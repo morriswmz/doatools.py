@@ -8,74 +8,86 @@ from .core import SpectrumBasedEstimatorBase, get_noise_subspace, \
                   ensure_covariance_size, ensure_n_resolvable_sources
 
 def f_music(A, En):
-    r"""
-    Function to evaluate the MUSIC spectrum. This is a vectorized
-    implementation of the spectrum function:
+    r"""Computes the classical MUSIC spectrum
+    
+    This is a vectorized implementation of the spectrum function:
 
-    P_{\mathrm{MUSIC}}(\theta) = \frac{1}{a^H(\theta) E_n E_n^H a(\theta)}
+    .. math::
+        P_{\mathrm{MUSIC}}(\theta)
+        = \frac{1}{\mathbf{a}^H(\theta) \mathbf{E}_\mathrm{n}
+                   \mathbf{E}_\mathrm{n}^H \mathbf{a}(\theta)}
 
     Args:
-        A: M x K steering matrix of candidate direction-of-arrivals, where
-            M is the number of sensors and K is the number of candidate
+        A: m x k steering matrix of candidate direction-of-arrivals, where
+            m is the number of sensors and k is the number of candidate
             direction-of-arrivals.
-        En: M x D matrix of noise eigenvectors, where D is the dimension of the
+        En: m x d matrix of noise eigenvectors, where d is the dimension of the
             noise subspace.
     """
     v = En.T.conj() @ A
     return np.reciprocal(np.sum(v * v.conj(), axis=0).real)
 
 class MUSIC(SpectrumBasedEstimatorBase):
+    """Creates a spectrum-based MUSIC estimator.
+    
+    The MUSIC spectrum is computed on a predefined-grid using
+    :meth:`~doatools.estimation.music.f_music`, and the source locations are
+    estimated by identifying the peaks.
+
+    Args:
+        array (~doatools.model.arrays.ArrayDesign): Array design.
+        wavelength (float): Wavelength of the carrier wave.
+        search_grid (~doatools.estimation.grid.SearchGrid): The search grid
+            used to locate the sources.
+        **kwargs: Other keyword arguments supported by
+            :class:`~doatools.estimation.core.SpectrumBasedEstimatorBase`.
+    
+    References:
+        [1] R. Schmidt, "Multiple emitter location and signal parameter
+        estimation," IEEE Transactions on Antennas and Propagation,
+        vol. 34, no. 3, pp. 276-280, Mar. 1986.
+    """
 
     def __init__(self, array, wavelength, search_grid, **kwargs):
-        """Creates a spectrum-based MUSIC estimator.
-        
-        The MUSIC spectrum is computed on a predefined-grid, and the source
-        locations are estimated by identifying the peaks.
-
-        Args:
-            array (ArrayDesign): Array design.
-            wavelength (float): Wavelength of the carrier wave.
-            search_grid (SearchGrid): The search grid used to locate the
-                sources.
-        
-        References:
-        [1] R. Schmidt, "Multiple emitter location and signal parameter
-            estimation," IEEE Transactions on Antennas and Propagation,
-            vol. 34, no. 3, pp. 276-280, Mar. 1986.
-        """
         super().__init__(array, wavelength, search_grid, **kwargs)
         
     def estimate(self, R, k, **kwargs):
         """Estimates the source locations from the given covariance matrix.
 
         Args:
-            R (ndarray): Covariance matrix input. The size of R must match that
-                of the array design used when creating this estimator.
+            R (~numpy.ndarray): Covariance matrix input. The size of R must
+                match that of the array design used when creating this
+                estimator.
             k (int): Expected number of sources.
-            return_spectrum (bool): Set to True to also output the spectrum for
-                visualization. Default value if False.
-            refine_estimates: Set to True to enable grid refinement to obtain
-                potentially more accurate estimates.
-            refinement_density: Density of the refinement grids. Higher density
-                values lead to denser refinement grids and increased
+            return_spectrum (bool): Set to ``True`` to also output the spectrum
+                for visualization. Default value if ``False``.
+            refine_estimates (bool): Set to True to enable grid refinement to
+                obtain potentially more accurate estimates.
+            refinement_density (int): Density of the refinement grids. Higher
+                density values lead to denser refinement grids and increased
                 computational complexity. Default value is 10.
-            refinement_iters: Number of refinement iterations. More iterations
-                generally lead to better results, at the cost of increased
-                computational complexity. Default value is 3.
+            refinement_iters (int): Number of refinement iterations. More
+                iterations generally lead to better results, at the cost of
+                increased computational complexity. Default value is 3.
         
         Returns:
-            resolved (bool): A boolean indicating if the desired number of
-                sources are found. This flag does not guarantee that the
-                estimated source locations are correct. The estimated source
-                locations may be completely wrong!
-                If resolved is False, both `estimates` and `spectrum` will be
-                None.
-            estimates (SourcePlacement): A SourcePlacement instance of the same
-                type as the one used in the search grid, represeting the
-                estimated DOAs. Will be `None` if resolved is False.
-            spectrum (ndarray): A numpy array of the same shape of the
-                specified search grid, consisting of values evaluated at the
-                grid points. Only present if `return_spectrum` is True.
+            A tuple with the following elements.
+
+            * resolved (:class:`bool`): A boolean indicating if the desired
+              number of sources are found. This flag does **not** guarantee that
+              the estimated source locations are correct. The estimated source
+              locations may be completely wrong!
+              If resolved is False, both ``estimates`` and ``spectrum`` will be
+              ``None``.
+            * estimates (:class:`~doatools.model.sources.SourcePlacement`):
+              A :class:`~doatools.model.sources.SourcePlacement` instance of the
+              same type as the one used in the search grid, represeting the
+              estimated source locations. Will be ``None`` if resolved is
+              ``False``.
+            * spectrum (:class:`~numpy.ndarray`): An numpy array of the same
+              shape of the specified search grid, consisting of values evaluated
+              at the grid points. Only present if ``return_spectrum`` is
+              ``True``.
         """
         ensure_covariance_size(R, self._array)
         ensure_n_resolvable_sources(k, self._array.size - 1)
@@ -83,39 +95,52 @@ class MUSIC(SpectrumBasedEstimatorBase):
         return self._estimate(lambda A: f_music(A, En), k, **kwargs)
 
 class RootMUSIC1D:
+    """Creates a root-MUSIC estimator for uniform linear arrays.
+
+    Args:
+        wavelength (float): Wavelength of the carrier wave.
+
+    References:
+        [1] A. Barabell, "Improving the resolution performance of
+        eigenstructure-based direction-finding algorithms," ICASSP '83. IEEE
+        International Conference on Acoustics, Speech, and Signal Processing,
+        Boston, Massachusetts, USA, 1983, pp. 336-339.
+
+        [2] B. D. Rao and K. V. S. Hari, "Performance analysis of Root-Music,"
+        IEEE Transactions on Acoustics, Speech, and Signal Processing, vol. 37,
+        no. 12, pp. 1939-1949, Dec. 1989.
+    """
 
     def __init__(self, wavelength):
-        """Create a root-MUSIC estimator for uniform linear arrays.
-
-        Args:
-            wavelength (float): Wavelength of the carrier wave.
-        """
         self._wavelength = wavelength
 
     def estimate(self, R, k, d0=None, unit='rad'):
-        """
-        Estimates the DOAs of 1D far-field sources from the give covariance
-        matrix.
+        """Estimates the direction-of-arrivals of 1D far-field sources.
 
         Args:
-            R (ndarray): Covariance matrix input. The size of R determines
-                the size of the uniform linear array.
+            R (~numpy.ndarray): Covariance matrix input. This covariance matrix
+                must be obtained using a uniform linear array.
             k (int): Expected number of sources.
-            d0 (float): Inter-element spacing of the uniform linear array.
-                If not specified, it will be set to one half of the wavelength.
-            unit (str): Unit of the estimates. Default value is 'rad'. See
-                FarField1DSourcePlacement for valid units.
+            d0 (float): Inter-element spacing of the uniform linear array used
+                to obtain ``R``. If not specified, it will be set to one half
+                of the ``wavelength`` used when creating this estimator.
+                Default value is ``None``.
+            unit (str): Unit of the estimates. Default value is ``'rad'``.
+                See :class:`~doatools.model.sources.FarField1DSourcePlacement`
+                for more details on valid units.
         
         Returns:
-            resolved (bool): A boolean indicating if the desired number of
-                sources are found. This flag does not guarantee that the
-                estimated source locations are correct. The estimated source
-                locations may be completely wrong!
-                If resolved is False, both `estimates` and `spectrum` will be
-                None.
-            estimates (FarField1DSourcePlacement): A FarField1DSourcePlacement
-                instance represeting the estimated DOAs. Will be `None` if
-                resolved is False.
+            A tuple with the following elements.
+
+            * resolved (:class:`bool`): ``True`` only if the rooting algorithm
+              successfully finds ``k`` roots inside the unit circle. This flag
+              does **not** guarantee that the estimated source locations are
+              correct. The estimated source locations may be completely wrong!
+              If resolved is False, ``estimates`` will be ``None``.
+            * estimates (:class:`~doatools.model.sources.FarField1DSourcePlacement`):
+              A :class:`~doatools.model.sources.FarField1DSourcePlacement`
+              recording the estimated source locations. Will be ``None`` if
+              resolved is ``False``.
         """
         if R.ndim != 2 or R.shape[0] != R.shape[1]:
             raise ValueError('R should be a square matrix.')

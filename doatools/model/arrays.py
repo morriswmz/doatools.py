@@ -125,7 +125,7 @@ class ArrayDesign:
     
     @property
     def element_locations(self):
-        """Retrives the nominal element locations.
+        """Retrieves the nominal element locations.
 
         Returns:
             An M x d matrix, where M is the number of elements and d is the
@@ -387,7 +387,7 @@ class GridBasedArrayDesign(ArrayDesign):
 
     @property
     def element_indices(self):
-        """Retrives the element indices."""
+        """Retrieves the element indices."""
         return self._element_indices.copy()
 
 class UniformLinearArray(GridBasedArrayDesign):
@@ -532,6 +532,7 @@ class MinimumRedundancyLinearArray(GridBasedArrayDesign):
     References:
         [1] M. Ishiguro, "Minimum redundancy linear arrays for a large number of
         antennas," Radio Sci., vol. 15, no. 6, pp. 1163-1170, Nov. 1980.
+        
         [2] A. Moffet, "Minimum-redundancy linear arrays," IEEE Transactions on
         Antennas and Propagation, vol. 16, no. 2, pp. 172-175, Mar. 1968.
     """

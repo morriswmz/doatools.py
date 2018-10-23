@@ -67,7 +67,7 @@ class SourcePlacement(ABC):
 
     @property
     def locations(self):
-        """Retrives the source locations.
+        """Retrieves the source locations.
         
         While this property provides read/write access to the underlying ndarray
         storing the source locations. Modifying the underlying ndarray is
@@ -77,7 +77,7 @@ class SourcePlacement(ABC):
 
     @property
     def units(self):
-        """Retrives a tuple consisting of units used for each dimension."""
+        """Retrieves a tuple consisting of units used for each dimension."""
         return self._units
 
     @property

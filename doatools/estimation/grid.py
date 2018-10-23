@@ -4,44 +4,19 @@ import numpy as np
 from ..model.sources import FarField1DSourcePlacement, FarField2DSourcePlacement, NearField2DSourcePlacement
 from ..utils.math import cartesian
 
-def merge_intervals(intervals):
-    """
-    Merges closed intervals.
-
-    Args:
-        intervals: A list of two-element tuples representing the intervals.
-    
-    Returns:
-        merged: A list of two-element tuples representing the intervals after
-            merging.
-    """
-    if len(intervals) == 0:
-        return []
-    merged = []
-    intervals = sorted(intervals)
-    cur_start, cur_stop = intervals[0]
-    for i in range(1, len(intervals)):
-        if intervals[i][0] <= cur_start:
-            cur_stop = max(cur_stop, intervals[i][1])
-        else:
-            merged.append((cur_start, cur_stop))
-            cur_start, cur_stop = intervals[i]
-    merged.append(cur_start, cur_stop)
-    return merged
-
 class SearchGrid(ABC):
-    """Base class for all search grids. Provides standard implementation."""
+    """Base class for all search grids. Provides standard implementation.
+    
+    Args:
+        axes: A tuple of 1D ndarrays representing the axes of this search
+            grid. The source locations on this search grid will be generated
+            from these axes.
+        axis_names: A tuple of strings denoting the names of the axes.
+        units (str): A tuple of strings representing the unit used for each
+            axis.
+    """
 
     def __init__(self, axes, axis_names, units):
-        """Creates a search grid.
-
-        Args:
-            axes: A tuple of 1D ndarrays representing the axes of this search
-                grid. The source locations on this search grid will be generated
-                from these axes.
-            axis_names: A tuple of strings denoting the names of the axes.
-            units: A tuple of strings representing the unit used for each axis.
-        """
         if not isinstance(axes, tuple):
             raise ValueError('axes should be a tuple.')
         if not isinstance(axis_names, tuple):
@@ -66,31 +41,37 @@ class SearchGrid(ABC):
 
     @property
     def shape(self):
-        """Retrives the shape of this search grid.
+        """Retrieves the shape of this search grid.
 
         Returns:
-            shape: A tuple representing the shape.
+            A tuple of integers representing the shape.
         """
         return self._shape
 
     @property
     def source_placement(self):
-        """Retrieves the source placement based on this grid.
+        r"""Retrieves the source placement based on this grid.
         
-        For a multi-dimensional search grid with shape (d1, d2,..., dn), the
-        returned SourcePlacement instance will contain d1 x d2 x ... x dn
-        elements, which are ordered in such a way that the first dimension
-        changes the slowest, the second dimension changes the second slowest,
-        and so on. For instance, the elements in the following 2x3 grid
+        For a multi-dimensional search grid with shape
+        :math:`(d_1, d_2, \ldots, d_n)`, the returned
+        :class:`~doatools.model.sources.SourcePlacement` instance will contain
+        :math:`d_1 \times d_2 \times \cdots \times d_n` elements, which are
+        ordered in such a way that the first dimension changes the slowest, the
+        second dimension changes the second slowest, and so on. For instance,
+        the elements in the following 2x3 grid
 
-        (1, 1) (1, 2) (1, 3)
-        (2, 1) (2, 2) (2, 3)
+        ::
+
+            (1, 1) (1, 2) (1, 3)
+            (2, 1) (2, 2) (2, 3)
 
         will be ordered as
 
-        (1, 1) (1, 2) (1, 3) (2, 1) (2, 2) (2, 3)
+        ::
 
-        Do not modify the returned SourcePlacement instance.
+            (1, 1) (1, 2) (1, 3) (2, 1) (2, 2) (2, 3)
+
+        Do not **modify**.
         """
         if self._sources is None:
             self._sources = self._create_source_placement()
@@ -103,10 +84,12 @@ class SearchGrid(ABC):
 
     @property
     def axes(self):
-        """Retrieves a tuple of 1D numpy vectors representing the axes such
-        that: source_locations = cartesian(axes[0], axes[1], ...).
+        """Retrieves a tuple of 1D numpy vectors representing the axes.
+        
+        The sources locations can be recovered with the Cartesian product over
+        ``(axes[0], axes[1], ...)``.
 
-        Do NOT modify.
+        Do **not** modify.
         """
         return self._axes
     
@@ -119,8 +102,9 @@ class SearchGrid(ABC):
     def _create_source_placement(self):
         """Creates the source placement instance for this grid.
         
-        Implementation notice: implement this method in a subclass to create
-        the source placement instance of the desired type.
+        Notes:
+            Implement this method in a subclass to create the source placement
+            instance of the desired type.
         """
         raise NotImplementedError()
 
@@ -131,30 +115,34 @@ class SearchGrid(ABC):
 
         For instance, suppose that the original grid is a 2D grid with the axes:
 
-        | Axis name | Axis data           |
-        |-----------|---------------------| 
-        |  Azimuth  | [0, 10, 20, 30, 40] |
-        | Elevation | [0, 20, 40]         |
+        ==========  ===================
+        Axis name   Axis data
+        ==========  =================== 
+        Azimuth     [0, 10, 20, 30, 40]
+        Elevation   [0, 20, 40]
+        ==========  ===================
         
-        Suppose that `coord` is (3, 1), `density` is 4, and `span` is 1. Then
-        the following set of axes will be created:
+        Suppose that ``coord`` is (3, 1), ``density`` is 4, and ``span`` is 1.
+        Then the following set of axes will be created:
 
         Refined axes around the coordinate (3, 1) (or azimuth = 30,
         elevation = 20):
 
-           | Axis name | Axis data                                      |
-           |-----------|------------------------------------------------| 
-           |  Azimuth  | [20, 22.5, 25.0, 27.5, 30, 32.5, 35, 37.5, 40] |
-           | Elevation | [0, 5, 10, 15, 20, 25, 30, 35, 40]             |
-        
+        =========  ==============================================
+        Axis name  Axis data
+        =========  ============================================== 
+        Azimuth    [20, 22.5, 25.0, 27.5, 30, 32.5, 35, 37.5, 40]
+        Elevation  [0, 5, 10, 15, 20, 25, 30, 35, 40]
+        =========  ==============================================
+
         Args:
             coord: A tuple of integers representing a single coordinate within
                 this grid.
-            density: Controls number of new intervals between two adjacent
+            density (int): Controls number of new intervals between two adjacent
                 points in the original grid.
-            span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coord` when
-                performing the refinement.
+            span (int): Controls how many adjacent intervals in the original
+                grid will be considered around the point specified by ``coord``
+                when performing the refinement.
         
         Returns:
             A tuple of ndarrays representing the refined axes.
@@ -185,15 +173,15 @@ class SearchGrid(ABC):
         Args:
             *coords: A sequence of list-like objects representing the
                 coordinates of the grid points around which the refinement will
-                be performed. The length of `coords` should be equal to the
+                be performed. The length of ``coords`` should be equal to the
                 number of dimensions of this grid. The list-like objects in
-                `coords` should share the same length. `coords[j][i]` denotes
-                the j-th element of the i-th coordinate.
-            density: Controls number of new intervals between two adjacent
+                ``coords`` should share the same length. ``coords[j][i]``
+                denotes the j-th element of the i-th coordinate.
+            density (int): Controls number of new intervals between two adjacent
                 points in the original grid.
-            span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coords` when
-                performing the refinement.
+            span (int): Controls how many adjacent intervals in the original
+                grid will be considered around the point specified by ``coords``
+                when performing the refinement.
         
         Returns:
             A list of refined grids.
@@ -207,11 +195,11 @@ class SearchGrid(ABC):
         Args:
             coord: A tuple of integers representing a single coordinate within
                 this grid.
-            density: Controls number of new intervals between two adjacent
+            density (int): Controls number of new intervals between two adjacent
                 points in the original grid.
-            span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coord` when
-                performing the refinement.
+            span (int): Controls how many adjacent intervals in the original
+                grid will be considered around the point specified by ``coord``
+                when performing the refinement.
         
         Returns:
             A refined grid.
@@ -219,37 +207,47 @@ class SearchGrid(ABC):
         raise NotImplementedError()
 
 class FarField1DSearchGrid(SearchGrid):
+    r"""Creates a search grid for 1D far-field source localization.
+
+    When both ``start`` and ``stop`` are scalars, the resulting search grid
+    consists only one uniform grid. When both ``start`` and ``stop`` are lists
+    the resulting search grid is a combination of multiple uniform grids
+    specified by ``start[k]``, ``stop[k]``, and ``size[k]``. 
+
+    Args:
+        start (float): A scalar of the starting angle or a list of starting
+            angles. If not specified, the following default values will be used
+            depending on ``unit``:
+
+            * ``'rad'``: :math:`-\pi/2`
+            * ``'deg'``: -90,
+            * ``'sin'``: -1
+
+        stop (float): A scalar of the stopping angle or a list of stopping
+            angles. This angle is not included in the grid. If not specified,
+            the following default values will be used depending on ``unit``:
+            
+            * ``'rad'``: :math:`\pi/2`
+            * ``'deg'``: 90
+            * ``'sin'``: 1
+
+        size (int): Specifies the grid size. If both ``start`` and ``stop`` are
+            lists, `size` must also be a list such that 'size[k]' specifies the
+            number of grid points between ``start[k]`` and ``stop[k]``. Default
+            value is 180.
+        
+        unit (str): Can be ``'rad'`` (default), ``'deg'`` or ``'sin'``.
+        
+        axes: A tuple of 1D ndarrays representing the axes of the search grid.
+            If specified, ``start``, ``stop``, and ``size`` will be ignored
+            and the search grid will be generated based only on ``axes`` and
+            ``units``. Default value is ``None``.
+    
+    Returns:
+        A search grid for 1D far-field source localization.
+    """
 
     def __init__(self, start=None, stop=None, size=180, unit='rad', axes=None):
-        """Creates a search grid for 1D far-field source localization.
-
-        When both `start` and `stop` are scalars, the resulting search grid
-        consists only one uniform grid. When both `start` and `stop` are lists
-        the resulting search grid is a combination of multiple uniform grids
-        specified by `start[k]`, `stop[k]`, and `size[k]`. 
-
-        Args:
-            start: A scalar of the starting angle or a list of starting angles.
-                If not specified, the following default values will be used
-                depending on `unit`:
-                    'rad': -pi/2, 'deg': -90, 'sin': -1
-            stop: A scalar of the stopping angle or a list of stopping angles.
-                This angle is not included in the grid. If not specified, the
-                following default values will be used depending on `unit`:
-                    'rad': pi/2, 'deg': 90, 'sin': 1
-            size: Specifies the grid size. If both `start` and `stop` are
-                lists, `size` must also be a list such that 'size[k]' specifies
-                the number of grid points between `start[k]` and `stop[k]`.
-                Default value is 180.
-            unit: Can be 'rad' (default), 'deg' or 'sin'.
-            axes: A tuple of 1D ndarrays representing the axes of the search
-                grid. If specified, `start`, `stop`, and `size` will be ignored
-                and the search grid will be generated based only on `axes` and
-                `units`. Default value is None.
-        
-        Returns:
-            grid: A search grid for 1D far-field source localization.
-        """
         if axes is not None:
             super().__init__(axes, ('DOA',), (unit,))
         else:
@@ -281,11 +279,11 @@ class FarField1DSearchGrid(SearchGrid):
         Args:
             coord: A tuple of integers representing a single coordinate within
                 this grid.
-            density: Controls number of new intervals between two adjacent
+            density (int): Controls number of new intervals between two adjacent
                 points in the original grid. Default value is 10.
-            span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coord` when
-                performing the refinement. Default value is 1.
+            span (int): Controls how many adjacent intervals in the original
+                grid will be considered around the point specified by ``coord``
+                when performing the refinement. Default value is 1.
         
         Returns:
             A refined 1D far-field search grid.
@@ -294,38 +292,46 @@ class FarField1DSearchGrid(SearchGrid):
         return FarField1DSearchGrid(unit=self._units[0], axes=axes)
 
 class FarField2DSearchGrid(SearchGrid):
+    r"""Creates a search grid for 2D far-field source localization.
+
+    The first dimension corresponds to the azimuth angle, and the second
+    dimension corresponds to the elevation angle.
+
+    Args:
+        start: A two-element list-like object containing the starting azimuth
+            and elevation angles. If not specified, the following default values
+            will be used depending on ``unit``:
+
+            * ``'rad'``: (:math:`-\pi`, 0)
+            * ``'deg'``: (-180, 0)
+
+        stop: A two-element list-like object containing the stopping azimuth and
+            elevation angles. These two angles are not included in the search
+            grid. If not specified, the following default values will be used
+            depending on ``unit``:
+
+            * ``'rad'``: (:math:`\pi`, :math:`\pi/2`)
+            * ``'deg'``: (180, 90)
+
+        size: A scalar or a two-element list-like object specifying the size of
+            the search grid. If ``size`` is a scalar, a ``size`` by ``size``
+            grid will be created. If ``size`` is a two-element list-like object,
+            a ``size[0]`` by ``size[1]`` grid will be created. Default value is
+            ``(360, 90)``.
+
+        unit (str): Can be ``'rad'`` (default) or ``'deg'``.
+
+        axes: A tuple of 1D ndarrays representing the axes of the search grid.
+            If specified, ``start``, ``stop``, and ``size`` will be ignored and
+            the search grid will be generated based only on ``axes`` and
+            ``units``. Default value is ``None``.
+    
+    Returns:
+        A search grid for 2D far-field source localization.
+    """
 
     def __init__(self, start=None, stop=None, size=(360, 90), unit='rad',
                  axes=None):
-        """Creates a search grid for 2D far-field source localization.
-
-        The first dimension corresponds to the azimuth angle, and the second
-        dimension corresponds to the elevation angle.
-
-        Args:
-            start: A two-element list-like object containing the starting
-                azimuth and elevation angles. If not specified, the following
-                default values will be used depending on `unit`:
-                    'rad': (0, 0), 'deg': (0, 0)
-            stop: A two-element list-like object containing the stopping
-                azimuth and elevation angles. These two angles are not included
-                in the search grid. If not specified, the following default
-                values will be used depending on `unit`:
-                    'rad': (2*pi, pi/2),
-            size: A scalar or a two-element list-like object specifying the
-                size of the search grid. If `size` is a scalar, a `size`x`size`
-                grid will be created. If `size` is a two-element list-like
-                object, a `size[0]`x`size[1]` grid will be created. Default
-                value is `(360, 90)`. 
-            unit: Can be 'rad' (default), 'deg'.
-            axes: A tuple of 1D ndarrays representing the axes of the search
-                grid. If specified, `start`, `stop`, and `size` will be ignored
-                and the search grid will be generated based only on `axes` and
-                `units`. Default value is None.
-        
-        Returns:
-            grid: A search grid for 2D far-field source localization.
-        """
         axis_names = ('Azimuth', 'Elevation')
         if axes is not None:
             super().__init__(axes, axis_names, (unit, unit))
@@ -353,11 +359,11 @@ class FarField2DSearchGrid(SearchGrid):
         Args:
             coord: A tuple of integers representing a single coordinate within
                 this grid.
-            density: Controls number of new intervals between two adjacent
+            density (int): Controls number of new intervals between two adjacent
                 points in the original grid. Default value is 10.
-            span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coord` when
-                performing the refinement. Default value is 1.
+            span (int): Controls how many adjacent intervals in the original
+                grid will be considered around the point specified by ``coord``
+                when performing the refinement. Default value is 1.
         
         Returns:
             A refined 2D far-field search grid.
@@ -366,31 +372,35 @@ class FarField2DSearchGrid(SearchGrid):
         return FarField2DSearchGrid(unit=self._units[0], axes=axes)
 
 class NearField2DSearchGrid(SearchGrid):
+    """Creates a search grid for 2D near-field source localization.
+
+    The first dimension corresponds to the x coordinate, and the second
+    dimension corresponds to the y coordinate.
+
+    Args:
+        start: A two-element list-like object containing the starting x and y
+            coordinates.
+
+        stop: A two-element list-like object containing the stopping x and y
+            coordinates. These two coordinates are not included in the search
+            grid.
+
+        size: A scalar or a two-element list-like object specifying the size of
+            the search grid. If ``size`` is a scalar, a ``size`` by ``size``
+            grid will be created. If ``size`` is a two-element list-like object,
+            a ``size[0]`` by ``size[1]`` grid will be created. Default value is
+            ``(360, 90)``.
+
+        axes: A tuple of 1D ndarrays representing the axes of the search grid.
+            If specified, ``start``, ``stop``, and ``size`` will be ignored and
+            the search grid will be generated based only on ``axes`` and
+            ``units``. Default value is ``None``.
+    
+    Returns:
+        A search grid for 2D near-field source localization.
+    """
 
     def __init__(self, start=None, stop=None, size=None, axes=None):
-        """Creates a search grid for 2D near-field source localization.
-
-        The first dimension corresponds to the x coordinate, and the second
-        dimension corresponds to the y coordinate.
-
-        Args:
-            start: A two-element list-like object containing the starting
-                x and y coordinates.
-            stop: A two-element list-like object containing the stopping
-                x and y coordinates.. These two coordinates are not included
-                in the search grid.
-            size: A scalar or a two-element list-like object specifying the
-                size of the search grid. If `size` is a scalar, a `size`x`size`
-                grid will be created. If `size` is a two-element list-like
-                object, a `size[0]`x`size[1]` grid will be created.
-            axes: A tuple of 1D ndarrays representing the axes of the search
-                grid. If specified, `start`, `stop`, and `size` will be ignored
-                and the search grid will be generated based only on `axes` and
-                `units`. Default value is None.
-        
-        Returns:
-            grid: A search grid for 2D near-field source localization.
-        """
         axis_names = ('x', 'y')
         if axes is not None:
             super().__init__(axes, axis_names, ('m', 'm'))
@@ -410,11 +420,11 @@ class NearField2DSearchGrid(SearchGrid):
         Args:
             coord: A tuple of integers representing a single coordinate within
                 this grid.
-            density: Controls number of new intervals between two adjacent
+            density (int): Controls number of new intervals between two adjacent
                 points in the original grid. Default value is 10.
-            span: Controls how many adjacent intervals in the original grid will
-                be considered around the point specified by `coord` when
-                performing the refinement. Default value is 1.
+            span (int): Controls how many adjacent intervals in the original
+                grid will be considered around the point specified by ``coord``
+                when performing the refinement. Default value is 1.
         
         Returns:
             A refined 2D near-field search grid.

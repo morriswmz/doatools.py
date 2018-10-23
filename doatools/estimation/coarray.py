@@ -1,68 +1,86 @@
 import numpy as np
 from ..model.arrays import UniformLinearArray, GridBasedArrayDesign
 from ..model.coarray import WeightFunction1D
+from .core import ensure_covariance_size
 from ..utils.math import vec
 
 class CoarrayACMBuilder1D:
+    """Creates a coarray-based augmented covariance matrix builder.
+    
+    Based on the specified sensor array, creates a callable object that can
+    transform sample covariance matrices obtained from the physical array model
+    into augmented covariance matrices under the difference coarray model
+
+    Args:
+        array (~doatools.model.arrays.ArrayDesign): An 1D grid-based sensor
+            array. Common candidates include
+            :class:`~doatools.model.arrays.CoPrimeArray`,
+            :class:`~doatools.model.arrays.NestedArray`,
+            :class:`~doatools.model.arrays.MinimumRedundancyLinearArray`.
+    """
 
     def __init__(self, array):
-        """Based on the sensor array, creates an callable object that can
-        transforms covariance matrices obtained from the physical array model
-        into augmented covariance matrices under the difference coarray model.
-
-        Args:
-            array - A 1D grid-based sensor array.
-        """
         if not isinstance(array, GridBasedArrayDesign) or array.ndim > 1:
             raise ValueError('Expecting an 1D grid-based array.')
         self._array = array
         self._w = WeightFunction1D(array)
 
     def __call__(self, R, method='ss'):
-        """An shortcut to `self.transform()`."""
+        """An shortcut to :meth:``transform``."""
         return self.transform(R, method)
 
     @property
     def input_size(self):
-        """Retrives the size of the input covariance matrix."""
+        """Retrieves the size of the input covariance matrix."""
         return self._array.size
 
     @property
     def output_size(self):
-        """Retrives the size of the output/transformed covariance matrix."""
+        """Retrieves the size of the output/transformed covariance matrix."""
         return self._w.get_central_ula_size(True)
     
     def get_virtual_ula(self, name=None):
+        """Retrieves the corresponding virtual uniform linear array.
+
+        Args:
+            name (str): Name of the virtual uniform linear array. If not
+                specified, a default name will be generated.
+        
+        Returns:
+            ~doatools.model.arrays.UniformLinearArray: A uniform linear array
+            corresponding to the augmented covariance matrix.
+        """
         if name is None:
             name = 'Virtual ULA of ' + self._array.name
         return UniformLinearArray(self.output_size, self._array.d0, name)
 
     def transform(self, R, method='ss'):
-        """Transforms the input covariance matrix into the augmented covariance
-        matrix under the difference coarray model.
+        """Transforms the input sample covariance matrix.
 
         Args:
-            R: Covariance matrix.
-            method: 'ss' for spatial-smoothing based construction, and 'da'
-                for direct-augmentation based construction. It should be noted
-                that direct-augmentation does not guarantee the
-                positive-definiteness of `Ra`, which may lead to unexpected
-                results when using beamforming-based estimators.
+            R (~numpy.ndarray): Sample covariance matrix.
+            method (str): ``'ss'`` for spatial-smoothing based transformation,
+                and ``'da'`` for direct-augmentation based transformation.
+                
+                It should be noted that direct-augmentation does not guarantee
+                the positive-definiteness of augmented covariance matrix, which
+                may lead to unexpected results when using beamforming-based
+                estimators.
           
         Returns:
-            Augmented covariance matrix.
+            ~numpy.ndarray: The augmented covariance matrix.
 
         References:
-        [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
-            IEEE Transactions on Signal Processing, vol. 65, no. 4, pp. 933-946,
-            Feb. 2017.
-        [2] P. Pal and P. P. Vaidyanathan, "Nested arrays: A novel approach to
-            array processing with enhanced degrees of freedom," IEEE
-            Transactions on Signal Processing, vol. 58, no. 8, pp. 4167-4181,
-            Aug. 2010.
+            [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao
+            Bound," *IEEE Transactions on Signal Processing*, vol. 65, no. 4,
+            pp. 933-946, Feb. 2017.
+
+            [2] P. Pal and P. P. Vaidyanathan, "Nested arrays: A novel approach
+            to array processing with enhanced degrees of freedom,"
+            *IEEE Transactions on Signal Processing*, vol. 58, no. 8,
+            pp. 4167-4181, Aug. 2010.
         """
-        if R.shape[0] != self._array.size or R.shape[1] != self._array.size:
-            raise ValueError('The dimension of the covariance matrix does not match the array size.')
+        ensure_covariance_size(R, self._array)
         if method not in ['ss', 'da']:
             raise ValueError('Method can only be one of the following: ss, da.')
         mc = self._w.get_central_ula_size()
