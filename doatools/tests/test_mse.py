@@ -50,8 +50,8 @@ class TestMSE(unittest.TestCase):
         n_snapshots = 1000
         power_source = 10.0
         power_noise = 1.0
-        source_signal = ComplexStochasticSignal(power_source, sources.size)
-        noise_signal = ComplexStochasticSignal(power_noise, array.size)
+        source_signal = ComplexStochasticSignal(sources.size, power_source)
+        noise_signal = ComplexStochasticSignal(array.size, power_noise)
         transform = CoarrayACMBuilder1D(array)
         estimator = RootMUSIC1D(self.wavelength)
         # Collect empirical results.

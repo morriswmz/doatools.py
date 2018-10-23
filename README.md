@@ -4,6 +4,8 @@
 
 I made some notebooks that produce figures similar to those in my papers (may not be exactly the same due to the randomness of Monte Carlo simulations). You can browse them [here](examples/paper). These examples are not as complete as those in the MATLAB version.
 
+You can also view the full documentation [here](https://morriswmz.github.io/doatools.py/).
+
 ## Features
 
 * Several array design and difference coarray related functions.
@@ -21,6 +23,8 @@ I made some notebooks that produce figures similar to those in my papers (may no
 The Python version retains most of the functionalities of the MATLAB version, while adding some new ones. For instance, the Python version supports 2D (azimuth and elevation) DOA estimation and includes more ML-based estimators.
 
 The Python version is also more modular, providing more flexibility over the MATLAB version. Many spectrum-based estimators (e.g., MUSIC) are now reusable, and work for both 1D and 2D sources.
+
+The Python version is better documented.
 
 ## Requirements
 
