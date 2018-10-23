@@ -1,0 +1,370 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>doatools.plotting.plot_spectrum &#8212; DoaTools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for doatools.plotting.plot_spectrum</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="k">import</span> <span class="n">LogNorm</span>
+
+<span class="k">def</span> <span class="nf">_normalize_by_maximum</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">max_x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">max_x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">/</span> <span class="n">max_x</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+<span class="k">def</span> <span class="nf">_build_spectrum_list</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Preprocesses the spectrum input and convert it into a list of tuples, where</span>
+<span class="sd">    the first element in the tuple is the numpy array and the second element is</span>
+<span class="sd">    the label. Also outputs the dimension of the spectrum.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="n">sp_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">sp</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">sp_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">s</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sp</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">sp_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">v</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sp</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unsupported spectrum data input.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sp_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting at least on spectrum.&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sp_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The shape of the spectrum, </span><span class="si">{0}</span><span class="s1">, does not match the search grid, </span><span class="si">{1}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">sp_list</span>
+
+<div class="viewcode-block" id="plot_spectrum_1d"><a class="viewcode-back" href="../../../references/doatools.plotting.plot_spectrum.html#doatools.plotting.plot_spectrum.plot_spectrum_1d">[docs]</a><span class="k">def</span> <span class="nf">plot_spectrum_1d</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">estimates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ground_truth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">use_log_scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">discrete</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots an 1D spectrum or multiple 1D spectra.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sp: Can be one of the following:</span>
+
+<span class="sd">            1. An :class:`~numpy.ndarray` representing the spectrum. Usually</span>
+<span class="sd">               this is the output of a spectrum-based estimator. This function</span>
+<span class="sd">               will draw a single spectrum.</span>
+<span class="sd">            2. A :class:`~list` or :class:`~tuple` of :class:`~numpy.ndarray` of</span>
+<span class="sd">               the same shape. This function will draw multiple spectra in the</span>
+<span class="sd">               same plot without labels.</span>
+<span class="sd">            3. A dictionary that maps labels to numpy arrays of the same shape.</span>
+<span class="sd">               This function will draw multiple spectra in the same plot with</span>
+<span class="sd">               labels.</span>
+<span class="sd">        </span>
+<span class="sd">        grid (~doatools.estimation.grid.SearchGrid): The search grid used to</span>
+<span class="sd">            generate the spectrum/spectra. Its shape must match that of the</span>
+<span class="sd">            spectrum/spectra.</span>
+<span class="sd">        ax (~matplotlib.axes.Axes): The matplotlib axes that will be used for</span>
+<span class="sd">            plotting.</span>
+<span class="sd">        estimates (~doatools.model.sources.SourcePlacement): Estimated source</span>
+<span class="sd">            locations. Will be plotted if supplied. Default value is ``None``.</span>
+<span class="sd">        ground_truth (~doatools.model.sources.SourcePlacement): True source</span>
+<span class="sd">            locations. Will be plotted if supplied. Default value is ``None``.</span>
+<span class="sd">        use_log_scale (bool): Sets whether the spectrum should be plotted in</span>
+<span class="sd">            logarithmic scale. Default value is ``False``.</span>
+<span class="sd">        discrete (bool): Sets whether the spectrum should be visualized using</span>
+<span class="sd">            stem plots instead of line plots. Default value is ``False``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list of plot containers with the following structure:</span>
+<span class="sd">        ``[sp1, sp2, ..., spN, est, truth]``, where ``sp1``, ``sp2``, ...,</span>
+<span class="sd">        ``spN`` are the plot containers of the spectra, ``est`` is the plot</span>
+<span class="sd">        container of the estimates, and ``truth`` is the plot container of</span>
+<span class="sd">        the ground truth.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Preprocess the sp input</span>
+    <span class="n">sp_list</span> <span class="o">=</span> <span class="n">_build_spectrum_list</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># &#39;C3&#39; and &#39;C2&#39; are reserved for estimates and ground truth</span>
+    <span class="n">color_estimates</span> <span class="o">=</span> <span class="s1">&#39;C3&#39;</span>
+    <span class="n">color_truth</span> <span class="o">=</span> <span class="s1">&#39;C2&#39;</span>
+    <span class="n">color_cycle</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;C0&#39;</span><span class="p">,</span> <span class="s1">&#39;C1&#39;</span><span class="p">,</span> <span class="s1">&#39;C4&#39;</span><span class="p">,</span> <span class="s1">&#39;C5&#39;</span><span class="p">,</span> <span class="s1">&#39;C6&#39;</span><span class="p">,</span> <span class="s1">&#39;C7&#39;</span><span class="p">,</span> <span class="s1">&#39;C8&#39;</span><span class="p">,</span> <span class="s1">&#39;C9&#39;</span><span class="p">]</span>
+    <span class="n">plot_containers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Plot every spectrum</span>
+    <span class="k">if</span> <span class="n">discrete</span> <span class="ow">and</span> <span class="n">use_log_scale</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">spectrum</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sp_list</span><span class="p">):</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">color_cycle</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">color_cycle</span><span class="p">)]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">_normalize_by_maximum</span><span class="p">(</span><span class="n">spectrum</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">discrete</span><span class="p">:</span>
+            <span class="n">container_sp</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">markerfmt</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">basefmt</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span>
+                                   <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">container_sp</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+            <span class="n">plot_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container_sp</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_log_scale</span><span class="p">:</span>
+                <span class="n">plot_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">semilogy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plot_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">))</span>
+    <span class="c1"># Plot estimates</span>
+    <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">estimates</span><span class="o">.</span><span class="n">units</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The unit of estimates does not match that of the search grid.&#39;</span><span class="p">)</span>
+        <span class="n">x_est</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">locations</span>
+        <span class="n">y_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x_est</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">container_est</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="n">x_est</span><span class="p">,</span> <span class="n">y_est</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">markerfmt</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span>
+                                <span class="n">basefmt</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Estimates&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">container_est</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_estimates</span><span class="p">)</span>
+        <span class="n">plot_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container_est</span><span class="p">)</span>
+        <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Plot ground truth</span>
+    <span class="k">if</span> <span class="n">ground_truth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">units</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The unit of ground truth does not match that of the search grid.&#39;</span><span class="p">)</span>
+        <span class="n">x_truth</span> <span class="o">=</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">locations</span>
+        <span class="n">y_truth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x_truth</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">container_truth</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="n">x_truth</span><span class="p">,</span> <span class="n">y_truth</span><span class="p">,</span> <span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">markerfmt</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span>
+                                  <span class="n">basefmt</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Ground truth&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">setp</span><span class="p">(</span><span class="n">container_truth</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_truth</span><span class="p">)</span>
+        <span class="n">plot_containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container_truth</span><span class="p">)</span>
+        <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Set up x-axis</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">axis_names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grid</span><span class="o">.</span><span class="n">units</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Set up y-axis</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_log_scale</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Normalized spectrum&#39;</span><span class="p">)</span>
+    <span class="c1"># Show the legend.</span>
+    <span class="k">if</span> <span class="n">has_legend</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">plot_containers</span></div>
+
+<div class="viewcode-block" id="plot_spectrum_2d"><a class="viewcode-back" href="../../../references/doatools.plotting.plot_spectrum.html#doatools.plotting.plot_spectrum.plot_spectrum_2d">[docs]</a><span class="k">def</span> <span class="nf">plot_spectrum_2d</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">estimates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ground_truth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">use_log_scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">swap_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color_map</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots a 2D spectrum.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sp (~numpy.ndarray): A 2D ndarray representing the spectrum.</span>
+<span class="sd">        grid (~doatools.estimation.grid.SearchGrid): The search grid used to</span>
+<span class="sd">            generate the spectrum. Its shape must match the shape of ``sp``.</span>
+<span class="sd">        ax (~matplotlib.axes.Axes): The matplotlib axes that will be used for</span>
+<span class="sd">            plotting.</span>
+<span class="sd">        estimates (~doatools.model.sources.SourcePlacement): Estimated source</span>
+<span class="sd">            locations. Will be plotted if supplied. Default value is ``None``.</span>
+<span class="sd">        ground_truth (~doatools.model.sources.SourcePlacement): True source</span>
+<span class="sd">            locations. Will be plotted if supplied. Default value is ``None``.</span>
+<span class="sd">        use_log_scale (bool): Sets whether the spectrum should be plotted in</span>
+<span class="sd">            logarithmic scale. Default value is ``False``.</span>
+<span class="sd">        swap_axes (bool): Set to ``True`` to swap the x and y axis when</span>
+<span class="sd">            plotting. Default value is ``False``.</span>
+<span class="sd">        color_map: Specifies the color map. Default value is ``&#39;jet&#39;``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list of plot containers with the following structure:</span>
+<span class="sd">        ``[sp, est, truth]``, where ``sp1`` is the plot containers of the</span>
+<span class="sd">        spectrum, ``est`` is the plot container of the estimates, and ``truth``</span>
+<span class="sd">        is the plot container of the ground truth.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The shape of the spectrum, </span><span class="si">{0}</span><span class="s1">, does not match the search grid, </span><span class="si">{1}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="c1"># Note that columns -&gt; x, rows -&gt; y by default</span>
+    <span class="k">if</span> <span class="n">swap_axes</span><span class="p">:</span>
+        <span class="n">ind_x</span><span class="p">,</span> <span class="n">ind_y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ind_x</span><span class="p">,</span> <span class="n">ind_y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="n">sp</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">axes</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">axes</span>
+    <span class="n">axis_names</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">axis_names</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">units</span>
+    <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">ind_x</span><span class="p">],</span> <span class="n">axes</span><span class="p">[</span><span class="n">ind_y</span><span class="p">]</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">_normalize_by_maximum</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axis_names</span><span class="p">[</span><span class="n">ind_x</span><span class="p">],</span> <span class="n">units</span><span class="p">[</span><span class="n">ind_x</span><span class="p">])</span>
+    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{0}</span><span class="s1">/</span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">axis_names</span><span class="p">[</span><span class="n">ind_y</span><span class="p">],</span> <span class="n">units</span><span class="p">[</span><span class="n">ind_y</span><span class="p">])</span>
+    <span class="n">plot_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;extent&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">()),</span>
+        <span class="s1">&#39;origin&#39;</span><span class="p">:</span> <span class="s1">&#39;lower&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;cmap&#39;</span><span class="p">:</span> <span class="n">color_map</span><span class="p">,</span>
+        <span class="s1">&#39;aspect&#39;</span><span class="p">:</span> <span class="s1">&#39;auto&#39;</span>
+    <span class="p">}</span>
+    <span class="n">containers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">use_log_scale</span><span class="p">:</span>
+        <span class="n">plot_args</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">LogNorm</span><span class="p">()</span>
+    <span class="n">containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="o">**</span><span class="n">plot_args</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">containers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">x_label</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">y_label</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">estimates</span><span class="o">.</span><span class="n">units</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The unit of estimates does not match that of the search grid.&#39;</span><span class="p">)</span>
+        <span class="n">containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+            <span class="n">estimates</span><span class="o">.</span><span class="n">locations</span><span class="p">[:,</span> <span class="n">ind_x</span><span class="p">],</span>
+            <span class="n">estimates</span><span class="o">.</span><span class="n">locations</span><span class="p">[:,</span> <span class="n">ind_y</span><span class="p">],</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span>
+            <span class="n">edgecolors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+            <span class="n">facecolors</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Estimates&#39;</span><span class="p">))</span>
+        <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">ground_truth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ground_truth</span><span class="o">.</span><span class="n">units</span> <span class="o">!=</span> <span class="n">grid</span><span class="o">.</span><span class="n">units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The unit of ground truth does not match that of the search grid.&#39;</span><span class="p">)</span>
+        <span class="n">containers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+            <span class="n">ground_truth</span><span class="o">.</span><span class="n">locations</span><span class="p">[:,</span> <span class="n">ind_x</span><span class="p">],</span>
+            <span class="n">ground_truth</span><span class="o">.</span><span class="n">locations</span><span class="p">[:,</span> <span class="n">ind_y</span><span class="p">],</span>
+            <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+            <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Ground truth&#39;</span><span class="p">))</span>
+        <span class="n">has_legend</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">has_legend</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">containers</span></div>
+
+<div class="viewcode-block" id="plot_spectrum"><a class="viewcode-back" href="../../../references/doatools.plotting.plot_spectrum.html#doatools.plotting.plot_spectrum.plot_spectrum">[docs]</a><span class="k">def</span> <span class="nf">plot_spectrum</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">estimates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">ground_truth</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_log_scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the given spectrum/spectra.</span>
+<span class="sd">    </span>
+<span class="sd">    Provides a convenient way to plot the given spectrum/spectra. Automatically</span>
+<span class="sd">    selects the plot function based on input grid&#39;s number of dimensions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sp: Compatible spectrum (or spectra collection) input.</span>
+<span class="sd">        grid (~doatools.estimation.grid.SearchGrid): The search grid used to</span>
+<span class="sd">            generate the spectrum/spectra. Its shape must match that of the</span>
+<span class="sd">            spectrum/spectra supplied in ``sp``.</span>
+<span class="sd">        ax (~matplotlib.axes.Axes): The matplotlib axes used for plotting. If</span>
+<span class="sd">            not specified, a new figure will be created and shown. Default value</span>
+<span class="sd">            is ``None``.</span>
+<span class="sd">        figsize (tuple): If ``ax`` is ``None``, specifies the new figure&#39;s size.</span>
+<span class="sd">        estimates (~doatools.model.sources.SourcePlacement): Estimated source</span>
+<span class="sd">            locations. Will be plotted if supplied. Default value is ``None``.</span>
+<span class="sd">        ground_truth (~doatools.model.sources.SourcePlacement): True source</span>
+<span class="sd">            locations. Will be plotted if supplied. Default value is ``None``.</span>
+<span class="sd">        use_log_scale (bool): Sets whether the spectrum should be plotted in</span>
+<span class="sd">            logarithmic scale. Default value is ``False``.</span>
+<span class="sd">        **kwargs: Other compatible options depending on the number of dimensions</span>
+<span class="sd">            of the input grid. See :meth:`plot_spectrum_1d` and</span>
+<span class="sd">            :meth:`plot_spectrum_2d` for more details.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple consists of the following elements:</span>
+
+<span class="sd">        * ax (:class:`~matplotlib.axes.Axes`): The axes object containing the</span>
+<span class="sd">          plot.</span>
+<span class="sd">        * containers (:class:`~list`): A list of plot containers. See</span>
+<span class="sd">          :meth:`plot_spectrum_1d` and :meth:`plot_spectrum_2d` for more</span>
+<span class="sd">          details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="n">new_plot</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_plot</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">grid</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">plot_spectrum_1d</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span>
+                               <span class="n">use_log_scale</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">grid</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">plot_spectrum_2d</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span>
+                               <span class="n">use_log_scale</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">new_plot</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ax</span><span class="p">,</span> <span class="n">ret</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">DoaTools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.plotting.html">Plotting</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Modeling source signals &#8212; doatools 0.2.0 documentation</title>
+    <title>Modeling source signals &#8212; DoaTools 0.2.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -61,7 +61,7 @@ each column represents a sample.</p>
 
 <dl class="class">
 <dt id="doatools.model.signals.ComplexStochasticSignal">
-<em class="property">class </em><code class="descclassname">doatools.model.signals.</code><code class="descname">ComplexStochasticSignal</code><span class="sig-paren">(</span><em>C</em>, <em>n=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#ComplexStochasticSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.ComplexStochasticSignal" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">doatools.model.signals.</code><code class="descname">ComplexStochasticSignal</code><span class="sig-paren">(</span><em>dim</em>, <em>C=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#ComplexStochasticSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.ComplexStochasticSignal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a signal generator that generates zero-mean complex
 circularly-symmetric Gaussian signals.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -69,6 +69,8 @@ circularly-symmetric Gaussian signals.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimension of the complex Gaussian distribution. Must match
+the size of <code class="docutils literal notranslate"><span class="pre">C</span></code> if <code class="docutils literal notranslate"><span class="pre">C</span></code> is not a scalar.</li>
 <li><strong>C</strong> – <p>Covariance matrix of the complex Gaussian distribution.
 Can be specified by</p>
 <ol class="arabic">
@@ -79,9 +81,8 @@ matrix if the covariance matrix is diagonal.</li>
 diagonal elements share the same value. In this case,
 parameter n must be specified.</li>
 </ol>
+<p>Default value is <cite>1.0</cite>.</p>
 </li>
-<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimension of the complex Gaussian distribution. Only need to be
-specified when <code class="docutils literal notranslate"><span class="pre">C</span></code> is a scalar.</li>
 </ul>
 </td>
 </tr>
@@ -93,15 +94,48 @@ specified when <code class="docutils literal notranslate"><span class="pre">C</s
 <dd><p>Retrieves the dimension of the signal generator.</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="doatools.model.signals.ComplexStochasticSignal.covariance">
-<code class="descname">covariance</code><a class="headerlink" href="#doatools.model.signals.ComplexStochasticSignal.covariance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieves the covariance of the complex Gaussian distribution.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="doatools.model.signals.ComplexStochasticSignal.emit">
 <code class="descname">emit</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#ComplexStochasticSignal.emit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.ComplexStochasticSignal.emit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Emits the signal matrix.</p>
+<p>Generates a k x n matrix where k is the dimension of the signal and
+each column represents a sample.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.model.signals.RandomPhaseSignal">
+<em class="property">class </em><code class="descclassname">doatools.model.signals.</code><code class="descname">RandomPhaseSignal</code><span class="sig-paren">(</span><em>dim</em>, <em>amplitudes=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#RandomPhaseSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.RandomPhaseSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a random phase signal generator.</p>
+<p>The phases are uniformly and independently sampled from <span class="math notranslate nohighlight">\([-\pi, \pi]\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimension of the signal (usually equal to the number of
+sources).</li>
+<li><strong>amplitudes</strong> – <p>Amplitudes of the signal. Can be specified by</p>
+<ol class="arabic">
+<li>A scalar if all sources have the same amplitude.</li>
+<li>A vector if the sources have different amplitudes.</li>
+</ol>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="doatools.model.signals.RandomPhaseSignal.dim">
+<code class="descname">dim</code><a class="headerlink" href="#doatools.model.signals.RandomPhaseSignal.dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the dimension of the signal generator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.signals.RandomPhaseSignal.emit">
+<code class="descname">emit</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#RandomPhaseSignal.emit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.RandomPhaseSignal.emit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Emits the signal matrix.</p>
 <p>Generates a k x n matrix where k is the dimension of the signal and
 each column represents a sample.</p>
@@ -119,7 +153,7 @@ each column represents a sample.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">doatools</a></h1>
+<h1 class="logo"><a href="../index.html">DoaTools</a></h1>
 
 
 
@@ -140,6 +174,7 @@ each column represents a sample.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
 </ul>
 
 <div class="relations">

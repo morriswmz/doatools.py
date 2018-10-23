@@ -1,0 +1,263 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Visualize spectrum outputs &#8212; DoaTools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Visualize arrays" href="doatools.plotting.plot_array.html" />
+    <link rel="prev" title="Plotting" href="doatools.plotting.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="visualize-spectrum-outputs">
+<h1>Visualize spectrum outputs<a class="headerlink" href="#visualize-spectrum-outputs" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-doatools.plotting.plot_spectrum">
+<span id="api-reference"></span><h2>API reference<a class="headerlink" href="#module-doatools.plotting.plot_spectrum" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="doatools.plotting.plot_spectrum.plot_spectrum_1d">
+<code class="descclassname">doatools.plotting.plot_spectrum.</code><code class="descname">plot_spectrum_1d</code><span class="sig-paren">(</span><em>sp</em>, <em>grid</em>, <em>ax</em>, <em>estimates=None</em>, <em>ground_truth=None</em>, <em>use_log_scale=False</em>, <em>discrete=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/plotting/plot_spectrum.html#plot_spectrum_1d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.plotting.plot_spectrum.plot_spectrum_1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots an 1D spectrum or multiple 1D spectra.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sp</strong> – <p>Can be one of the following:</p>
+<ol class="arabic">
+<li>An <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> representing the spectrum. Usually
+this is the output of a spectrum-based estimator. This function
+will draw a single spectrum.</li>
+<li>A <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a> of <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> of
+the same shape. This function will draw multiple spectra in the
+same plot without labels.</li>
+<li>A dictionary that maps labels to numpy arrays of the same shape.
+This function will draw multiple spectra in the same plot with
+labels.</li>
+</ol>
+</li>
+<li><strong>grid</strong> (<a class="reference internal" href="doatools.estimation.grid.html#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><em>SearchGrid</em></a>) – The search grid used to
+generate the spectrum/spectra. Its shape must match that of the
+spectrum/spectra.</li>
+<li><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.0.0)"><em>Axes</em></a>) – The matplotlib axes that will be used for
+plotting.</li>
+<li><strong>estimates</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – Estimated source
+locations. Will be plotted if supplied. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>ground_truth</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – True source
+locations. Will be plotted if supplied. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>use_log_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Sets whether the spectrum should be plotted in
+logarithmic scale. Default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>discrete</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Sets whether the spectrum should be visualized using
+stem plots instead of line plots. Default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A list of plot containers with the following structure:
+<code class="docutils literal notranslate"><span class="pre">[sp1,</span> <span class="pre">sp2,</span> <span class="pre">...,</span> <span class="pre">spN,</span> <span class="pre">est,</span> <span class="pre">truth]</span></code>, where <code class="docutils literal notranslate"><span class="pre">sp1</span></code>, <code class="docutils literal notranslate"><span class="pre">sp2</span></code>, …,
+<code class="docutils literal notranslate"><span class="pre">spN</span></code> are the plot containers of the spectra, <code class="docutils literal notranslate"><span class="pre">est</span></code> is the plot
+container of the estimates, and <code class="docutils literal notranslate"><span class="pre">truth</span></code> is the plot container of
+the ground truth.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.plotting.plot_spectrum.plot_spectrum_2d">
+<code class="descclassname">doatools.plotting.plot_spectrum.</code><code class="descname">plot_spectrum_2d</code><span class="sig-paren">(</span><em>sp</em>, <em>grid</em>, <em>ax</em>, <em>estimates=None</em>, <em>ground_truth=None</em>, <em>use_log_scale=False</em>, <em>swap_axes=False</em>, <em>color_map='jet'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/plotting/plot_spectrum.html#plot_spectrum_2d"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.plotting.plot_spectrum.plot_spectrum_2d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots a 2D spectrum.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sp</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – A 2D ndarray representing the spectrum.</li>
+<li><strong>grid</strong> (<a class="reference internal" href="doatools.estimation.grid.html#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><em>SearchGrid</em></a>) – The search grid used to
+generate the spectrum. Its shape must match the shape of <code class="docutils literal notranslate"><span class="pre">sp</span></code>.</li>
+<li><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.0.0)"><em>Axes</em></a>) – The matplotlib axes that will be used for
+plotting.</li>
+<li><strong>estimates</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – Estimated source
+locations. Will be plotted if supplied. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>ground_truth</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – True source
+locations. Will be plotted if supplied. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>use_log_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Sets whether the spectrum should be plotted in
+logarithmic scale. Default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>swap_axes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Set to <code class="docutils literal notranslate"><span class="pre">True</span></code> to swap the x and y axis when
+plotting. Default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>color_map</strong> – Specifies the color map. Default value is <code class="docutils literal notranslate"><span class="pre">'jet'</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A list of plot containers with the following structure:
+<code class="docutils literal notranslate"><span class="pre">[sp,</span> <span class="pre">est,</span> <span class="pre">truth]</span></code>, where <code class="docutils literal notranslate"><span class="pre">sp1</span></code> is the plot containers of the
+spectrum, <code class="docutils literal notranslate"><span class="pre">est</span></code> is the plot container of the estimates, and <code class="docutils literal notranslate"><span class="pre">truth</span></code>
+is the plot container of the ground truth.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)">list</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.plotting.plot_spectrum.plot_spectrum">
+<code class="descclassname">doatools.plotting.plot_spectrum.</code><code class="descname">plot_spectrum</code><span class="sig-paren">(</span><em>sp</em>, <em>grid</em>, <em>ax=None</em>, <em>figsize=None</em>, <em>estimates=None</em>, <em>ground_truth=None</em>, <em>use_log_scale=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/plotting/plot_spectrum.html#plot_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.plotting.plot_spectrum.plot_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the given spectrum/spectra.</p>
+<p>Provides a convenient way to plot the given spectrum/spectra. Automatically
+selects the plot function based on input grid’s number of dimensions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sp</strong> – Compatible spectrum (or spectra collection) input.</li>
+<li><strong>grid</strong> (<a class="reference internal" href="doatools.estimation.grid.html#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><em>SearchGrid</em></a>) – The search grid used to
+generate the spectrum/spectra. Its shape must match that of the
+spectrum/spectra supplied in <code class="docutils literal notranslate"><span class="pre">sp</span></code>.</li>
+<li><strong>ax</strong> (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.0.0)"><em>Axes</em></a>) – The matplotlib axes used for plotting. If
+not specified, a new figure will be created and shown. Default value
+is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>figsize</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)"><em>tuple</em></a>) – If <code class="docutils literal notranslate"><span class="pre">ax</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>, specifies the new figure’s size.</li>
+<li><strong>estimates</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – Estimated source
+locations. Will be plotted if supplied. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>ground_truth</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – True source
+locations. Will be plotted if supplied. Default value is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</li>
+<li><strong>use_log_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Sets whether the spectrum should be plotted in
+logarithmic scale. Default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+<li><strong>**kwargs</strong> – Other compatible options depending on the number of dimensions
+of the input grid. See <a class="reference internal" href="#doatools.plotting.plot_spectrum.plot_spectrum_1d" title="doatools.plotting.plot_spectrum.plot_spectrum_1d"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot_spectrum_1d()</span></code></a> and
+<a class="reference internal" href="#doatools.plotting.plot_spectrum.plot_spectrum_2d" title="doatools.plotting.plot_spectrum.plot_spectrum_2d"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot_spectrum_2d()</span></code></a> for more details.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>A tuple consists of the following elements:</p>
+<ul class="simple">
+<li>ax (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Axes</span></code></a>): The axes object containing the
+plot.</li>
+<li>containers (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>): A list of plot containers. See
+<a class="reference internal" href="#doatools.plotting.plot_spectrum.plot_spectrum_1d" title="doatools.plotting.plot_spectrum.plot_spectrum_1d"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot_spectrum_1d()</span></code></a> and <a class="reference internal" href="#doatools.plotting.plot_spectrum.plot_spectrum_2d" title="doatools.plotting.plot_spectrum.plot_spectrum_2d"><code class="xref py py-meth docutils literal notranslate"><span class="pre">plot_spectrum_2d()</span></code></a> for more
+details.</li>
+</ul>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">DoaTools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.plotting.html">Plotting</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Visualize spectrum outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.plotting.plot_array.html">Visualize arrays</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.plotting.html">Plotting</a><ul>
+      <li>Previous: <a href="doatools.plotting.html" title="previous chapter">Plotting</a></li>
+      <li>Next: <a href="doatools.plotting.plot_array.html" title="next chapter">Visualize arrays</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.plotting.plot_spectrum.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
