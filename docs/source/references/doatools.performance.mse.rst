@@ -1,7 +1,7 @@
 Mean-squared errors
 ===================
 
-API References
+API references
 ~~~~~~~~~~~~~~
 
 .. automodule:: doatools.performance.mse

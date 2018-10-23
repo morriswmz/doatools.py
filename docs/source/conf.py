@@ -30,7 +30,7 @@ __version__ = find_version()
 
 # -- Project information -----------------------------------------------------
 
-project = 'doatools'
+project = 'DoaTools'
 copyright = '2018, Mianzhi Wang'
 author = 'Mianzhi Wang'
 
@@ -206,5 +206,6 @@ epub_exclude_files = ['search.html']
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'https://docs.python.org/': None,
-    'https://docs.scipy.org/doc/numpy/': None
+    'https://docs.scipy.org/doc/numpy/': None,
+    'https://matplotlib.org': None
 }

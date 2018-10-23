@@ -42,7 +42,10 @@ def _fix_3d_aspect(ax):
 def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
     """Internal implementation for plotting arrays."""
     if not array.has_perturbation('location_errors') and show_location_errors:
-        warnings.warn('The input array does not have location errors. Visualization of location errors is disabled.')
+        warnings.warn(
+            'The input array does not have location errors.'
+            'Visualization of location errors is disabled.'
+        )
         show_location_errors = False
     # Create a new axes if necessary.
     if ax is None:
@@ -55,17 +58,15 @@ def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
     else:
         new_plot = False
     # Plot the nominal array.
+    element_locations = array.element_locations
     if coarray:
-        element_locations = compute_unique_location_differences(array.element_locations)
-    else:
-        element_locations = array.element_locations
+        element_locations = compute_unique_location_differences(element_locations)        
     _auto_scatter(ax, element_locations, marker='o', label='Nominal locations')
     # Plot the perturbed array.
     if show_location_errors:
+        element_locations = array.actual_element_locations
         if coarray:
-            element_locations = compute_unique_location_differences(array.actual_element_locations)
-        else:
-            element_locations = array.actual_element_locations
+            element_locations = compute_unique_location_differences(element_locations)
         _auto_scatter(ax, element_locations, marker='x', label='Actual locations')
     ax.set_xlabel('x')
     ax.set_ylabel('y')
@@ -85,14 +86,14 @@ def plot_array(array, ax=None, show_location_errors=False):
     """Visualizes the input array.
 
     Args:
-        array: A sensor array.
-        ax: Axes used for the plot. If not specified, a new figure will be
-            created. Default value is None.
-        show_location_errors: If set to True, will visualized the perturbed
-            array if the input array has location errors.
+        array (~doatools.model.arrays.ArrayDesign): A sensor array.
+        ax (~matplotlib.axes.Axes): Matplotlib axes used for the plot. If not
+            specified, a new figure will be created. Default value is ``None``.
+        show_location_errors (bool): If set to ``True``, will visualized the
+            perturbed array if the input array has location errors.
     
     Returns:
-        ax: The axes object containing the plot.
+        The axes object containing the plot.
     """
     return _plot_array_impl(array, ax, False, show_location_errors)
 
@@ -100,13 +101,13 @@ def plot_coarray(array, ax=None, show_location_errors=False):
     """Visualizes the difference coarray of the input array.
 
     Args:
-        array: A sensor array.
-        ax: Axes used for the plot. If not specified, a new figure will be
-            created. Default value is None.
-        show_location_errors: If set to True, will visualized the perturbed
-            array if the input array has location errors.
+        array (~doatools.model.arrays.ArrayDesign): A sensor array.
+        ax (~matplotlib.axes.Axes): Matplotlib axes used for the plot. If not
+            specified, a new figure will be created. Default value is ``None``.
+        show_location_errors (bool): If set to ``True``, will visualized the
+            perturbed array if the input array has location errors.
     
     Returns:
-        ax: The axes object containing the plot.
+        The axes object containing the plot.
     """
     return _plot_array_impl(array, ax, True, show_location_errors)

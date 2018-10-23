@@ -84,7 +84,7 @@ class ArrayDesign:
             ndarray representing the parameters and the second element is
             a bool specifying whether these parameters are known in prior.
 
-    .. note::
+    Notes:
         Array designs are supposed to be **immutable**. Because array
         design objects are passed around when computing steering matrices,
         weight functions, etc., having a mutable internal state leads to more

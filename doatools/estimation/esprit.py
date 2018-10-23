@@ -56,11 +56,9 @@ class Esprit1D:
                 subarrays measured in number of minimal inter-element spacings.
                 Default value is 1.
 
-                .. note::
-
-                    Increasing this value will lead to smaller unambiguous
-                    range and number of resolvable sources. Make sure your DOAs
-                    falls within the unambiguous range.
+                Increasing this value will lead to **smaller** unambiguous
+                range and number of resolvable sources. Make sure your DOAs
+                falls within the unambiguous range.
             
             formulation (str): Method used to estimate the rotation matrix.
                 Either ``'tls'`` (Total Lease Squares) or ``'ls'``
