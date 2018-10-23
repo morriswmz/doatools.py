@@ -4,8 +4,7 @@ from .utils import unify_p_to_matrix, unify_p_to_vector
 from ..utils.math import projm
 
 def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
-    r"""
-    Computes the stochastic CRB for 1D farfield sources.
+    r"""Computes the stochastic CRB for 1D farfield sources.
     
     Under the stochastic signal model, the source signal is assumed to be
     complex Gaussian, and the noise signal is assumed complex white Gaussian.
@@ -20,24 +19,26 @@ def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     all array perturbation parameters are assumed known during the computation.
 
     Args:
-        array: Array design.
-        wavelength: Wavelength of the carrier wave.
-        sources: A FarField1DSourcePlacement instance representing the source
-            locations.
-        p: The power of the source signals. Can be
+        array (~doatools.model.arrays.ArrayDesign): Array design.
+        wavelength (float): Wavelength of the carrier wave.
+        sources (~doatools.model.sources.FarField1DSourcePlacement):
+            Source locations.
+        p (float or ~numpy.ndarray): The power of the source signals. Can be
+
             1. A scalar if all sources are uncorrelated and share the same
                power.
-            2. A 1D numpy array if all sources are uncorrelated but have
+            2. An 1D numpy array if all sources are uncorrelated but have
                different powers.
             3. A 2D numpy array representing the source covariance matrix.
-        sigma: Variance of the additive noise.
-        n_snapshots: Number of snapshots.
+        
+        sigma (float): Variance of the additive noise.
+        n_snapshots (int): Number of snapshots. Default value is 1.
 
     Returns:
-        crb: k x k CRB matrix where k is the number of sources.
+        ~numpy.ndarray: The CRB matrix.
     
     References:
-    [1] P. Stoica and A. Nehorai, "Performance study of conditional and
+        [1] P. Stoica and A. Nehorai, "Performance study of conditional and
         unconditional direction-of-arrival estimation," IEEE Transactions on
         Acoustics, Speech and Signal Processing, vol. 38, no. 10,
         pp. 1783-1795, Oct. 1990.
@@ -61,8 +62,7 @@ def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     return 0.5 * (CRB + CRB.T)
 
 def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
-    r"""
-    Computes the deterministic CRB for 1D farfield sources.
+    r"""Computes the deterministic CRB for 1D farfield sources.
     
     Under the deterministic signal model, the source signal is assumed to be
     deterministic unknown, and the noise signal is assumed complex white
@@ -77,22 +77,28 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
     all array perturbation parameters are assumed known during the computation.
 
     Args:
-        array: Array design.
-        wavelength: Wavelength of the carrier wave.
-        sources: A FarField1DSourcePlacement instance representing the source
-            locations.
+        array (~doatools.model.arrays.ArrayDesign): Array design.
+        wavelength (float): Wavelength of the carrier wave.
+        sources (~doatools.model.sources.FarField1DSourcePlacement):
+            Source locations.
         P: The sample covariance matrix of the source signals. Suppose there are
-            N snapshots, x(1), x(2), ..., x(N). The sample covariance matrix of
-            the source signals is obtained as follows:
-                \frac{1}{N} \sum_{t=1}^N x(t)x^H(t)
-        sigma: Variance of the additive noise.
-        n_snapshots: Number of snapshots.
+            :math:`T` snapshots,
+            :math:`\mathbf{x}(1), \mathbf{x}(2), \ldots, \mathbf{x}(T)`.
+            The sample covariance matrix of the source signals is obtained as
+            follows:
+
+            .. math::
+                
+                \frac{1}{T} \sum_{t=1}^T \mathbf{x}(t) \mathbf{x}^H(t).
+            
+        sigma (float): Variance of the additive noise.
+        n_snapshots (int): Number of snapshots. Default value is 1.
 
     Returns:
-        crb: k x k CRB matrix where k is the number of sources.
+        ~numpy.ndarray: The CRB matrix.
     
     References:
-    [1] P. Stoica and A. Nehorai, "Performance study of conditional and
+        [1] P. Stoica and A. Nehorai, "Performance study of conditional and
         unconditional direction-of-arrival estimation," IEEE Transactions on
         Acoustics, Speech and Signal Processing, vol. 38, no. 10,
         pp. 1783-1795, Oct. 1990.
@@ -114,8 +120,7 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
 
 def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
                           output_fim=False):
-    r"""
-    Computes the stochastic CRB for 1D farfield sources with the assumption
+    r"""Computes the stochastic CRB for 1D farfield sources with the assumption
     that the sources are uncorrelated.
     
     Under the stochastic signal model, the source signal is assumed to be
@@ -131,29 +136,33 @@ def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
     all array perturbation parameters are assumed known during the computation.
 
     Args:
-        array: Array design.
-        wavelength: Wavelength of the carrier wave.
-        sources: A FarField1DSourcePlacement instance representing the source
-            locations.
-        p: The power of the source signals. Can be
+        array (~doatools.model.arrays.ArrayDesign): Array design.
+        wavelength (float): Wavelength of the carrier wave.
+        sources (~doatools.model.sources.FarField1DSourcePlacement):
+            Source locations.
+        p (float or ~numpy.ndarray): The power of the source signals. Can be
+
             1. A scalar if all sources are uncorrelated and share the same
                power.
-            2. A 1D numpy array if all sources are uncorrelated but have
+            2. An 1D numpy array if all sources are uncorrelated but have
                different powers.
             3. A 2D numpy array representing the source covariance matrix.
                Only the diagonal elements will be used.
-        sigma: Variance of the additive noise.
-        n_snapshots: Number of snapshots.
+        
+        sigma (float): Variance of the additive noise.
+        n_snapshots (int): Number of snapshots. Default value is 1.
 
     Returns:
-        crb: k x k CRB matrix where k is the number of sources.
+        ~numpy.ndarray: The CRB matrix.
     
     References:
-    [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    [2] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
+        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
+
+        [2] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
         IEEE Transactions on Signal Processing, vol. 65, no. 4, pp. 933-946,
         Feb. 2017.
-    [3] C-L. Liu and P. P. Vaidyanathan, "Cramér-Rao bounds for coprime and
+
+        [3] C-L. Liu and P. P. Vaidyanathan, "Cramér-Rao bounds for coprime and
         other sparse arrays, which find more sources than sensors," Digital
         Signal Processing, vol. 61, pp. 43-61, 2017.
     """

@@ -9,31 +9,35 @@ def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbat
     the classical MUSIC algorithm.
 
     Args:
-        array: Array design.
-        wavelength: Wavelength of the carrier wave.
-        sources: A FarField1DSourcePlacement instance representing the source
-            locations.
-        P: The power of the source signals. Can be
+        array (~doatools.model.arrays.ArrayDesign): Array design.
+        wavelength (float): Wavelength of the carrier wave.
+        sources (~doatools.model.sources.FarField1DSourcePlacement):
+            Source locations.
+        p (float or ~numpy.ndarray): The power of the source signals. Can be
+
             1. A scalar if all sources are uncorrelated and share the same
                power.
-            2. A 1D numpy array if all sources are uncorrelated but have
+            2. An 1D numpy array if all sources are uncorrelated but have
                different powers.
             3. A 2D numpy array representing the source covariance matrix.
-        sigma: Variance of the additive noise.
-        n_snapshots: Number of snapshots.
-        perturbations: Specifies which perturbations are considered when
-            constructing the steering matrix. Possible values include 'all',
-            'known', and 'none'. Default value is 'all'.
-            See `ArrayDesign.steering_matrix()` for more details.
+        
+        sigma (float): Variance of the additive noise.
+        n_snapshots (int): Number of snapshots. Default value is 1.
+        perturbations (str): Specifies which perturbations are considered when
+            constructing the steering matrix. Possible values include ``'all'``,
+            ``'known'``, and ``'none'``. Default value is ``'all'``.
+            See :meth:`~doatools.model.arrays.ArrayDesign.steering_matrix`
+            for more details.
 
     Returns:
-        The asymptotic error covariance matrix.
+        ~numpy.ndarray: The asymptotic error covariance matrix.
 
     References:
-    [1] P. Stoica and A. Nehorai, "MUSIC, maximum likelihood, and Cramér-Rao
+        [1] P. Stoica and A. Nehorai, "MUSIC, maximum likelihood, and Cramér-Rao
         bound: further results and comparisons," IEEE Transactions on Acoustics,
         Speech and Signal Processing, vol. 38, no. 12, pp. 2140-2150, Dec. 1990.
-    [2] P. Stoica and A. Nehorai, "MUSIC, maximum likelihood, and Cramér-Rao
+        
+        [2] P. Stoica and A. Nehorai, "MUSIC, maximum likelihood, and Cramér-Rao
         bound," IEEE Transactions on Acoustics, Speech and Signal Processing,
         vol. 37, no. 5, pp. 720-741, May 1989.
     """
@@ -64,25 +68,27 @@ def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     coarray-based MUSIC algorithm, SS-MUSIC or DA-MUSIC.
 
     Args:
-        array: Array design.
-        wavelength: Wavelength of the carrier wave.
-        sources: A FarField1DSourcePlacement instance representing the source
-            locations.
-        p: The power of the source signals. Can be
+        array (~doatools.model.arrays.ArrayDesign): Array design.
+        wavelength (float): Wavelength of the carrier wave.
+        sources (~doatools.model.sources.FarField1DSourcePlacement):
+            Source locations.
+        p (float or ~numpy.ndarray): The power of the source signals. Can be
+
             1. A scalar if all sources are uncorrelated and share the same
                power.
-            2. A 1D numpy array if all sources are uncorrelated but have
+            2. An 1D numpy array if all sources are uncorrelated but have
                different powers.
             3. A 2D numpy array representing the source covariance matrix.
                Only the diagonal elements will be used.
-        sigma: Variance of the additive noise.
-        n_snapshots: Number of snapshots.
+        
+        sigma (float): Variance of the additive noise.
+        n_snapshots (int): Number of snapshots. Default value is 1.
     
     Returns:
-        The asymptotic error covariance matrix.
+        ~numpy.ndarray: The asymptotic error covariance matrix.
     
     References:
-    [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
+        [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
         IEEE Transactions on Signal Processing, vol. 65, no. 4, pp. 933-946,
         Feb. 2017.
     """
