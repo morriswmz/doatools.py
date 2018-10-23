@@ -167,8 +167,11 @@ class CovarianceBasedMLEstimator(ABC):
             bounds=bounds,
             **kwargs
         )
-        self.update_estimates_from_x(res.x)
-        return True, self.get_last_estimates()
+        if res.success:
+            self._update_estimates_from_x(res.x)
+            return True, self.get_last_estimates()
+        else:
+            return False, None
 
 class AMLEstimator(CovarianceBasedMLEstimator):
     r"""Asymptotic maximum-likelihood (AML) estimator.
