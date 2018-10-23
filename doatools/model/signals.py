@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.linalg import sqrtm
+from ..utils.math import randcn
 
 class SignalGenerator(ABC):
     """Abstrace base class for all signal generators.
@@ -28,6 +29,8 @@ class ComplexStochasticSignal(SignalGenerator):
     circularly-symmetric Gaussian signals.
 
     Args:
+        dim (int): Dimension of the complex Gaussian distribution. Must match
+            the size of ``C`` if ``C`` is not a scalar.
         C: Covariance matrix of the complex Gaussian distribution.
             Can be specified by
 
@@ -37,56 +40,71 @@ class ComplexStochasticSignal(SignalGenerator):
             3. A scalar if the covariance matrix is diagonal and all
                diagonal elements share the same value. In this case,
                parameter n must be specified.
-        
-        n (int): Dimension of the complex Gaussian distribution. Only need to be
-            specified when ``C`` is a scalar.
+            
+            Default value is `1.0`.
     """
 
-    def __init__(self, C, n=None):
-        self._C = C
+    def __init__(self, dim, C=1.0):
+        self._dim = dim
         if np.isscalar(C):
-            self._dim = n
+            # Scalar
+            self._C2 = np.sqrt(C)
+            self._generator = lambda n: self._C2 * randcn((self._dim, n))
+        elif C.ndim == 1:
+            # Vector
+            if C.size != dim:
+                raise ValueError('The size of C must be {0}.'.format(dim))
+            self._C2 = np.sqrt(C).reshape((-1, 1))
+            self._generator = lambda n: self._C2 * randcn((self._dim, n))
+        elif C.ndim == 2:
+            # Matrix
+            if C.shape[0] != dim or C.shape[1] != dim:
+                raise ValueError('The shape of C must be ({0}, {0}).'.format(dim))
+            self._C2 = sqrtm(C)
+            self._generator = lambda n: self._C2 @ randcn((self._dim, n))
         else:
-            self._dim = C.shape[0]
+            raise ValueError(
+                'The covariance must be specified by a scalar, a vector of'
+                'size {0}, or a matrix of {0}x{0}.'.format(dim)
+            )
+        self._C = C
     
     @property
     def dim(self):
         return self._dim
-    
-    @property
-    def covariance(self):
-        """Retrieves the covariance of the complex Gaussian distribution."""
-        return self._C
-    
-    @covariance.setter
-    def covariance(self, C):
-        """Sets the covariance of the complex Gaussian distribution.
-        
-        Args:
-            C: Covariance matrix of the complex Gaussian distribution.
-                Can be specified by
-
-                1. A full covariance matrix.
-                2. An real vector denoting the diagonals of the covariance
-                   matrix if the covariance matrix is diagonal.
-                3. A scalar if the covariance matrix is diagonal and all
-                   diagonal elements share the same value.
-        """
-        if not np.isscalar(C):
-            if C.ndim > 2 or any(map(lambda x: x != self._dim, C.shape)):
-                raise ValueError('Expecting a scalar, an 1D vector of length {0}, or a matrix of size {0}x{0}'.format(self._dim))
-        self._C = C
 
     def emit(self, n):
-        k = self.dim
-        S = 1j * np.random.randn(k, n)
-        S += np.random.randn(k, n)
-        # Apply the covariance transform.
-        if np.isscalar(self._C):
-            S *= np.sqrt(self._C / 2.)
-        elif self._C.ndim == 1:
-            S = np.sqrt(self._C.reshape((-1, 1)) / 2.) * S
-        else:
-            S = sqrtm(self._C / 2.) @ S
-        return S
+        return self._generator(n)
 
+class RandomPhaseSignal(SignalGenerator):
+    r"""Creates a random phase signal generator.
+
+    The phases are uniformly and independently sampled from :math:`[-\pi, \pi]`.
+
+    Args:
+        dim (int): Dimension of the signal (usually equal to the number of
+            sources).
+        amplitudes: Amplitudes of the signal. Can be specified by
+            
+            1. A scalar if all sources have the same amplitude.
+            2. A vector if the sources have different amplitudes.
+    """
+
+    def __init__(self, dim, amplitudes=1.0):
+        self._dim = dim
+        if np.isscalar(amplitudes):
+            self._amplitudes = np.full(amplitudes, (dim, 1))
+        else:
+            if amplitudes.size != dim:
+                raise ValueError("The size of 'amplitudes' does not match the value of 'dim'.")
+            self._amplitudes = amplitudes.reshape((-1, 1))
+
+    @property
+    def dim(self):
+        return self._dim
+
+    def emit(self, n):
+        phases = np.random.uniform(-np.pi, np.pi, (self._dim, n))
+        c = np.sin(phases) * 1j
+        c += np.cos(phases)
+        return self._amplitudes * c

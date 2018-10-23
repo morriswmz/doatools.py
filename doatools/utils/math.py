@@ -71,6 +71,21 @@ def cartesian(*xi):
     yi = np.meshgrid(*xi, indexing='ij')
     return np.vstack([y.flatten() for y in yi]).T
 
+def randcn(shape):
+    """Samples from complex circularly-symmetric normal distribution.
+
+    Args:
+        shape (tuple): Shape of the output.
+    
+    Returns:
+        ~numpy.ndarray: A complex :class:`~numpy.ndarray` containing the
+        samples.
+    """
+    x = 1j * np.random.randn(*shape)
+    x += np.random.randn(*shape)
+    x *= np.sqrt(0.5)
+    return x
+
 def unique_rows(x, atol=0.0, rtol=1e-8, return_index=False, sort=False):
     """Obtains the unique rows within the specified tolerance.
     
