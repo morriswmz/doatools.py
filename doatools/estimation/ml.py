@@ -16,7 +16,12 @@ def f_nll_stouc(R, array, sources, wavelength, p, sigma):
     return logdet + np.trace(np.linalg.solve(S, R))
 
 class CovarianceBasedMLEstimator(ABC):
-    """Encapsulates a covariance based maximum-likelihood problem."""
+    """Abstract base class for covariance based maximum-likelihood estimators.
+    
+    Args:
+        array (~doatools.model.arrays.ArrayDesign): Sensor array design.
+        wavelength (float): Wavelength of the carrier wave.
+    """
 
     def __init__(self, array, wavelength):
         self._array = array
@@ -41,57 +46,68 @@ class CovarianceBasedMLEstimator(ABC):
         return self._array.size - 1
 
     @abstractmethod
-    def eval_nll(self, x, R, k):
+    def _eval_nll(self, x, R, k):
         """Evaluates the negative log-likelihood function for the given input.
-        
-        Implementation notice: `self._estimates` serves as a working instance
-        for computing the steering matrix. It is reused and modified in-placed
-        during the optimization process.
 
         Args:
-            x: A vector of variables being optimized (e.g. DOAs, source powers,
-                noise variance, etc.). The first k*d elements of x are always
-                for source locations, where d=1 for 1D sources and d=2 for 2D
-                sources. The remaining elements of x correspond to other unknown
-                parameters.
-            R: The sample covariance matrix.
-            k: The number of sources.
+            x (~numpy.ndarray): A vector consisting of the variables being
+                optimized (e.g. DOAs, source powers, noise variance, etc.). The
+                first k*d elements of x are always for source locations,
+                where d is 1 for 1D sources and 2 for 2D sources. The remaining
+                elements of x correspond to other unknown parameters (such as
+                source powers, noise variance, etc.).
+            R (~numpy.ndarray): The sample covariance matrix.
+            k (int): The number of sources.
+        
+        Notes:
+            During the optimization process, the current estimation of the
+            source locations is stored in ``self._estimates``.
+            ``self._estimates`` is first initialized when :meth:`estimate` is
+            called, and then reused and modified in-placed during the
+            optimization process. How ``self._estimates`` is updated from the
+            current ``x`` is determined by :meth:`update_estimates_from_x`.
 
         Returns:
-            A real number, the value of the negative log-likelihood function for
-            the given input.
+            float: A real number, the value of the negative log-likelihood
+            function for the given input.
         """
         raise NotImplementedError()
 
-    def prepare_opt_prob(self, sources0, R):
+    def _prepare_opt_prob(self, sources0, R):
         """Prepares the optimization problem.
 
         More specifically, this method
-        1. constructs the objective function.
-        2. creates the starting point x0.
-        3. determines the bounds for the variable.
 
-        Implementation notice: the first k*d elements of x0 should correspond to
-        the source location estimates, where d=1 for 1D sources and d=2 for 2D
-        sources. The default implementation assumes that x0 consists of only
+        1. Constructs the objective function.
+        2. Creates the starting point ``x0``.
+        3. Determines the bounds for the variables.
+        4. Precompute other required data and update relevant fields.
+
+        The first k*d elements of ``x0`` should correspond to the source
+        location estimates, where d is 1 for 1D sources and 2 for 2D sources.
+        The default implementation assumes that ``x0`` consists of only
         the source locations. This is not necessarily true for every ML-based
         optimization problems.
 
         Args:
-            sources0: A SourcePlacement instance containing the initial guess of
-                the source locations.
-            R: The sample covariance matrix.
+            sources0 (~doatools.model.sources.SourcePlacement): The initial
+                guess of the source locations. Usually obtained from other
+                less accurate estimators.
+            R (~numpy.ndarray): The sample covariance matrix.
 
         Returns:
-            f: The objective function.
-            x0: A vector whose size is equal to the number of variables in the
-                ML-based optimization problem.
-            bounds: A list of 2-element tuples representing the bounds for the
-                variables.
+            tuple: A tuple of the following elements:
+
+            * f (:class:`abc.Callable`): The objective function.
+            * x0 (:class:`~numpy.ndarray`): The starting point for the  ML-based
+              optimization problem, whose size is equal to the number of
+              variables in the optimization problem.
+            * bounds (List[[float, float]]): A list of 2-element tuples
+              representing the bounds for the variables.
         """
         k = sources0.size
         # Delegate the call to self.eval_nll
-        f = lambda x : self.eval_nll(x, R, k)
+        f = lambda x : self._eval_nll(x, R, k)
         # Simply flatten the source location array:
         # x0 = [\theta_{11} \theta_{12} ... \theta_{1d} \theta{21} ...]
         # For instance, for far-field 2D sources
@@ -102,21 +118,28 @@ class CovarianceBasedMLEstimator(ABC):
         bounds = list(sources0.valid_ranges) * k
         return f, x0, bounds
 
-    def update_estimates_from_x(self, x):
-        """Updates the current source location estimates from x."""
+    def _update_estimates_from_x(self, x):
+        """Updates the current source location estimates from ``x``.
+        
+        The default implementation reshapes the first k*d elements in ``x``
+        into a k by d matrix and assign it to ``self._estimates.locations``,
+        where k is the number of sources and d is the number of dimensions of
+        source locations.
+        """
         n = self._estimates.locations.size
         np.copyto(
             self._estimates.locations,
             x[:n].reshape(self._estimates.locations.shape)
         )
 
-    def eval_steering_matrix_from_x(self, x):
-        """Evaluates the steering matrix from x.
+    def _eval_steering_matrix_from_x(self, x):
+        """Evaluates the steering matrix from ``x``.
         
-        `self._estimates` is first updated from x and then used to evaluate
-        the steering matrix.
+        The default implementation first calls :meth:`update_estimates_from_x`
+        to update ``self._estimates`` and then use it to evaluate the steering
+        matrix.
         """
-        self.update_estimates_from_x(x)
+        self._update_estimates_from_x(x)
         return self._array.steering_matrix(
             self._estimates, self._wavelength,
             perturbations='known'
@@ -125,30 +148,36 @@ class CovarianceBasedMLEstimator(ABC):
     def estimate(self, R, sources0, **kwargs):
         r"""Solves the ML problem for the given inputs.
 
-        Note: in general, ML estimates are computationally expensive to obtain
-        and sensitive to initialization. They are generally used in theoretical
-        performance analyses.
-
         Args:
-            R: The sample covariance matrix.
-            sources0: A SourcePlacement instance representing the initial guess.
-                Its type determines the source type and its size determines the
-                number of sources.
-                Note: because the log-likelihood function is highly non-convex,
-                the initial guess of source locations will greatly affect the
-                final estimates. It is recommended to use the output of another
+            R (~numpy.ndarray): The sample covariance matrix.
+            sources0 (~doatools.model.sources.SourcePlacement): The initial
+                guess of source locations. Its type determines the source type
+                and its size determines the number of sources.
+
+                Because the log-likelihood function is highly non-convex, the
+                initial guess of source locations will greatly affect the final
+                estimates. It is recommended to use the output of another
                 estimator (e.g. conventional beamformer) as the initial guess.
-            **kwargs: Additional arguments for the solver.
+                
+            **kwargs: Additional keyword arguments for the solver.
+        
+        Notes:
+            In general, ML estimates are computationally expensive to obtain
+            and sensitive to initialization. They are generally used in
+            theoretical performance analyses.
 
         Returns:
-            resolved (bool): A boolean indicating if the desired number of
-                sources are found. This flag does not guarantee that the
-                estimated source locations are correct. The estimated source
-                locations may be completely wrong!
-                This flag is always True for ML-based estimators.
-            estimates (SourcePlacement): A SourcePlacement instance of the same
-                type as the one used in the search grid, represeting the
-                estimated DOAs. Will be `None` if resolved is False.
+            tuple: A tuple containing the following elements:
+
+            * resolved (:class:`bool`): ``True`` if the optimizer exited
+              successfully. This flag does **not** guarantee that the estimated
+              source locations are correct. The estimated source locations may
+              be completely wrong!
+              If resolved is False, ``estimates`` will be ``None``.
+            * estimates (:class:`~doatools.model.sources.SourcePlacement`):
+              A :class:`~doatools.model.sources.SourcePlacement` instance of the
+              same type as that of ``sources0``, represeting the estimated
+              source locations. Will be ``None`` if resolved is ``False``.
         """
         ensure_n_resolvable_sources(sources0.size, self.get_max_resolvable_sources())
         ensure_covariance_size(R, self._array)
@@ -160,7 +189,7 @@ class CovarianceBasedMLEstimator(ABC):
         # Use scipy for numerical optimization.
         # Subclasses should override this implementation if there exists faster
         # optimization approaches.
-        obj_func, x0, bounds = self.prepare_opt_prob(sources0, R)
+        obj_func, x0, bounds = self._prepare_opt_prob(sources0, R)
         res = minimize(
             obj_func, x0,
             method='L-BFGS-B',
@@ -177,23 +206,42 @@ class AMLEstimator(CovarianceBasedMLEstimator):
     r"""Asymptotic maximum-likelihood (AML) estimator.
     
     The AML estimator maximizes the following log-likelihood function:
-        - logdet S - tr(S^{-1} R)
-    where S = APA^H + sI, A is the steering matrix, P is the source covariance
-    matrix, s is the noise variance, and R is the sample covariance matrix.
-    Here the unknown parameters include the source locations, P, and s.
-    We can obtain the MLE of P and s in terms of the source locations. The
-    final optimization problem only involves the source locations as unknown
-    variables.
+
+    .. math::
+        
+        - \log\det \mathbf{S} - \mathrm{tr}(\mathbf{S}^{-1} \mathbf{R})
+    
+    where :math:`\mathbf{S} = \mathbf{A}\mathbf{P}\mathbf{A}^H + \sigma^2\mathbf{I}`,
+    :math:`\mathbf{A}` is the steering matrix, :math:`\mathbf{P}` is the source
+    covariance matrix, :math:`\sigma^2` is the noise variance, and
+    :math:`\hat{\mathbf{R}}` is the sample covariance matrix.
+
+    Here the unknown parameters include the source locations,
+    :math:`\mathbf{P}`, and :math:`\sigma^2`. The MLE of :math:`\mathbf{P}` and
+    :math:`\sigma^2` can be analytically obtained in terms of the source
+    locations. The final optimization problem only involves the source
+    locations, :math:`\mathbf{\theta}`, as unknown variables:
+
+    .. math::
+
+        \min_{\mathbf{\theta}} \log\det\left\lbrack
+        \mathbf{P}_{\mathbf{A}} \hat{\mathbf{R}} \mathbf{P}_{\mathbf{A}}
+        + \frac{
+            \mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}} \hat{\mathbf{R}})
+            \mathbf{P}^\perp_{\mathbf{A}}
+        }{N-D}
+        \right\rbrack.
+
 
     References:
-    [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
+        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
     """
 
-    def eval_nll(self, x, R, k):
+    def _eval_nll(self, x, R, k):
         # See 8.6.1 of the following:
         # * H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
         m = self._array.size
-        A = self.eval_steering_matrix_from_x(x)
+        A = self._eval_steering_matrix_from_x(x)
         # Projection matrix of A
         PA = projm(A, True)
         # Null projection matrix of A
@@ -214,42 +262,78 @@ class CMLEstimator(CovarianceBasedMLEstimator):
     
     Given the conditional observation model (the source signals are assumed to
     be deterministic unknown):
-        y(t) = Ax(t) + n(t), t = 1,2,...,T,
+
+    .. math::
+
+        \mathbf{y}(t) = \mathbf{A}(\mathbf{\theta})\mathbf{x}(t) + \mathbf{n}(t),
+        t = 1,2,...,T,
+    
     the CML estimator maximizes the following log-likelihood function:
-        - TM\log s - s^{-1}\sum_{t=1}^T |y(t) - Ax(t)|^2
-    where M is the number of sensors, T is the number of snapshots, A is the
-    steering matrix, matrix, s is the noise variance.
-    Here the unknown parameters include the source locations, x(t), and s.
+
+    .. math::
+
+        - TM\log\sigma^2
+        - \sigma^{-2} \sum_{t=1}^T
+          \| \mathbf{y}(t) - \mathbf{A}\mathbf{x}(t) \|^2,
+
+    where :math:`M` is the number of sensors, :math:`T` is the number of
+    snapshots, :math:`\mathbf{A}` is the steering matrix, :math:`\sigma^2` is
+    the noise variance.
+    
+    Here the unknown parameters include the source locations,
+    :math:`\mathbf{\theta}`, as well as :math:`\mathbf{x}(t)` and
+    :math:`\sigma^2`. With further computations, it can be shown that the final
+    optimization problem only involves the source locations:
+
+    .. math::
+
+        \mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}} \hat{\mathbf{R}}),
+
+    where
+    :math:`\hat{\mathbf{R}} = 1/T \sum_{t=1}^T \mathbf{x}(t)\mathbf{x}^H(t)`.
 
     References:
-    [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
+        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
     """
 
-    def eval_nll(self, x, R, k):
+    def _eval_nll(self, x, R, k):
         # See 8.5.2 of the following:
         # * H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
         # tr(P^\perp_A R)
-        A = self.eval_steering_matrix_from_x(x)
+        A = self._eval_steering_matrix_from_x(x)
         PPA = np.eye(self._array.size) - projm(A, True)
         return np.real(np.trace(PPA @ R))
 
 class WSFEstimator(CovarianceBasedMLEstimator):
     r"""Weighted subspace fitting (WSF) estimator.
 
-    WSF is based on the CML estimator. This class uses the asymptotically
+    WSF is based on the CML estimator, with the objective function given by
+
+    .. math::
+
+        \mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}}
+            \hat{\mathbf{U}}_\mathrm{s}
+            \hat{\mathbf{W}}
+            \hat{\mathbf{U}}_\mathrm{s}^H),
+    
+    where :math:`\hat{\mathbf{U}}_\mathrm{s}` consists of the eigenvectors of
+    the signal subspace of :math:`\hat{\mathbf{R}}`, and
+    :math:`\hat{\mathbf{W}}` is a diagonal matrix consists of asymptotically
     optimal weights.
 
     References:
-    [1] M. Viberg and B. Ottersten, "Sensor array processing based on subspace
-        fitting," IEEE Transactions on Signal Processing, vol. 39, no. 5,
-        pp. 1110-1121, May 1991.
-    [2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-    [3] P. Stoica and K. Sharman, "Maximum likelihood methods for direction-of-
-        arrival estimation," IEEE Trans. Acoust., Speech, Signal Process.,
-        vol. 38, pp. 1132-1143, July 1990.
+        [1] M. Viberg and B. Ottersten, "Sensor array processing based on
+        subspace fitting," IEEE Transactions on Signal Processing, vol. 39,
+        no. 5, pp. 1110-1121, May 1991.
+
+        [2] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
+        
+        [3] P. Stoica and K. Sharman, "Maximum likelihood methods for
+        direction-of-arrival estimation," IEEE Trans. Acoust., Speech, Signal
+        Process., vol. 38, pp. 1132-1143, July 1990.
     """
 
-    def prepare_m(self, sources0, R):
+    def _prepare_m(self, sources0, R):
         """Prepare the M matrix used in the optimization."""
         k = sources0.size
         # Pre-calculate optimal weights
@@ -265,14 +349,14 @@ class WSFEstimator(CovarianceBasedMLEstimator):
         # M = Es diag(w) Es^H
         self._M = (Es * w) @ Es.conj().T
 
-    def prepare_opt_prob(self, sources0, R):
-        self.prepare_m(sources0, R)
-        return super().prepare_opt_prob(sources0, R)
+    def _prepare_opt_prob(self, sources0, R):
+        self._prepare_m(sources0, R)
+        return super()._prepare_opt_prob(sources0, R)
 
-    def eval_nll(self, x, R, k):
+    def _eval_nll(self, x, R, k):
         # See 8.5.3 of the following:
         # * H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
-        A = self.eval_steering_matrix_from_x(x)
+        A = self._eval_steering_matrix_from_x(x)
         PPA = np.eye(self._array.size) - projm(A, True)
         # tr(P^\perp_A M)
         return np.real(np.trace(PPA @ self._M))
