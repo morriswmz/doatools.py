@@ -8,48 +8,66 @@ except ImportError:
     cvx_available = False
 
 class L1RegularizedLeastSquaresProblem:
+    r"""Creates a reusable :math:`l_1`-regularized least squares problem.
+
+    Let :math:`\mathbf{A}` be an :math:`M \times L` real dictionary matrix,
+    :math:`\mathbf{b}` be an :math:`M \times 1` observation vector,
+    :math:`\mathbf{x}` be a :math:`K \times 1` sparse vector, :math:`l` be
+    a nonnegative scalar. Let :math:`c` equal to 0 if :math:`\mathbf{x}`
+    must be nonnegative and :math:`-\infty` if :math:`\mathbf{x}` can be any
+    real number.
+    
+    The default formulation, named ``'penalizedl1'``, is given by
+
+    .. math::
+
+        \begin{aligned}
+        \min_{\mathbf{x}}&
+        \frac{1}{2} \| \mathbf{A}\mathbf{x} - \mathbf{b} \|_2^2 +
+            l \| \mathbf{x} \|_1,\\
+        \text{s.t. }& x \geq c
+        \end{aligned}
+
+    This formulation can be efficiently solved with QP or FISTA.
+
+    One common variant, namely the ``'constraintedl1'`` formulation, is
+    given by
+
+    .. math::
+
+        \begin{aligned}
+        \min_{\mathbf{x}}& \| \mathbf{A}\mathbf{x} - \mathbf{b} \|_2^2,\\
+        \text{s.t. }& \| \mathbf{x} \|_1 \leq l, \mathbf{x} \geq c.
+        \end{aligned}
+
+    This formulation can be efficiently solved with QP.
+
+    A less common variant, namely the ``'constrainedl2'`` formulation, is
+    given by
+
+    .. math::
+
+        \begin{aligned}
+        \min_{\mathbf{x}}& \| \mathbf{x} \|_1,\\
+        \text{s.t. }& \| \mathbf{A}\mathbf{x} - \mathbf{b} \|_2 \leq l,
+            \mathbf{x} \geq c.
+        \end{aligned}
+    
+    Note that the :math:`l_2` error is upper bounded by l. If l is too small
+    this problem may be infeasible. This formulation can be converted to a
+    SOCP problem.
+
+    Args:
+        m (int): Dimension of the observation vector :math:`\mathbf{b}`.
+        k (int): Dimension of the sparse vector :math:`\mathbf{x}` (or the
+            number of columns of the dictionary matrix, :math:`\mathbf{A}`).
+        formulation (str): ``'penalizedl1'``, ``'constrainedl1'`` or
+            ``'constrainedl2'``. Default value is ``'penalizedl1'``.
+        nonnegative (bool): Specifies whether :math:`\mathbf{x}` must be
+            nonnegative. Default value is ``False``.
+    """
 
     def __init__(self, m, k, formulation='penalizedl1', nonnegative=False):
-        r"""Creates a reusable l1-regularized least squares problem.
-
-        Let A be an m x k real dictionary matrix, b be an m x 1 observation
-        vector, x be an k x 1 sparse vector, l be a nonnegative scalar. Let lb
-        equal to 0 if x must be nonnegative and -inf if x can be any real
-        number.
-        
-        The default formulation, named 'penalizedl1', is given by
-
-        min_{x} 0.5 \| Ax - b \|_2^2 + l * \| x \|_1,
-        s.t. x >= lb
-
-        This formulation can be efficiently solved with QP or FISTA.
-
-        One common variant, namely the 'constraintedl1' formulation, is given by
-
-        min_{x} \| Ax - b \|_2^2,
-        s.t. \| x \|_1 <= l,
-             x >= lb.
-
-        This formulation can be efficiently solved with QP.
-
-        A less common variant, namely the 'constrainedl2' formulation, is given
-        by (Note that the l2 error is upper bounded by l. If l is too small this
-        problem may be infeasible.)
-
-        min_{x} \| x \|_1,
-        s.t. \| Ax - b \|_2 <= l,
-             x >= lb.
-            
-        This formulation can be converted to a SOCP problem.
-
-        Args:
-            m (int): Dimension of the observation vector b.
-            k (int): Dimension of the sparse vector x (or the number of columns
-                of the dictionary matrix, A).
-            formulation (str): 'penalizedl1', 'constrainedl1' or
-                'constrainedl2'. Default value is 'penalizedl1'.
-            nonnegative (bool): Specifies whether x must be nonnegative.
-        """
         if not cvx_available:
             raise RuntimeError('Cannot initialize when cvxpy is not available.')
         # Initialize parameters and variables
@@ -85,9 +103,9 @@ class L1RegularizedLeastSquaresProblem:
         """Solves the problem with the specified parameters.
 
         Args:
-            A: Dictionary matrix.
-            b: Observation vector.
-            l: Regularization/constraint parameter.
+            A (~numpy.ndarray): Dictionary matrix.
+            b (~numpy.ndarray): Observation vector.
+            l (float): Regularization/constraint parameter.
             **kwargs: Other keyword arguments to be passed to the solver.
         """
         self._A.value = A
@@ -100,25 +118,39 @@ class L1RegularizedLeastSquaresProblem:
         return self._x.value
 
 class L21RegularizedLeastSquaresProblem:
-    r"""l-21 norm regularized least squares problem.
+    r"""Creates an :math:`l_{2,1}`-norm regularized least squares problem.
     
-    The l-21 norm of a matrix variable X is given by
-        \|X\|_{2,1} = \sum_{i=1}^M \|X_i\|_2,
-    where X_i is the i-th row of X.
+    The :math:`l_{2,1}`-norm of a matrix variable
+    :math:`\mathbf{X} \in \mathbb{C}^{K \times L}` is given by
+    
+    .. math::
+        
+        \| \mathbf{X} \|_{2,1}
+        = \sum_{i=1}^K \left(\sum_{j=1}^L |X_{ij}|^2\right)^{\frac{1}{2}}.
+    
+    The :math:`l_{2,1}`-norm regularized least squares problem is given by
 
-    The l-21 norm regularized least squares problem is given by
-        min_X \frac{1}{2} \|AX - B\|_F^2 + l \|X\|_{2,1},
-    where A is M x K, X is K x L, B is M x L, and l is the regularization
-    parameter. Usually A is the dictionary matrix, X is the sparse signal to be
-    reconstructed, and B is the observation matrix where each column of B
-    represents a single observation.
+    .. math::
+
+        \min_{\mathbf{X}}
+        \frac{1}{2} \| \mathbf{A}\mathbf{X} - \mathbf{B} \|_F^2 +
+        l \| \mathbf{X} \|_{2,1},
+    
+    where :math:`\mathbf{A}` is :math:`M \times K`, :math:`\mathbf{X}` is
+    :math:`K \times L`, :math:`\mathbf{B}` is :math:`M \times L`, and :math:`l`
+    is the regularization parameter. Usually :math:`\mathbf{A}` is the
+    dictionary matrix, :math:`\mathbf{X}` is the sparse signal to be
+    reconstructed, and :math:`\mathbf{B}` is the observation matrix where each
+    column of :math:`\mathbf{B}` represents a single observation.
 
     Args:
-        m (int): Number of rows of the dictionary matrix A.
-        k (int): Number of rows of X (or the number of columns of the dictionary
-            matrix, A).
-        n (int): Number of observations (or the number of columns of the
-            observation matrix, B)
+        m (int): Number of rows of the dictionary matrix :math:`\mathbf{A}`.
+        k (int): Number of rows of :math:`\mathbf{X}` (or the number of columns
+            of the dictionary matrix, :math:`\mathbf{A}`).
+        n (int): Number of observations (the number of columns of the
+            observation matrix, :math:`\mathbf{B}`)
+        complex (bool): Specifies whether all matrices are complex. Default
+            value is ``False``.
     """
 
     def __init__(self, m, k, n, complex=False):
@@ -146,9 +178,9 @@ class L21RegularizedLeastSquaresProblem:
         """Solves the problem with the specified parameters.
 
         Args:
-            A: Dictionary matrix.
-            B: Observation matrix.
-            l: Regularization parameter.
+            A (~numpy.ndarray): Dictionary matrix.
+            B (~numpy.ndarray): Observation matrix.
+            l (~numpy.ndarray): Regularization parameter.
             **kwargs: Other keyword arguments to be passed to the solver.
         """
         self._A.value = A
