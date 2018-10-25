@@ -18,4 +18,3 @@ API references
 
 .. automodule:: doatools.model.arrays
     :members:
-    :exclude-members: GridBasedArrayDesign

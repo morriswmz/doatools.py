@@ -59,8 +59,11 @@ extensions = [
     'sphinx.ext.githubpages',
 ]
 
-# Keep the original ordering.
+# Autodoc settings.
 autodoc_member_order = 'bysource'
+autodoc_default_options = {
+    'show-inheritance': True
+}
 
 # No need to parse NumPy style docs.
 napoleon_numpy_docstring = False
