@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 from scipy.linalg import toeplitz
+from doatools.model.arrays import GridBasedArrayDesign
 from doatools.model.arrays import UniformLinearArray, CoPrimeArray, \
                                   NestedArray, MinimumRedundancyLinearArray, \
                                   UniformCircularArray, UniformRectangularArray
@@ -13,12 +14,14 @@ class Test1DArrays(unittest.TestCase):
         self.wavelength = 1
 
     def test_ula(self):
+        d0 = 2.
         custom_name = 'TestULA'
-        ula = UniformLinearArray(6, 2., custom_name)
-        self.assertEqual(ula.d0, 2.)
+        ula = UniformLinearArray(6, d0, custom_name)
         self.assertEqual(ula.size, 6)
         self.assertEqual(ula.ndim, 1)
         self.assertEqual(ula.name, custom_name)
+        npt.assert_allclose(ula.d0, np.array([d0]))
+        npt.assert_allclose(ula.bases, np.array([[d0]]))
         npt.assert_array_equal(
             ula.element_indices,
             np.array([0, 1, 2, 3, 4, 5]).reshape((-1, 1))
@@ -29,12 +32,14 @@ class Test1DArrays(unittest.TestCase):
         )
 
     def test_nested(self):
-        nea = NestedArray(4, 3, 1.)
+        d0 = 1.
+        nea = NestedArray(4, 3, d0)
         self.assertEqual(nea.n1, 4)
         self.assertEqual(nea.n2, 3)
-        self.assertEqual(nea.d0, 1.)
         self.assertEqual(nea.size, 7)
         self.assertEqual(nea.ndim, 1)
+        npt.assert_allclose(nea.d0, np.array([d0]))
+        npt.assert_allclose(nea.bases, np.array([[d0]]))
         npt.assert_array_equal(
             nea.element_indices,
             np.array([0, 1, 2, 3, 4, 9, 14]).reshape((-1, 1))
@@ -45,13 +50,15 @@ class Test1DArrays(unittest.TestCase):
         )
 
     def test_coprime(self):
+        d0 = self.wavelength / 2
         # M
-        cpa1 = CoPrimeArray(3, 5, 0.5, 'm')
+        cpa1 = CoPrimeArray(3, 5, d0, 'm')
         self.assertEqual(cpa1.coprime_pair, (3, 5))
         self.assertEqual(cpa1.mode, 'm')
-        self.assertEqual(cpa1.d0, 0.5)
         self.assertEqual(cpa1.size, 7)
         self.assertEqual(cpa1.ndim, 1)
+        npt.assert_array_equal(cpa1.d0, np.array([d0]))
+        npt.assert_array_equal(cpa1.bases, np.array([[d0]]))
         npt.assert_array_equal(
             cpa1.element_indices,
             np.array([0, 3, 6, 9, 12, 5, 10]).reshape((-1, 1))
@@ -61,12 +68,13 @@ class Test1DArrays(unittest.TestCase):
             np.array([0., 1.5, 3., 4.5, 6., 2.5, 5.]).reshape((-1, 1))
         )
         # 2M
-        cpa2 = CoPrimeArray(3, 5, 0.5, '2m')
+        cpa2 = CoPrimeArray(3, 5, d0, '2m')
         self.assertEqual(cpa2.coprime_pair, (3, 5))
         self.assertEqual(cpa2.mode, '2m')
-        self.assertEqual(cpa2.d0, 0.5)
         self.assertEqual(cpa2.size, 10)
         self.assertEqual(cpa2.ndim, 1)
+        npt.assert_array_equal(cpa2.d0, np.array([d0]))
+        npt.assert_array_equal(cpa2.bases, np.array([[d0]]))
         npt.assert_array_equal(
             cpa2.element_indices,
             np.array([0, 3, 6, 9, 12, 5, 10, 15, 20, 25]).reshape((-1, 1))
@@ -80,9 +88,10 @@ class Test1DArrays(unittest.TestCase):
         custom_name = 'TestMRA'
         d0 = self.wavelength / 2
         mra = MinimumRedundancyLinearArray(5, d0, custom_name)
-        self.assertEqual(mra.d0, 0.5)
         self.assertEqual(mra.size, 5)
         self.assertEqual(mra.ndim, 1)
+        npt.assert_array_equal(mra.d0, np.array([d0]))
+        npt.assert_array_equal(mra.bases, np.array([[d0]]))
         npt.assert_array_equal(
             mra.element_indices,
             np.array([0, 1, 4, 7, 9]).reshape((-1, 1))
@@ -152,6 +161,8 @@ class Test2DArrays(unittest.TestCase):
         self.assertEqual(ura1.ndim, 2)
         self.assertEqual(ura1.name, custom_name)
         self.assertEqual(ura1.shape, (m, n))
+        npt.assert_allclose(ura1.d0, np.array([d0, d0]))
+        npt.assert_allclose(ura1.bases, np.eye(2) * d0)
         npt.assert_array_equal(ura1.element_indices, indices_expected)
         npt.assert_allclose(ura1.element_locations, indices_expected * d0)
         # Rectangular cells
@@ -161,11 +172,36 @@ class Test2DArrays(unittest.TestCase):
         self.assertEqual(ura2.ndim, 2)
         self.assertEqual(ura2.name, custom_name)
         self.assertEqual(ura2.shape, (m, n))
+        npt.assert_allclose(ura2.d0, np.array(d0))
+        npt.assert_allclose(ura2.bases, np.diag(d0))
         npt.assert_array_equal(ura2.element_indices, indices_expected)
         npt.assert_allclose(
             ura2.element_locations,
             indices_expected * np.array(d0)
         )
+
+class TestGeneralGridBasedArrays(unittest.TestCase):
+
+    def test_3d(self):
+        bases = np.array([
+            [0., 0.5, 0.],
+            [1.,  0., 0.],
+            [0.,  0., 2.]
+        ])
+        indices = np.array([
+            [0, 0, 0],
+            [0, 0, 1],
+            [0, 1, 0],
+            [1, 1, 1]
+        ])
+        locations_expected = indices @ bases
+        array = GridBasedArrayDesign(indices, bases=bases)
+        self.assertEqual(array.size, indices.shape[0])
+        self.assertEqual(array.ndim, bases.shape[1])
+        npt.assert_allclose(array.d0, np.linalg.norm(bases, ord=2, axis=1))
+        npt.assert_allclose(array.element_indices, indices)
+        npt.assert_allclose(array.bases, bases)
+        npt.assert_allclose(array.element_locations, locations_expected)
 
 class TestArrayPerturbations(unittest.TestCase):
 
