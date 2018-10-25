@@ -2,7 +2,6 @@ import numpy as np
 from math import ceil
 from scipy.signal import find_peaks
 import warnings
-from ..model.arrays import UniformLinearArray
 from ..model.sources import FarField1DSourcePlacement
 from .core import SpectrumBasedEstimatorBase, get_noise_subspace, \
                   ensure_covariance_size, ensure_n_resolvable_sources
