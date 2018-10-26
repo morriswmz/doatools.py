@@ -41,7 +41,8 @@
 <dl class="class">
 <dt id="doatools.estimation.ml.CovarianceBasedMLEstimator">
 <em class="property">class </em><code class="descclassname">doatools.estimation.ml.</code><code class="descname">CovarianceBasedMLEstimator</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/ml.html#CovarianceBasedMLEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.ml.CovarianceBasedMLEstimator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Abstract base class for covariance based maximum-likelihood estimators.</p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>Abstract base class for covariance based maximum-likelihood estimators.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -126,7 +127,8 @@ source locations. Will be <code class="docutils literal notranslate"><span class
 <dl class="class">
 <dt id="doatools.estimation.ml.AMLEstimator">
 <em class="property">class </em><code class="descclassname">doatools.estimation.ml.</code><code class="descname">AMLEstimator</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/ml.html#AMLEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.ml.AMLEstimator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Asymptotic maximum-likelihood (AML) estimator.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.estimation.ml.CovarianceBasedMLEstimator" title="doatools.estimation.ml.CovarianceBasedMLEstimator"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.ml.CovarianceBasedMLEstimator</span></code></a></p>
+<p>Asymptotic maximum-likelihood (AML) estimator.</p>
 <p>The AML estimator maximizes the following log-likelihood function:</p>
 <div class="math notranslate nohighlight">
 \[- \log\det \mathbf{S} - \mathrm{tr}(\mathbf{S}^{-1} \mathbf{R})\]</div>
@@ -154,7 +156,8 @@ locations, <span class="math notranslate nohighlight">\(\mathbf{\theta}\)</span>
 <dl class="class">
 <dt id="doatools.estimation.ml.CMLEstimator">
 <em class="property">class </em><code class="descclassname">doatools.estimation.ml.</code><code class="descname">CMLEstimator</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/ml.html#CMLEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.ml.CMLEstimator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Conditional maximum-likelihood (CML) estimator.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.estimation.ml.CovarianceBasedMLEstimator" title="doatools.estimation.ml.CovarianceBasedMLEstimator"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.ml.CovarianceBasedMLEstimator</span></code></a></p>
+<p>Conditional maximum-likelihood (CML) estimator.</p>
 <p>Given the conditional observation model (the source signals are assumed to
 be deterministic unknown):</p>
 <div class="math notranslate nohighlight">
@@ -183,7 +186,8 @@ optimization problem only involves the source locations:</p>
 <dl class="class">
 <dt id="doatools.estimation.ml.WSFEstimator">
 <em class="property">class </em><code class="descclassname">doatools.estimation.ml.</code><code class="descname">WSFEstimator</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/ml.html#WSFEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.ml.WSFEstimator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Weighted subspace fitting (WSF) estimator.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.estimation.ml.CovarianceBasedMLEstimator" title="doatools.estimation.ml.CovarianceBasedMLEstimator"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.ml.CovarianceBasedMLEstimator</span></code></a></p>
+<p>Weighted subspace fitting (WSF) estimator.</p>
 <p>WSF is based on the CML estimator, with the objective function given by</p>
 <div class="math notranslate nohighlight">
 \[\mathrm{tr}(\mathbf{P}^\perp_{\mathbf{A}}
@@ -241,6 +245,7 @@ Process., vol. 38, pp. 1132-1143, July 1990.</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

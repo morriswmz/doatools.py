@@ -67,7 +67,8 @@ noise subspace.</li>
 <dl class="class">
 <dt id="doatools.estimation.music.MUSIC">
 <em class="property">class </em><code class="descclassname">doatools.estimation.music.</code><code class="descname">MUSIC</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/music.html#MUSIC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.music.MUSIC" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a spectrum-based MUSIC estimator.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.core.SpectrumBasedEstimatorBase</span></code></p>
+<p>Creates a spectrum-based MUSIC estimator.</p>
 <p>The MUSIC spectrum is computed on a predefined-grid using
 <a class="reference internal" href="#doatools.estimation.music.f_music" title="doatools.estimation.music.f_music"><code class="xref py py-meth docutils literal notranslate"><span class="pre">f_music()</span></code></a>, and the source locations are
 estimated by identifying the peaks.</p>
@@ -147,7 +148,8 @@ at the grid points. Only present if <code class="docutils literal notranslate"><
 <dl class="class">
 <dt id="doatools.estimation.music.RootMUSIC1D">
 <em class="property">class </em><code class="descclassname">doatools.estimation.music.</code><code class="descname">RootMUSIC1D</code><span class="sig-paren">(</span><em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/music.html#RootMUSIC1D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.music.RootMUSIC1D" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a root-MUSIC estimator for uniform linear arrays.</p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Creates a root-MUSIC estimator for uniform linear arrays.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -244,6 +246,7 @@ resolved is <code class="docutils literal notranslate"><span class="pre">False</
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

@@ -41,7 +41,8 @@
 <dl class="class">
 <dt id="doatools.estimation.sparse.SparseCovarianceMatching">
 <em class="property">class </em><code class="descclassname">doatools.estimation.sparse.</code><code class="descname">SparseCovarianceMatching</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>noise_known=False</em>, <em>formulation='penalizedl1'</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/sparse.html#SparseCovarianceMatching"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.sparse.SparseCovarianceMatching" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a source location estimator based on matching the sparse
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.core.SpectrumBasedEstimatorBase</span></code></p>
+<p>Creates a source location estimator based on matching the sparse
 representation of the covariance matrix.</p>
 <p>The sources are assumed to be uncorrelated. Take 1D far-field sources
 as an example. After discretizing the range of source locations into a fine
@@ -122,7 +123,7 @@ residual. Smaller values of <code class="docutils literal notranslate"><span cla
 reconstruction results. However the optimization problem
 will become infeasible if <code class="docutils literal notranslate"><span class="pre">l</span></code> is too small.</li>
 </ul>
-<p>See <code class="xref py py-class docutils literal notranslate"><span class="pre">L1RegularizedLeastSquaresProblem</span></code>
+<p>See <a class="reference internal" href="doatools.optim.l1lsq.html#doatools.optim.l1lsq.L1RegularizedLeastSquaresProblem" title="doatools.optim.l1lsq.L1RegularizedLeastSquaresProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">L1RegularizedLeastSquaresProblem</span></code></a>
 for more details.</p>
 </li>
 <li><strong>solver_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – A dictionary of additional keyword arguments
@@ -164,7 +165,8 @@ at the grid points. Only present if <code class="docutils literal notranslate"><
 <dl class="class">
 <dt id="doatools.estimation.sparse.GroupSparseEstimator">
 <em class="property">class </em><code class="descclassname">doatools.estimation.sparse.</code><code class="descname">GroupSparseEstimator</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>n_snapshots</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/sparse.html#GroupSparseEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.sparse.GroupSparseEstimator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a group-sparsity based estimator.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.core.SpectrumBasedEstimatorBase</span></code></p>
+<p>Creates a group-sparsity based estimator.</p>
 <p>The group-sparsity based estimator considers the following mulitple
 measurement vector (MMV) model:</p>
 <div class="math notranslate nohighlight">
@@ -298,6 +300,7 @@ at the grid points. Only present if <code class="docutils literal notranslate"><
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

@@ -10,6 +10,7 @@ Welcome to doatools's documentation!
    references/doatools.estimation
    references/doatools.performance
    references/doatools.plotting
+   references/doatools.misc
 
 Indices and tables
 ==================

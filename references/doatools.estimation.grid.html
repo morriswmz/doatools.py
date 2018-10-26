@@ -41,7 +41,8 @@
 <dl class="class">
 <dt id="doatools.estimation.grid.SearchGrid">
 <em class="property">class </em><code class="descclassname">doatools.estimation.grid.</code><code class="descname">SearchGrid</code><span class="sig-paren">(</span><em>axes</em>, <em>axis_names</em>, <em>units</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/grid.html#SearchGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.grid.SearchGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base class for all search grids. Provides standard implementation.</p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>Base class for all search grids. Provides standard implementation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -259,7 +260,8 @@ when performing the refinement.</li>
 <dl class="class">
 <dt id="doatools.estimation.grid.FarField1DSearchGrid">
 <em class="property">class </em><code class="descclassname">doatools.estimation.grid.</code><code class="descname">FarField1DSearchGrid</code><span class="sig-paren">(</span><em>start=None</em>, <em>stop=None</em>, <em>size=180</em>, <em>unit='rad'</em>, <em>axes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/grid.html#FarField1DSearchGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.grid.FarField1DSearchGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a search grid for 1D far-field source localization.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.grid.SearchGrid</span></code></a></p>
+<p>Creates a search grid for 1D far-field source localization.</p>
 <p>When both <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">stop</span></code> are scalars, the resulting search grid
 consists only one uniform grid. When both <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">stop</span></code> are lists
 the resulting search grid is a combination of multiple uniform grids
@@ -335,7 +337,8 @@ when performing the refinement. Default value is 1.</li>
 <dl class="class">
 <dt id="doatools.estimation.grid.FarField2DSearchGrid">
 <em class="property">class </em><code class="descclassname">doatools.estimation.grid.</code><code class="descname">FarField2DSearchGrid</code><span class="sig-paren">(</span><em>start=None</em>, <em>stop=None</em>, <em>size=(360</em>, <em>90)</em>, <em>unit='rad'</em>, <em>axes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/grid.html#FarField2DSearchGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.grid.FarField2DSearchGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a search grid for 2D far-field source localization.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.grid.SearchGrid</span></code></a></p>
+<p>Creates a search grid for 2D far-field source localization.</p>
 <p>The first dimension corresponds to the azimuth angle, and the second
 dimension corresponds to the elevation angle.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -409,7 +412,8 @@ when performing the refinement. Default value is 1.</li>
 <dl class="class">
 <dt id="doatools.estimation.grid.NearField2DSearchGrid">
 <em class="property">class </em><code class="descclassname">doatools.estimation.grid.</code><code class="descname">NearField2DSearchGrid</code><span class="sig-paren">(</span><em>start=None</em>, <em>stop=None</em>, <em>size=None</em>, <em>axes=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/grid.html#NearField2DSearchGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.grid.NearField2DSearchGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a search grid for 2D near-field source localization.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.estimation.grid.SearchGrid" title="doatools.estimation.grid.SearchGrid"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.grid.SearchGrid</span></code></a></p>
+<p>Creates a search grid for 2D near-field source localization.</p>
 <p>The first dimension corresponds to the x coordinate, and the second
 dimension corresponds to the y coordinate.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -504,6 +508,7 @@ when performing the refinement. Default value is 1.</li>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

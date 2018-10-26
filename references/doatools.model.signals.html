@@ -41,7 +41,8 @@
 <dl class="class">
 <dt id="doatools.model.signals.SignalGenerator">
 <em class="property">class </em><code class="descclassname">doatools.model.signals.</code><code class="descname">SignalGenerator</code><a class="reference internal" href="../_modules/doatools/model/signals.html#SignalGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.SignalGenerator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Abstrace base class for all signal generators.</p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>Abstrace base class for all signal generators.</p>
 <p>Extend this class to create your own signal generators.</p>
 <dl class="attribute">
 <dt id="doatools.model.signals.SignalGenerator.dim">
@@ -62,7 +63,8 @@ each column represents a sample.</p>
 <dl class="class">
 <dt id="doatools.model.signals.ComplexStochasticSignal">
 <em class="property">class </em><code class="descclassname">doatools.model.signals.</code><code class="descname">ComplexStochasticSignal</code><span class="sig-paren">(</span><em>dim</em>, <em>C=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#ComplexStochasticSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.ComplexStochasticSignal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a signal generator that generates zero-mean complex
+<dd><p>Bases: <a class="reference internal" href="#doatools.model.signals.SignalGenerator" title="doatools.model.signals.SignalGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.signals.SignalGenerator</span></code></a></p>
+<p>Creates a signal generator that generates zero-mean complex
 circularly-symmetric Gaussian signals.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -107,7 +109,8 @@ each column represents a sample.</p>
 <dl class="class">
 <dt id="doatools.model.signals.RandomPhaseSignal">
 <em class="property">class </em><code class="descclassname">doatools.model.signals.</code><code class="descname">RandomPhaseSignal</code><span class="sig-paren">(</span><em>dim</em>, <em>amplitudes=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/signals.html#RandomPhaseSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.signals.RandomPhaseSignal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a random phase signal generator.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.model.signals.SignalGenerator" title="doatools.model.signals.SignalGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.signals.SignalGenerator</span></code></a></p>
+<p>Creates a random phase signal generator.</p>
 <p>The phases are uniformly and independently sampled from <span class="math notranslate nohighlight">\([-\pi, \pi]\)</span>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -175,6 +178,7 @@ each column represents a sample.</p>
 <li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

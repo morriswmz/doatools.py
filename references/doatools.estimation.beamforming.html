@@ -87,7 +87,8 @@ direction-of-arrivals.</li>
 <dl class="class">
 <dt id="doatools.estimation.beamforming.BartlettBeamformer">
 <em class="property">class </em><code class="descclassname">doatools.estimation.beamforming.</code><code class="descname">BartlettBeamformer</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#BartlettBeamformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.BartlettBeamformer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a Barlett-beamformer based estimator.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.core.SpectrumBasedEstimatorBase</span></code></p>
+<p>Creates a Barlett-beamformer based estimator.</p>
 <p>This estimator is also named beamscan based estimator.</p>
 <p>The spectrum is computed on a predefined-grid using
 <a class="reference internal" href="#doatools.estimation.beamforming.f_bartlett" title="doatools.estimation.beamforming.f_bartlett"><code class="xref py py-meth docutils literal notranslate"><span class="pre">f_bartlett()</span></code></a>, and the source
@@ -166,7 +167,8 @@ at the grid points. Only present if <code class="docutils literal notranslate"><
 <dl class="class">
 <dt id="doatools.estimation.beamforming.MVDRBeamformer">
 <em class="property">class </em><code class="descclassname">doatools.estimation.beamforming.</code><code class="descname">MVDRBeamformer</code><span class="sig-paren">(</span><em>array</em>, <em>wavelength</em>, <em>search_grid</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/beamforming.html#MVDRBeamformer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.beamforming.MVDRBeamformer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a MVDR-beamformer based estimator.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.estimation.core.SpectrumBasedEstimatorBase</span></code></p>
+<p>Creates a MVDR-beamformer based estimator.</p>
 <p>The spectrum is computed on a predefined-grid using
 <a class="reference internal" href="#doatools.estimation.beamforming.f_mvdr" title="doatools.estimation.beamforming.f_mvdr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">f_mvdr()</span></code></a>, and the source locations
 are estimated by identifying the peaks.</p>
@@ -278,6 +280,7 @@ at the grid points. Only present if <code class="docutils literal notranslate"><
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

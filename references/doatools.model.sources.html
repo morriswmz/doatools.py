@@ -67,7 +67,8 @@ angles are measured with respect to the xy-plane.</li>
 <dl class="class">
 <dt id="doatools.model.sources.SourcePlacement">
 <em class="property">class </em><code class="descclassname">doatools.model.sources.</code><code class="descname">SourcePlacement</code><span class="sig-paren">(</span><em>locations</em>, <em>units</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#SourcePlacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.SourcePlacement" title="Permalink to this definition">¶</a></dt>
-<dd><p>Represents the placement of several sources.</p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<p>Represents the placement of several sources.</p>
 <p>This the base abstract class and should not be directly instantiated.</p>
 <dl class="method">
 <dt id="doatools.model.sources.SourcePlacement.__getitem__">
@@ -182,7 +183,8 @@ types of sources (e.g. far-field vs. near-field).</p>
 <dl class="class">
 <dt id="doatools.model.sources.FarField1DSourcePlacement">
 <em class="property">class </em><code class="descclassname">doatools.model.sources.</code><code class="descname">FarField1DSourcePlacement</code><span class="sig-paren">(</span><em>locations</em>, <em>unit='rad'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField1DSourcePlacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField1DSourcePlacement" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a far-field 1D source placement.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.sources.SourcePlacement</span></code></a></p>
+<p>Creates a far-field 1D source placement.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -256,7 +258,8 @@ is <code class="docutils literal notranslate"><span class="pre">'rad'</span></co
 <dl class="class">
 <dt id="doatools.model.sources.FarField2DSourcePlacement">
 <em class="property">class </em><code class="descclassname">doatools.model.sources.</code><code class="descname">FarField2DSourcePlacement</code><span class="sig-paren">(</span><em>locations</em>, <em>unit='rad'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField2DSourcePlacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField2DSourcePlacement" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a far-field 2D source placement.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.sources.SourcePlacement</span></code></a></p>
+<p>Creates a far-field 2D source placement.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -305,7 +308,8 @@ be modified after creation.</li>
 <dl class="class">
 <dt id="doatools.model.sources.NearField2DSourcePlacement">
 <em class="property">class </em><code class="descclassname">doatools.model.sources.</code><code class="descname">NearField2DSourcePlacement</code><span class="sig-paren">(</span><em>locations</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#NearField2DSourcePlacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.NearField2DSourcePlacement" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a near-field 2D source placement.</p>
+<dd><p>Bases: <a class="reference internal" href="#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.sources.SourcePlacement</span></code></a></p>
+<p>Creates a near-field 2D source placement.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -379,6 +383,7 @@ modified after creation.</td>
 <li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>
 
 <div class="relations">

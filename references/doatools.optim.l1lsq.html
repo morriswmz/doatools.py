@@ -1,0 +1,259 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Solving least squares problems with sparse regularization &#8212; DoaTools 0.2.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Miscellaneous" href="doatools.misc.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="solving-least-squares-problems-with-sparse-regularization">
+<h1>Solving least squares problems with sparse regularization<a class="headerlink" href="#solving-least-squares-problems-with-sparse-regularization" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-doatools.optim.l1lsq">
+<span id="api-references"></span><h2>API references:<a class="headerlink" href="#module-doatools.optim.l1lsq" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="doatools.optim.l1lsq.L1RegularizedLeastSquaresProblem">
+<em class="property">class </em><code class="descclassname">doatools.optim.l1lsq.</code><code class="descname">L1RegularizedLeastSquaresProblem</code><span class="sig-paren">(</span><em>m</em>, <em>k</em>, <em>formulation='penalizedl1'</em>, <em>nonnegative=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/optim/l1lsq.html#L1RegularizedLeastSquaresProblem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.optim.l1lsq.L1RegularizedLeastSquaresProblem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Creates a reusable <span class="math notranslate nohighlight">\(l_1\)</span>-regularized least squares problem.</p>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{A}\)</span> be an <span class="math notranslate nohighlight">\(M \times L\)</span> real dictionary matrix,
+<span class="math notranslate nohighlight">\(\mathbf{b}\)</span> be an <span class="math notranslate nohighlight">\(M \times 1\)</span> observation vector,
+<span class="math notranslate nohighlight">\(\mathbf{x}\)</span> be a <span class="math notranslate nohighlight">\(K \times 1\)</span> sparse vector, <span class="math notranslate nohighlight">\(l\)</span> be
+a nonnegative scalar. Let <span class="math notranslate nohighlight">\(c\)</span> equal to 0 if <span class="math notranslate nohighlight">\(\mathbf{x}\)</span>
+must be nonnegative and <span class="math notranslate nohighlight">\(-\infty\)</span> if <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> can be any
+real number.</p>
+<p>The default formulation, named <code class="docutils literal notranslate"><span class="pre">'penalizedl1'</span></code>, is given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\min_{\mathbf{x}}&amp;
+\frac{1}{2} \| \mathbf{A}\mathbf{x} - \mathbf{b} \|_2^2 +
+    l \| \mathbf{x} \|_1,\\
+\text{s.t. }&amp; x \geq c
+\end{aligned}\end{split}\]</div>
+<p>This formulation can be efficiently solved with QP or FISTA.</p>
+<p>One common variant, namely the <code class="docutils literal notranslate"><span class="pre">'constraintedl1'</span></code> formulation, is
+given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\min_{\mathbf{x}}&amp; \| \mathbf{A}\mathbf{x} - \mathbf{b} \|_2^2,\\
+\text{s.t. }&amp; \| \mathbf{x} \|_1 \leq l, \mathbf{x} \geq c.
+\end{aligned}\end{split}\]</div>
+<p>This formulation can be efficiently solved with QP.</p>
+<p>A less common variant, namely the <code class="docutils literal notranslate"><span class="pre">'constrainedl2'</span></code> formulation, is
+given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+\min_{\mathbf{x}}&amp; \| \mathbf{x} \|_1,\\
+\text{s.t. }&amp; \| \mathbf{A}\mathbf{x} - \mathbf{b} \|_2 \leq l,
+    \mathbf{x} \geq c.
+\end{aligned}\end{split}\]</div>
+<p>Note that the <span class="math notranslate nohighlight">\(l_2\)</span> error is upper bounded by l. If l is too small
+this problem may be infeasible. This formulation can be converted to a
+SOCP problem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimension of the observation vector <span class="math notranslate nohighlight">\(\mathbf{b}\)</span>.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Dimension of the sparse vector <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> (or the
+number of columns of the dictionary matrix, <span class="math notranslate nohighlight">\(\mathbf{A}\)</span>).</li>
+<li><strong>formulation</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">'penalizedl1'</span></code>, <code class="docutils literal notranslate"><span class="pre">'constrainedl1'</span></code> or
+<code class="docutils literal notranslate"><span class="pre">'constrainedl2'</span></code>. Default value is <code class="docutils literal notranslate"><span class="pre">'penalizedl1'</span></code>.</li>
+<li><strong>nonnegative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Specifies whether <span class="math notranslate nohighlight">\(\mathbf{x}\)</span> must be
+nonnegative. Default value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="doatools.optim.l1lsq.L1RegularizedLeastSquaresProblem.solve">
+<code class="descname">solve</code><span class="sig-paren">(</span><em>A</em>, <em>b</em>, <em>l</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/optim/l1lsq.html#L1RegularizedLeastSquaresProblem.solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.optim.l1lsq.L1RegularizedLeastSquaresProblem.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the problem with the specified parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Dictionary matrix.</li>
+<li><strong>b</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Observation vector.</li>
+<li><strong>l</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Regularization/constraint parameter.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments to be passed to the solver.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="doatools.optim.l1lsq.L21RegularizedLeastSquaresProblem">
+<em class="property">class </em><code class="descclassname">doatools.optim.l1lsq.</code><code class="descname">L21RegularizedLeastSquaresProblem</code><span class="sig-paren">(</span><em>m</em>, <em>k</em>, <em>n</em>, <em>complex=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/optim/l1lsq.html#L21RegularizedLeastSquaresProblem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.optim.l1lsq.L21RegularizedLeastSquaresProblem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Creates an <span class="math notranslate nohighlight">\(l_{2,1}\)</span>-norm regularized least squares problem.</p>
+<p>The <span class="math notranslate nohighlight">\(l_{2,1}\)</span>-norm of a matrix variable
+<span class="math notranslate nohighlight">\(\mathbf{X} \in \mathbb{C}^{K \times L}\)</span> is given by</p>
+<div class="math notranslate nohighlight">
+\[\| \mathbf{X} \|_{2,1}
+= \sum_{i=1}^K \left(\sum_{j=1}^L |X_{ij}|^2\right)^{\frac{1}{2}}.\]</div>
+<p>The <span class="math notranslate nohighlight">\(l_{2,1}\)</span>-norm regularized least squares problem is given by</p>
+<div class="math notranslate nohighlight">
+\[\min_{\mathbf{X}}
+\frac{1}{2} \| \mathbf{A}\mathbf{X} - \mathbf{B} \|_F^2 +
+l \| \mathbf{X} \|_{2,1},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mathbf{A}\)</span> is <span class="math notranslate nohighlight">\(M \times K\)</span>, <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> is
+<span class="math notranslate nohighlight">\(K \times L\)</span>, <span class="math notranslate nohighlight">\(\mathbf{B}\)</span> is <span class="math notranslate nohighlight">\(M \times L\)</span>, and <span class="math notranslate nohighlight">\(l\)</span>
+is the regularization parameter. Usually <span class="math notranslate nohighlight">\(\mathbf{A}\)</span> is the
+dictionary matrix, <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> is the sparse signal to be
+reconstructed, and <span class="math notranslate nohighlight">\(\mathbf{B}\)</span> is the observation matrix where each
+column of <span class="math notranslate nohighlight">\(\mathbf{B}\)</span> represents a single observation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of rows of the dictionary matrix <span class="math notranslate nohighlight">\(\mathbf{A}\)</span>.</li>
+<li><strong>k</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of rows of <span class="math notranslate nohighlight">\(\mathbf{X}\)</span> (or the number of columns
+of the dictionary matrix, <span class="math notranslate nohighlight">\(\mathbf{A}\)</span>).</li>
+<li><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.7)"><em>int</em></a>) – Number of observations (the number of columns of the
+observation matrix, <span class="math notranslate nohighlight">\(\mathbf{B}\)</span>)</li>
+<li><strong>complex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Specifies whether all matrices are complex. Default
+value is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="doatools.optim.l1lsq.L21RegularizedLeastSquaresProblem.solve">
+<code class="descname">solve</code><span class="sig-paren">(</span><em>A</em>, <em>B</em>, <em>l</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/optim/l1lsq.html#L21RegularizedLeastSquaresProblem.solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.optim.l1lsq.L21RegularizedLeastSquaresProblem.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solves the problem with the specified parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>A</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Dictionary matrix.</li>
+<li><strong>B</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Observation matrix.</li>
+<li><strong>l</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – Regularization parameter.</li>
+<li><strong>**kwargs</strong> – Other keyword arguments to be passed to the solver.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">DoaTools</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="doatools.model.html">Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Solving least squares problems with sparse regularization</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="doatools.misc.html">Miscellaneous</a><ul>
+      <li>Previous: <a href="doatools.misc.html" title="previous chapter">Miscellaneous</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Mianzhi Wang.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/references/doatools.optim.l1lsq.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
