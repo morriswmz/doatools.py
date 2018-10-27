@@ -32,7 +32,7 @@ def compute_unique_location_differences(locations, atol=0.0, rtol=1e-8):
     return unique_rows(compute_location_differences(locations), atol, rtol)
 
 class WeightFunction1D:
-    """Creates an 1D weight function.
+    """Creates a 1D weight function.
 
     Args:
         array (~doatools.model.arrays.ArrayDesign): Array design.
@@ -45,7 +45,7 @@ class WeightFunction1D:
 
     def __init__(self, array):
         if array.ndim != 1 or not isinstance(array, GridBasedArrayDesign):
-            raise ValueError('Expecting an 1D grid-based array.')
+            raise ValueError('Expecting a 1D grid-based array.')
         self._m = array.size
         self._mv = None
         self._build_map(array)
@@ -59,7 +59,7 @@ class WeightFunction1D:
         return len(self._index_map)
 
     def differences(self):
-        """Retrieves an 1D array of unique differences in ascending order.
+        """Retrieves a 1D array of unique differences in ascending order.
         
         The ordering of elements returned by :meth:`differences` and the
         ordering of elements returned by :meth:`weights` are the same.

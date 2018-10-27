@@ -21,7 +21,7 @@ def validate_location_errors(m, params):
 
 def validate_gain_and_phase_errors(m, params):
     if params.ndim != 1:
-        raise ValueError('Expecting an 1D array.')
+        raise ValueError('Expecting a 1D array.')
     if params.size != m:
         raise ValueError('The size of the gain/phase errors vector does not much the array size.')
 
@@ -97,7 +97,7 @@ class ArrayDesign:
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
         if locations.ndim > 2:
-            raise ValueError('Expecting an 1D vector or a 2D matrix.')
+            raise ValueError('Expecting a 1D vector or a 2D matrix.')
         if locations.ndim == 1:
             locations = locations.reshape((-1, 1))
         elif locations.shape[1] > 3:
@@ -415,7 +415,7 @@ class GridBasedArrayDesign(ArrayDesign):
         You are not supposed to modified the returned array.
 
         Returns:
-            ~numpy.ndarray: An 1D vector containing the inter-element spacings
+            ~numpy.ndarray: A 1D vector containing the inter-element spacings
             along each grid axis.
         """
         return self._d0
@@ -458,7 +458,7 @@ class UniformLinearArray(GridBasedArrayDesign):
         super().__init__(np.arange(n).reshape((-1, 1)), d0, name, **kwargs)
 
 class NestedArray(GridBasedArrayDesign):
-    """Creates an 1D nested array.
+    """Creates a 1D nested array.
 
     Args:
         n1 (int): Parameter N1.
@@ -495,7 +495,7 @@ class NestedArray(GridBasedArrayDesign):
         return self._n2
 
 class CoPrimeArray(GridBasedArrayDesign):
-    """Creates an 1D co-prime array.
+    """Creates a 1D co-prime array.
 
     Args:
         m (int): The smaller number in the co-prime pair.

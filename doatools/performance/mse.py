@@ -17,7 +17,7 @@ def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbat
 
             1. A scalar if all sources are uncorrelated and share the same
                power.
-            2. An 1D numpy array if all sources are uncorrelated but have
+            2. A 1D numpy array if all sources are uncorrelated but have
                different powers.
             3. A 2D numpy array representing the source covariance matrix.
         
@@ -76,7 +76,7 @@ def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
 
             1. A scalar if all sources are uncorrelated and share the same
                power.
-            2. An 1D numpy array if all sources are uncorrelated but have
+            2. A 1D numpy array if all sources are uncorrelated but have
                different powers.
             3. A 2D numpy array representing the source covariance matrix.
                Only the diagonal elements will be used.

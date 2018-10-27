@@ -12,7 +12,7 @@ class CoarrayACMBuilder1D:
     into augmented covariance matrices under the difference coarray model
 
     Args:
-        array (~doatools.model.arrays.ArrayDesign): An 1D grid-based sensor
+        array (~doatools.model.arrays.ArrayDesign): A 1D grid-based sensor
             array. Common candidates include
             :class:`~doatools.model.arrays.CoPrimeArray`,
             :class:`~doatools.model.arrays.NestedArray`,
@@ -21,7 +21,7 @@ class CoarrayACMBuilder1D:
 
     def __init__(self, array):
         if not isinstance(array, GridBasedArrayDesign) or array.ndim > 1:
-            raise ValueError('Expecting an 1D grid-based array.')
+            raise ValueError('Expecting a 1D grid-based array.')
         self._array = array
         self._w = WeightFunction1D(array)
 

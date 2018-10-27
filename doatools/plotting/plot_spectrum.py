@@ -32,7 +32,7 @@ def _build_spectrum_list(sp, grid):
 
 def plot_spectrum_1d(sp, grid, ax, estimates=None, ground_truth=None,
                      use_log_scale=False, discrete=False):
-    """Plots an 1D spectrum or multiple 1D spectra.
+    """Plots a 1D spectrum or multiple 1D spectra.
 
     Args:
         sp: Can be one of the following:

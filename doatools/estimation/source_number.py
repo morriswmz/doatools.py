@@ -5,7 +5,7 @@ def ld_stat(l, n_sources, n_snapshots):
     """Computes the sufficient statistic for source number detection in MDL/AIC.
 
     Args:
-        l (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance
+        l (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance
             matrix in ascending order.
         n_sources (int): Number of sources.
         n_snapshots (int): Number of snapshots.
@@ -14,7 +14,7 @@ def ld_stat(l, n_sources, n_snapshots):
         [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
     """
     if l.ndim != 1:
-        raise ValueError('An 1D numpy vector expected.')
+        raise ValueError('A 1D numpy vector expected.')
     n_sensors = l.size
     diff = n_sensors - n_sources
     l = l[:diff]
@@ -24,7 +24,7 @@ def aic(x, n_snapshots):
     """Detects source numbers using AIC.
 
     Args:
-        x (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance
+        x (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance
             matrix in ascending order, or the covariance matrix itself.
         n_snapshots (int): Number of snapshots.
 
@@ -48,7 +48,7 @@ def mdl(x, n_sensors, n_snapshots):
     """Detects source number using MDL.
     
     Args:
-        x (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance
+        x (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance
             matrix in ascending order, or the covariance matrix itself.
         n_snapshots (int): Number of snapshots.
     

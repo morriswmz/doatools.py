@@ -21,7 +21,7 @@ def unify_p_to_matrix(p, k):
             raise ValueError('The shape of the input matrix does not match the number of sources.')
         return p
     else:
-        raise ValueError('Expecting a scalar, an 1D vector or a 2D matrix.')
+        raise ValueError('Expecting a scalar, a 1D vector or a 2D matrix.')
 
 def unify_p_to_vector(p, k):
     """
@@ -42,4 +42,4 @@ def unify_p_to_vector(p, k):
             raise ValueError('The shape of the input matrix does not match the number of sources.')
         return np.diag(p)
     else:
-        raise ValueError('Expecting a scalar, an 1D vector or a 2D matrix.')
+        raise ValueError('Expecting a scalar, a 1D vector or a 2D matrix.')
