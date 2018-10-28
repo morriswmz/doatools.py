@@ -67,7 +67,7 @@
     <span class="k">return</span> <span class="n">unique_rows</span><span class="p">(</span><span class="n">compute_location_differences</span><span class="p">(</span><span class="n">locations</span><span class="p">),</span> <span class="n">atol</span><span class="p">,</span> <span class="n">rtol</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="WeightFunction1D"><a class="viewcode-back" href="../../../references/doatools.model.coarray.html#doatools.model.coarray.WeightFunction1D">[docs]</a><span class="k">class</span> <span class="nc">WeightFunction1D</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Creates an 1D weight function.</span>
+    <span class="sd">&quot;&quot;&quot;Creates a 1D weight function.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        array (~doatools.model.arrays.ArrayDesign): Array design.</span>
@@ -80,7 +80,7 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">GridBasedArrayDesign</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting an 1D grid-based array.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 1D grid-based array.&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_m</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mv</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_build_map</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
@@ -94,7 +94,7 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_index_map</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WeightFunction1D.differences"><a class="viewcode-back" href="../../../references/doatools.model.coarray.html#doatools.model.coarray.WeightFunction1D.differences">[docs]</a>    <span class="k">def</span> <span class="nf">differences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Retrieves an 1D array of unique differences in ascending order.</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves a 1D array of unique differences in ascending order.</span>
 <span class="sd">        </span>
 <span class="sd">        The ordering of elements returned by :meth:`differences` and the</span>
 <span class="sd">        ordering of elements returned by :meth:`weights` are the same.</span>

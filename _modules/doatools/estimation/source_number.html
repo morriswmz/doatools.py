@@ -40,7 +40,7 @@
     <span class="sd">&quot;&quot;&quot;Computes the sufficient statistic for source number detection in MDL/AIC.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        l (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">        l (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance</span>
 <span class="sd">            matrix in ascending order.</span>
 <span class="sd">        n_sources (int): Number of sources.</span>
 <span class="sd">        n_snapshots (int): Number of snapshots.</span>
@@ -49,7 +49,7 @@
 <span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;An 1D numpy vector expected.&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;A 1D numpy vector expected.&#39;</span><span class="p">)</span>
     <span class="n">n_sensors</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">size</span>
     <span class="n">diff</span> <span class="o">=</span> <span class="n">n_sensors</span> <span class="o">-</span> <span class="n">n_sources</span>
     <span class="n">l</span> <span class="o">=</span> <span class="n">l</span><span class="p">[:</span><span class="n">diff</span><span class="p">]</span>
@@ -59,7 +59,7 @@
     <span class="sd">&quot;&quot;&quot;Detects source numbers using AIC.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        x (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">        x (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance</span>
 <span class="sd">            matrix in ascending order, or the covariance matrix itself.</span>
 <span class="sd">        n_snapshots (int): Number of snapshots.</span>
 
@@ -83,7 +83,7 @@
     <span class="sd">&quot;&quot;&quot;Detects source number using MDL.</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
-<span class="sd">        x (~numpy.ndarray): An 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">        x (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance</span>
 <span class="sd">            matrix in ascending order, or the covariance matrix itself.</span>
 <span class="sd">        n_snapshots (int): Number of snapshots.</span>
 <span class="sd">    </span>

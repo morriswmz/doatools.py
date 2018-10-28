@@ -47,7 +47,7 @@
 <span class="sd">    into augmented covariance matrices under the difference coarray model</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        array (~doatools.model.arrays.ArrayDesign): An 1D grid-based sensor</span>
+<span class="sd">        array (~doatools.model.arrays.ArrayDesign): A 1D grid-based sensor</span>
 <span class="sd">            array. Common candidates include</span>
 <span class="sd">            :class:`~doatools.model.arrays.CoPrimeArray`,</span>
 <span class="sd">            :class:`~doatools.model.arrays.NestedArray`,</span>
@@ -56,7 +56,7 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">array</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">GridBasedArrayDesign</span><span class="p">)</span> <span class="ow">or</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting an 1D grid-based array.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 1D grid-based array.&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_array</span> <span class="o">=</span> <span class="n">array</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_w</span> <span class="o">=</span> <span class="n">WeightFunction1D</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
 
