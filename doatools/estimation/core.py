@@ -190,7 +190,8 @@ class SpectrumBasedEstimatorBase(ABC):
                 # Convert sorted flattened indices back to a tuple of coordinate
                 # arrays.
                 peak_indices = np.unravel_index(flattened_indices, self._search_grid.shape)
-                self._refine_estimates(f_sp, estimates, peak_indices)
+                self._refine_estimates(f_sp, estimates, peak_indices,
+                                       refinement_density, refinement_iters)
             if return_spectrum:
                 return True, estimates, sp
             else:

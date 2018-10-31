@@ -168,7 +168,6 @@ def plot_spectrum_2d(sp, grid, ax, estimates=None, ground_truth=None,
     units = grid.units
     has_legend = False
     x, y = axes[ind_x], axes[ind_y]
-    z = _normalize_by_maximum(sp)
     x_label = '{0}/{1}'.format(axis_names[ind_x], units[ind_x])
     y_label = '{0}/{1}'.format(axis_names[ind_y], units[ind_y])
     plot_args = {
