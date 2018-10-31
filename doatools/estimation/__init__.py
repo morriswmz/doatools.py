@@ -7,4 +7,4 @@ from .ml import AMLEstimator, CMLEstimator, WSFEstimator
 from .grid import FarField1DSearchGrid, FarField2DSearchGrid, NearField2DSearchGrid
 from .coarray import CoarrayACMBuilder1D
 from .preprocessing import spatial_smooth, l1_svd
-from .source_number import aic, mdl
+from .source_number import aic, mdl, sorte
