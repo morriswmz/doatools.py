@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>doatools.estimation.source_number &#8212; DoaTools 0.2.0 documentation</title>
+    <title>doatools.estimation.source_number &#8212; DoaTools 0.2.1 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -79,7 +79,7 @@
         <span class="n">ld</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ld_stat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_sensors</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">ld</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="mdl"><a class="viewcode-back" href="../../../references/doatools.estimation.source_number.html#doatools.estimation.source_number.mdl">[docs]</a><span class="k">def</span> <span class="nf">mdl</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_sensors</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">):</span>
+<div class="viewcode-block" id="mdl"><a class="viewcode-back" href="../../../references/doatools.estimation.source_number.html#doatools.estimation.source_number.mdl">[docs]</a><span class="k">def</span> <span class="nf">mdl</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Detects source number using MDL.</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
@@ -100,6 +100,35 @@
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sensors</span><span class="p">):</span>
         <span class="n">ld</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">ld_stat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_sensors</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">n_snapshots</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">ld</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="sorte"><a class="viewcode-back" href="../../../references/doatools.estimation.source_number.html#doatools.estimation.source_number.sorte">[docs]</a><span class="k">def</span> <span class="nf">sorte</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Detects source number using SORTE.</span>
+
+<span class="sd">    Arg:</span>
+<span class="sd">        x: (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance</span>
+<span class="sd">            matrix in ascending order, or the covariance matrix itself.</span>
+<span class="sd">    </span>
+<span class="sd">    Refereces:</span>
+<span class="sd">        [1] Z. He, A. Cichocke, S. Xie, and K. Choi, &quot;Detecting the number of</span>
+<span class="sd">        clusters in n-way probabilistic clustering,&quot; IEEE Trans. Pattern</span>
+<span class="sd">        Anal. Mach. Intell., vol. 32, pp. 2006-2021, Nov. 2010.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigvalsh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c1"># SORTE requires descending order.</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;At least four eigenvalues required.&#39;</span><span class="p">)</span>
+    <span class="n">diffs</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">sigmas</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">diffs</span><span class="p">[</span><span class="n">k</span><span class="p">:])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,))</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sigmas</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float_</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">:</span>
+            <span class="n">s</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">s</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigmas</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">sigmas</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span></div>
 </pre></div>
 
           </div>

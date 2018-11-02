@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Source number detection &#8212; DoaTools 0.2.0 documentation</title>
+    <title>Source number detection &#8212; DoaTools 0.2.1 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -87,7 +87,7 @@ correct decision.</p>
 
 <dl class="function">
 <dt id="doatools.estimation.source_number.mdl">
-<code class="descclassname">doatools.estimation.source_number.</code><code class="descname">mdl</code><span class="sig-paren">(</span><em>x</em>, <em>n_sensors</em>, <em>n_snapshots</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/source_number.html#mdl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.source_number.mdl" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">doatools.estimation.source_number.</code><code class="descname">mdl</code><span class="sig-paren">(</span><em>x</em>, <em>n_snapshots</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/source_number.html#mdl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.source_number.mdl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Detects source number using MDL.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -106,6 +106,24 @@ matrix in ascending order, or the covariance matrix itself.</li>
 <p>MDL is consistent.</p>
 <p class="rubric">References</p>
 <p>[1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="doatools.estimation.source_number.sorte">
+<code class="descclassname">doatools.estimation.source_number.</code><code class="descname">sorte</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/estimation/source_number.html#sorte"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.estimation.source_number.sorte" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detects source number using SORTE.</p>
+<dl class="docutils">
+<dt>Arg:</dt>
+<dd><dl class="first last docutils">
+<dt>x: (~numpy.ndarray): A 1D vector of the eigenvalues of the covariance</dt>
+<dd>matrix in ascending order, or the covariance matrix itself.</dd>
+</dl>
+</dd>
+<dt>Refereces:</dt>
+<dd>[1] Z. He, A. Cichocke, S. Xie, and K. Choi, “Detecting the number of
+clusters in n-way probabilistic clustering,” IEEE Trans. Pattern
+Anal. Mach. Intell., vol. 32, pp. 2006-2021, Nov. 2010.</dd>
+</dl>
 </dd></dl>
 
 </div>

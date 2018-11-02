@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>doatools.performance.crb &#8212; DoaTools 0.2.0 documentation</title>
+    <title>doatools.performance.crb &#8212; DoaTools 0.2.1 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -35,10 +35,11 @@
   <h1>Source code for doatools.performance.crb</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">..model.sources</span> <span class="k">import</span> <span class="n">FarField1DSourcePlacement</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">unify_p_to_matrix</span><span class="p">,</span> <span class="n">unify_p_to_vector</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">unify_p_to_matrix</span><span class="p">,</span> <span class="n">unify_p_to_vector</span><span class="p">,</span> <span class="n">reduce_output_matrix</span>
 <span class="kn">from</span> <span class="nn">..utils.math</span> <span class="k">import</span> <span class="n">projm</span>
 
-<div class="viewcode-block" id="crb_sto_farfield_1d"><a class="viewcode-back" href="../../../references/doatools.performance.crb.html#doatools.performance.crb.crb_sto_farfield_1d">[docs]</a><span class="k">def</span> <span class="nf">crb_sto_farfield_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="crb_sto_farfield_1d"><a class="viewcode-back" href="../../../references/doatools.performance.crb.html#doatools.performance.crb.crb_sto_farfield_1d">[docs]</a><span class="k">def</span> <span class="nf">crb_sto_farfield_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">return_mode</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the stochastic CRB for 1D farfield sources.</span>
 <span class="sd">    </span>
 <span class="sd">    Under the stochastic signal model, the source signal is assumed to be</span>
@@ -68,9 +69,19 @@
 <span class="sd">        </span>
 <span class="sd">        sigma (float): Variance of the additive noise.</span>
 <span class="sd">        n_snapshots (int): Number of snapshots. Default value is 1.</span>
+<span class="sd">        return_mode (str): Can be one of the following:</span>
+<span class="sd">            </span>
+<span class="sd">            1. ``&#39;full&#39;``: returns the full CRB matrix.</span>
+<span class="sd">            2. ``&#39;diag&#39;``: returns only the diagonals of the CRB matrix.</span>
+<span class="sd">            3. ``&#39;mean_diag&#39;``: returns the mean of the diagonals of the CRB</span>
+<span class="sd">               matrix.</span>
 
+<span class="sd">            Default value is ``&#39;full&#39;``.</span>
+<span class="sd">    </span>
 <span class="sd">    Returns:</span>
-<span class="sd">        ~numpy.ndarray: The CRB matrix.</span>
+<span class="sd">        Depending on ``&#39;return_mode&#39;``, can be the full CRB matrix, the</span>
+<span class="sd">        diagonals of the CRB matrix, or the mean of the diagonals of the CRB</span>
+<span class="sd">        matrix.</span>
 <span class="sd">    </span>
 <span class="sd">    References:</span>
 <span class="sd">        [1] P. Stoica and A. Nehorai, &quot;Performance study of conditional and</span>
@@ -94,9 +105,10 @@
     <span class="c1"># Compute the CRB</span>
     <span class="n">CRB</span> <span class="o">=</span> <span class="p">(</span><span class="n">H</span> <span class="o">*</span> <span class="p">((</span><span class="n">P</span> <span class="o">@</span> <span class="p">(</span><span class="n">A_H</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">A</span><span class="p">))</span> <span class="o">@</span> <span class="n">P</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">))</span><span class="o">.</span><span class="n">real</span>
     <span class="n">CRB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">CRB</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">n_snapshots</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">CRB</span> <span class="o">+</span> <span class="n">CRB</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">reduce_output_matrix</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">CRB</span> <span class="o">+</span> <span class="n">CRB</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="n">return_mode</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="crb_det_farfield_1d"><a class="viewcode-back" href="../../../references/doatools.performance.crb.html#doatools.performance.crb.crb_det_farfield_1d">[docs]</a><span class="k">def</span> <span class="nf">crb_det_farfield_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="crb_det_farfield_1d"><a class="viewcode-back" href="../../../references/doatools.performance.crb.html#doatools.performance.crb.crb_det_farfield_1d">[docs]</a><span class="k">def</span> <span class="nf">crb_det_farfield_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">return_mode</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the deterministic CRB for 1D farfield sources.</span>
 <span class="sd">    </span>
 <span class="sd">    Under the deterministic signal model, the source signal is assumed to be</span>
@@ -128,9 +140,19 @@
 <span class="sd">            </span>
 <span class="sd">        sigma (float): Variance of the additive noise.</span>
 <span class="sd">        n_snapshots (int): Number of snapshots. Default value is 1.</span>
+<span class="sd">        return_mode (str): Can be one of the following:</span>
+<span class="sd">            </span>
+<span class="sd">            1. ``&#39;full&#39;``: returns the full CRB matrix.</span>
+<span class="sd">            2. ``&#39;diag&#39;``: returns only the diagonals of the CRB matrix.</span>
+<span class="sd">            3. ``&#39;mean_diag&#39;``: returns the mean of the diagonals of the CRB</span>
+<span class="sd">               matrix.</span>
 
+<span class="sd">            Default value is ``&#39;full&#39;``.</span>
+<span class="sd">    </span>
 <span class="sd">    Returns:</span>
-<span class="sd">        ~numpy.ndarray: The CRB matrix.</span>
+<span class="sd">        Depending on ``&#39;return_mode&#39;``, can be the full CRB matrix, the</span>
+<span class="sd">        diagonals of the CRB matrix, or the mean of the diagonals of the CRB</span>
+<span class="sd">        matrix.</span>
 <span class="sd">    </span>
 <span class="sd">    References:</span>
 <span class="sd">        [1] P. Stoica and A. Nehorai, &quot;Performance study of conditional and</span>
@@ -151,10 +173,10 @@
     <span class="n">H</span> <span class="o">=</span> <span class="n">D</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">-</span> <span class="n">P_A</span><span class="p">)</span> <span class="o">@</span> <span class="n">D</span>
     <span class="c1"># Compute the CRB.</span>
     <span class="n">CRB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">((</span><span class="n">H</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="n">n_snapshots</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">CRB</span> <span class="o">+</span> <span class="n">CRB</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">reduce_output_matrix</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">CRB</span> <span class="o">+</span> <span class="n">CRB</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="n">return_mode</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="crb_stouc_farfield_1d"><a class="viewcode-back" href="../../../references/doatools.performance.crb.html#doatools.performance.crb.crb_stouc_farfield_1d">[docs]</a><span class="k">def</span> <span class="nf">crb_stouc_farfield_1d</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">n_snapshots</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                          <span class="n">output_fim</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                          <span class="n">return_mode</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Computes the stochastic CRB for 1D farfield sources with the assumption</span>
 <span class="sd">    that the sources are uncorrelated.</span>
 <span class="sd">    </span>
@@ -186,9 +208,19 @@
 <span class="sd">        </span>
 <span class="sd">        sigma (float): Variance of the additive noise.</span>
 <span class="sd">        n_snapshots (int): Number of snapshots. Default value is 1.</span>
+<span class="sd">        return_mode (str): Can be one of the following:</span>
+<span class="sd">            </span>
+<span class="sd">            1. ``&#39;full&#39;``: returns the full CRB matrix.</span>
+<span class="sd">            2. ``&#39;diag&#39;``: returns only the diagonals of the CRB matrix.</span>
+<span class="sd">            3. ``&#39;mean_diag&#39;``: returns the mean of the diagonals of the CRB</span>
+<span class="sd">               matrix.</span>
 
+<span class="sd">            Default value is ``&#39;full&#39;``.</span>
+<span class="sd">    </span>
 <span class="sd">    Returns:</span>
-<span class="sd">        ~numpy.ndarray: The CRB matrix.</span>
+<span class="sd">        Depending on ``&#39;return_mode&#39;``, can be the full CRB matrix, the</span>
+<span class="sd">        diagonals of the CRB matrix, or the mean of the diagonals of the CRB</span>
+<span class="sd">        matrix.</span>
 <span class="sd">    </span>
 <span class="sd">    References:</span>
 <span class="sd">        [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.</span>
@@ -232,7 +264,7 @@
         <span class="p">[</span><span class="n">FIM_ts</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">FIM_ps</span><span class="o">.</span><span class="n">conj</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">FIM_ss</span><span class="p">]</span>
     <span class="p">])</span>
     <span class="n">CRB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">FIM</span><span class="p">)[:</span><span class="n">k</span><span class="p">,</span> <span class="p">:</span><span class="n">k</span><span class="p">]</span> <span class="o">/</span> <span class="n">n_snapshots</span>
-    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">CRB</span> <span class="o">+</span> <span class="n">CRB</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">reduce_output_matrix</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">CRB</span> <span class="o">+</span> <span class="n">CRB</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="n">return_mode</span><span class="p">)</span></div>
 </pre></div>
 
           </div>
