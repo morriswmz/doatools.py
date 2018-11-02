@@ -1,9 +1,10 @@
 import numpy as np
 from ..model.sources import FarField1DSourcePlacement
-from .utils import unify_p_to_matrix, unify_p_to_vector
+from .utils import unify_p_to_matrix, unify_p_to_vector, reduce_output_matrix
 from ..utils.math import projm
 
-def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
+def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
+                        return_mode='full'):
     r"""Computes the stochastic CRB for 1D farfield sources.
     
     Under the stochastic signal model, the source signal is assumed to be
@@ -33,9 +34,19 @@ def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
         
         sigma (float): Variance of the additive noise.
         n_snapshots (int): Number of snapshots. Default value is 1.
+        return_mode (str): Can be one of the following:
+            
+            1. ``'full'``: returns the full CRB matrix.
+            2. ``'diag'``: returns only the diagonals of the CRB matrix.
+            3. ``'mean_diag'``: returns the mean of the diagonals of the CRB
+               matrix.
 
+            Default value is ``'full'``.
+    
     Returns:
-        ~numpy.ndarray: The CRB matrix.
+        Depending on ``'return_mode'``, can be the full CRB matrix, the
+        diagonals of the CRB matrix, or the mean of the diagonals of the CRB
+        matrix.
     
     References:
         [1] P. Stoica and A. Nehorai, "Performance study of conditional and
@@ -59,9 +70,10 @@ def crb_sto_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
     # Compute the CRB
     CRB = (H * ((P @ (A_H @ np.linalg.solve(R, A)) @ P).T)).real
     CRB = np.linalg.inv(CRB) * (sigma / n_snapshots / 2)
-    return 0.5 * (CRB + CRB.T)
+    return reduce_output_matrix(0.5 * (CRB + CRB.T), return_mode)
 
-def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
+def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1,
+                        return_mode='full'):
     r"""Computes the deterministic CRB for 1D farfield sources.
     
     Under the deterministic signal model, the source signal is assumed to be
@@ -93,9 +105,19 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
             
         sigma (float): Variance of the additive noise.
         n_snapshots (int): Number of snapshots. Default value is 1.
+        return_mode (str): Can be one of the following:
+            
+            1. ``'full'``: returns the full CRB matrix.
+            2. ``'diag'``: returns only the diagonals of the CRB matrix.
+            3. ``'mean_diag'``: returns the mean of the diagonals of the CRB
+               matrix.
 
+            Default value is ``'full'``.
+    
     Returns:
-        ~numpy.ndarray: The CRB matrix.
+        Depending on ``'return_mode'``, can be the full CRB matrix, the
+        diagonals of the CRB matrix, or the mean of the diagonals of the CRB
+        matrix.
     
     References:
         [1] P. Stoica and A. Nehorai, "Performance study of conditional and
@@ -116,10 +138,10 @@ def crb_det_farfield_1d(array, sources, wavelength, P, sigma, n_snapshots=1):
     H = D.conj().T @ (np.eye(m) - P_A) @ D
     # Compute the CRB.
     CRB = np.linalg.inv((H * P.T).real) * (sigma / n_snapshots / 2)
-    return 0.5 * (CRB + CRB.T)
+    return reduce_output_matrix(0.5 * (CRB + CRB.T), return_mode)
 
 def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
-                          output_fim=False):
+                          return_mode='full'):
     r"""Computes the stochastic CRB for 1D farfield sources with the assumption
     that the sources are uncorrelated.
     
@@ -151,9 +173,19 @@ def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
         
         sigma (float): Variance of the additive noise.
         n_snapshots (int): Number of snapshots. Default value is 1.
+        return_mode (str): Can be one of the following:
+            
+            1. ``'full'``: returns the full CRB matrix.
+            2. ``'diag'``: returns only the diagonals of the CRB matrix.
+            3. ``'mean_diag'``: returns the mean of the diagonals of the CRB
+               matrix.
 
+            Default value is ``'full'``.
+    
     Returns:
-        ~numpy.ndarray: The CRB matrix.
+        Depending on ``'return_mode'``, can be the full CRB matrix, the
+        diagonals of the CRB matrix, or the mean of the diagonals of the CRB
+        matrix.
     
     References:
         [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
@@ -197,4 +229,4 @@ def crb_stouc_farfield_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
         [FIM_ts.conj().T, FIM_ps.conj().T, FIM_ss]
     ])
     CRB = np.linalg.inv(FIM)[:k, :k] / n_snapshots
-    return 0.5 * (CRB + CRB.T)
+    return reduce_output_matrix(0.5 * (CRB + CRB.T), return_mode)

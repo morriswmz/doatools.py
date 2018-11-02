@@ -2,9 +2,10 @@ import numpy as np
 from ..model.arrays import UniformLinearArray
 from ..model.sources import FarField1DSourcePlacement
 from ..model.coarray import WeightFunction1D
-from .utils import unify_p_to_matrix, unify_p_to_vector
+from .utils import unify_p_to_matrix, unify_p_to_vector, reduce_output_matrix
 
-def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbations='all'):
+def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1,
+                  perturbations='all', return_mode='full'):
     """Computes the asymptotic covariance matrix of the estimation errors of
     the classical MUSIC algorithm.
 
@@ -28,9 +29,19 @@ def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbat
             ``'known'``, and ``'none'``. Default value is ``'all'``.
             See :meth:`~doatools.model.arrays.ArrayDesign.steering_matrix`
             for more details.
-
+        return_mode (str): Can be one of the following:
+            
+            1. ``'full'``: returns the full covariance matrix.
+            2. ``'diag'``: returns only the diagonals of the covariance matrix.
+            3. ``'mean_diag'``: returns the mean of the diagonals of the
+               covariance matrix.
+        
+            Default value is ``'full'``.
+    
     Returns:
-        ~numpy.ndarray: The asymptotic error covariance matrix.
+        Depending on ``'return_mode'``, can be the full covariance matrix, the
+        diagonals of the covariance matrix, or the mean of the diagonals of the
+        covariance matrix.
 
     References:
         [1] P. Stoica and A. Nehorai, "MUSIC, maximum likelihood, and Cramér-Rao
@@ -61,9 +72,10 @@ def ecov_music_1d(array, sources, wavelength, P, sigma, n_snapshots=1, perturbat
     # C = \sigma/(2N) (H \odot I)^{-1} Re(H \odot B^T) (H \odot I)^{-1}
     h = np.reciprocal(np.diag(H).real)
     C = (sigma / 2.0 / n_snapshots) * ((H * B.T).real * np.outer(h, h))
-    return C
+    return reduce_output_matrix(C, return_mode)
 
-def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
+def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1,
+                          return_mode='full'):
     """Computes the asymptotic covariance matrix of the estimation errors of the
     coarray-based MUSIC algorithm, SS-MUSIC or DA-MUSIC.
 
@@ -83,10 +95,20 @@ def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
         
         sigma (float): Variance of the additive noise.
         n_snapshots (int): Number of snapshots. Default value is 1.
+        return_mode (str): Can be one of the following:
+            
+            1. ``'full'``: returns the full covariance matrix.
+            2. ``'diag'``: returns only the diagonals of the covariance matrix.
+            3. ``'mean_diag'``: returns the mean of the diagonals of the
+               covariance matrix.
+        
+            Default value is ``'full'``.
     
     Returns:
-        ~numpy.ndarray: The asymptotic error covariance matrix.
-    
+        Depending on ``'return_mode'``, can be the full covariance matrix, the
+        diagonals of the covariance matrix, or the mean of the diagonals of the
+        covariance matrix.
+        
     References:
         [1] M. Wang and A. Nehorai, "Coarrays, MUSIC, and the Cramér-Rao Bound,"
         IEEE Transactions on Signal Processing, vol. 65, no. 4, pp. 933-946,
@@ -136,4 +158,4 @@ def ecov_coarray_music_1d(array, sources, wavelength, p, sigma, n_snapshots=1):
         Xi_g[:, kk] = GF_T @ np.kron(beta_k, alpha_k) / gamma_k
     # Evaluate C.
     C = (Xi_g.conj().T @ np.kron(R_ideal, R_ideal.T) @ Xi_g).real / n_snapshots
-    return C
+    return reduce_output_matrix(C, return_mode)
