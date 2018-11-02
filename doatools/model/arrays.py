@@ -124,6 +124,15 @@ class ArrayDesign:
         return self._locations.shape[0]
     
     @property
+    def output_size(self):
+        """Retrieves the output size of the array.
+        
+        In generate, the output size should be equal to ``size``. However, for
+        vector sensor arrays, the output size is greater than the array size.
+        """
+        return self.size
+    
+    @property
     def element_locations(self):
         """Retrieves the nominal element locations.
 
@@ -218,7 +227,7 @@ class ArrayDesign:
             if not isinstance(v, tuple) and len(v) != 2:
                 raise ValueError('Perturbation details should be specified by a two-element tuple.')
             # Validate and copy
-            PERTURBATION_VALIDATORS[k](self.size, v[0])
+            PERTURBATION_VALIDATORS[k](self.output_size, v[0])
             params_copy = v[0].copy()
             params_copy.setflags(write=False)
             p_copy[k] = (params_copy, v[1])
