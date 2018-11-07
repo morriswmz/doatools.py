@@ -58,3 +58,31 @@ def convert_angles(x, from_unit, to_unit):
         return x.copy()
     return ANGULAR_COV_MAT[from_unit][to_unit](x)
     
+def cart2spherical(coords):
+    """Converts Cartesian coordinates to spherical coordinates.
+    
+    Args:
+        x (~numpy.ndarray): A matrix where each row represents a single
+            Cartesian coordinate.
+    
+    Returns:
+        ~numpy.ndarray: A matrix where each row is a triplet of the range, the
+        azimuth angle and the elevation angle.
+    """
+    s = np.zeros((coords.shape[0], 3))
+    if coords.shape[1] == 1:
+        # x coordinates only.
+        s[:, 0] = np.abs(coords[:, 0])
+        s[:, 1] = np.arctan2(0, coords[:, 0])
+    elif coords.shape[1] <= 3:
+        xy2 = coords[:, 0]**2 + coords[:, 1]**2
+        s[:, 1] = np.arctan2(coords[:, 1], coords[:, 0])
+        if coords.shape[1] == 2:
+            # x, y coordinates only
+            s[:, 0] = np.sqrt(xy2)
+        else:
+            # x, y, z coordinates are all present
+            s[:, 0] = np.sqrt(xy2 + coords[:, 2]**2)
+            s[:, 2] = np.arctan2(coords[:, 2], np.sqrt(xy2))
+    return s
+

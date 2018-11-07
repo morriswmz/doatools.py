@@ -3,7 +3,7 @@ import numpy as np
 import numpy.testing as npt
 from doatools.model.sources import FarField1DSourcePlacement, FarField2DSourcePlacement
 
-class TestSourcePlacement(unittest.TestCase):
+class TestFarFieldSourcePlacement(unittest.TestCase):
 
     def setUp(self):
         self.wavelength = 1
@@ -86,6 +86,20 @@ class TestSourcePlacement(unittest.TestCase):
         ])
         npt.assert_allclose(D1, D1_expected, rtol=1e-6)
         npt.assert_allclose(DD1, DD1_expected, rtol=1e-6)
+
+    def test_far_field_1d_spherical(self):
+        m = 5
+        k = 6
+        source_locations = np.linspace(-60, 60, k)
+        sensor_locations = np.linspace(0, m - 1, m).reshape((-1, 1))
+        sources = FarField1DSourcePlacement(source_locations, 'deg')
+        r, az, el = sources.calc_spherical_coords(sensor_locations)
+        r_expected = np.full((m, k), np.inf)
+        az_expected = np.tile(np.pi/2 - np.deg2rad(source_locations), (m, 1))
+        el_expected = np.zeros((m, k))
+        npt.assert_allclose(r, r_expected)
+        npt.assert_allclose(az, az_expected)
+        npt.assert_allclose(el, el_expected)
 
     def test_far_field_2d(self):
         locations = np.array([

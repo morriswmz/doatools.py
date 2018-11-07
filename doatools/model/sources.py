@@ -4,7 +4,7 @@ import copy
 import warnings
 import numpy as np
 from scipy.spatial.distance import cdist
-from ..utils.conversion import convert_angles
+from ..utils.conversion import convert_angles, cart2spherical
 
 def _validate_sensor_location_ndim(sensor_locations):
     if sensor_locations.shape[1] < 1 or sensor_locations.shape[1] > 3:
@@ -96,6 +96,24 @@ class SourcePlacement(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def calc_spherical_coords(self, ref_locations):
+        """Calculates the spherical coordinates relative to reference locations.
+
+        Args:
+            ref_locations (~numpy.ndarray): An M x D matrix storing the
+                Cartesian coordinates (measured in meters), where M is the
+                number of reference locations, and D is the number of dimensions
+                of the coordinates (1, 2, or 3).
+        
+        Returns:
+            tuple: A tuple of three M by K matrices containing the ranges, the
+            azimuth angles and the elevation angles, respectively. The (m,k)-th
+            elements from the three matrices form the spherical coordinates for
+            the k-th source relative to the m-th reference location.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         """Computes the phase delay matrix.
 
@@ -128,6 +146,20 @@ class SourcePlacement(ABC):
 
 class FarField1DSourcePlacement(SourcePlacement):
     """Creates a far-field 1D source placement.
+
+    Far-field 1D sources are placed within the xy-plane and represented by
+    the angles relative to the y-axis (broadside angles for an array placed
+    along the x-axis).
+
+    ::
+
+                 y   
+                 ^
+                 |   /
+                 |  /
+                 |-/
+                 |/
+        ---------+---------> x
 
     Args:
         locations: A list or 1D numpy array representing the source locations.
@@ -199,6 +231,16 @@ class FarField1DSourcePlacement(SourcePlacement):
             new_unit
         )
 
+    def calc_spherical_coords(self, ref_locations):
+        m = ref_locations.shape[0]
+        k = self.size
+        r = np.full((m, k), np.inf)
+        el = np.zeros((m, k))
+        # Broadside angles are defined relative to the y-axis
+        az = np.pi/2 - convert_angles(self.locations, self.units[0], 'rad')
+        az = np.tile(az, (m, 1))
+        return r, az, el
+
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         """Computes the phase delay matrix for 1D far-field sources."""
         _validate_sensor_location_ndim(sensor_locations)
@@ -269,6 +311,10 @@ class FarField1DSourcePlacement(SourcePlacement):
 class FarField2DSourcePlacement(SourcePlacement):
     """Creates a far-field 2D source placement.
 
+    Far-field 2D sources are represented by azimuth and elevation angles. The
+    azimuth angles start from the x-axis and the elevation angles are measured
+    with respect to the xy-plane.
+
     Args:
         locations: An k x 2 numpy array representing the source locations,
             where k is the number of sources, and the k-th row consists of
@@ -314,6 +360,14 @@ class FarField2DSourcePlacement(SourcePlacement):
             convert_angles(self._locations, self._units[0], new_unit),
             new_unit
         )
+
+    def calc_spherical_coords(self, ref_locations):
+        m = ref_locations.shape[0]
+        k = self.size
+        r = np.full((m, k), np.inf)
+        az = convert_angles(self._locations[:, 0], self._units[0], 'rad')
+        el = convert_angles(self._locations[:, 1], self._units[0], 'rad')
+        return r, az, el
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
         """Computes the phase delay matrix for 2D far-field sources."""
@@ -372,13 +426,14 @@ class NearField2DSourcePlacement(SourcePlacement):
             raise ValueError("new_unit must be 'm'.")
         return NearField2DSourcePlacement(self._locations.copy())
 
-    def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
-        """Computes the phase delay matrix for 2D near-field sources."""
-        _validate_sensor_location_ndim(sensor_locations)
-        if derivatives:
-            raise ValueError('Derivative matrix computation is not supported for near-field 2D DOAs.')
-
-        # Align the number of dimensions
+    def _align_location_dims(self, sensor_locations):
+        """Adds necessary paddings when the sources locations and sensor
+        locations have different number of dimensions.
+        
+        Returns:
+            tuple: A two-element tuple containing padded sources locations and
+            sensor locations.
+        """
         source_locations = self._locations
         if sensor_locations.shape[1] < 2:
             # 1D arrays
@@ -386,6 +441,26 @@ class NearField2DSourcePlacement(SourcePlacement):
         elif sensor_locations.shape[1] > 2:
             # 3D arrays
             source_locations = np.pad(source_locations, ((0, 0), (0, 1)), 'constant')
+        return source_locations, sensor_locations
+
+    def calc_spherical_coords(self, ref_locations):
+        source_locations, ref_locations = self._align_location_dims(ref_locations)
+        m = ref_locations.shape[0]
+        k, d = source_locations.shape
+        # Compute pair-wise differences.
+        diffs = source_locations.reshape((1, k, d)) - ref_locations.reshape((m, 1, d))
+        diffs = diffs.reshape((-1, d))
+        s = cart2spherical(diffs)
+        return s[:, 0].reshape((m, k)), s[:, 1].reshape((m, k)), s[:, 2].reshape((m, k))
+
+    def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
+        """Computes the phase delay matrix for 2D near-field sources."""
+        _validate_sensor_location_ndim(sensor_locations)
+        if derivatives:
+            raise ValueError('Derivative matrix computation is not supported for near-field 2D DOAs.')
+
+        # Align the number of dimensions
+        source_locations, sensor_locations = self._align_location_dims(sensor_locations)
 
         s = 2 * np.pi / wavelength
         # Compute the pair-wise Euclidean distance.

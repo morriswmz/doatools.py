@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import doatools.utils.math as doa_math
+import doatools.utils.conversion as doa_conv
 
 class TestMath(unittest.TestCase):
 
@@ -107,6 +108,42 @@ class TestMath(unittest.TestCase):
         self.assert_unique_rows(data3, unique3, atol3, rtol3)
         npt.assert_array_equal(unique3, data3[indices3, :])
         npt.assert_allclose(unique3, centers, atol=0.1)
+
+class TestConversion(unittest.TestCase):
+
+    def test_cartesian_to_spherical(self):
+        # 1D
+        coords1 = np.array([[1.], [-2.], [3.]])
+        s1_expected = np.array([
+            [1., 0., 0.],
+            [2., np.pi, 0.],
+            [3., 0., 0.]
+        ])
+        npt.assert_allclose(doa_conv.cart2spherical(coords1), s1_expected)
+        # 2D
+        coords2 = np.array([
+            [ 1.0,  1.0],
+            [ 0.0, -1.0],
+            [-2.0, -2.0]
+        ])
+        s2_expected = np.array([
+            [np.sqrt(2), np.pi/4, 0.0],
+            [1.0, -np.pi/2, 0.0],
+            [np.sqrt(8), -np.pi*3/4, 0.0]
+        ])
+        npt.assert_allclose(doa_conv.cart2spherical(coords2), s2_expected)
+        # 3D
+        coords3 = np.array([
+            [0.0, 0.0, 1.0],
+            [-1.0, 1.0, 1.0],
+            [3/4, np.sqrt(3)/4, 1/2]
+        ])
+        s3_expected = np.array([
+            [1.0, 0.0, np.pi/2],
+            [np.sqrt(3), np.pi*3/4, np.arctan2(1.0, np.sqrt(2))],
+            [1.0, np.pi/6, np.pi/6]
+        ])
+        npt.assert_allclose(doa_conv.cart2spherical(coords3), s3_expected)
 
 if __name__ == '__main__':
     unittest.main()
