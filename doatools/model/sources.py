@@ -74,6 +74,16 @@ class SourcePlacement(ABC):
         discourage because modified values are not checked for validity.
         """
         return self._locations
+    
+    @property
+    @abstractmethod
+    def is_far_field(self):
+        """Retrieves whether the source placement is considered far-field.
+        
+        A far-field source's distance to a sensor array is defined to be
+        infinity.
+        """
+        raise NotImplementedError()
 
     @property
     def units(self):
@@ -222,6 +232,10 @@ class FarField1DSourcePlacement(SourcePlacement):
             return FarField1DSourcePlacement(np.rad2deg(locations), 'deg')
 
     @property
+    def is_far_field(self):
+        return True
+
+    @property
     def valid_ranges(self):
         return FarField1DSourcePlacement.VALID_RANGES[self._units[0]],
 
@@ -352,6 +366,10 @@ class FarField2DSourcePlacement(SourcePlacement):
         super().__init__(locations, (unit, unit))
 
     @property
+    def is_far_field(self):
+        return True
+    
+    @property
     def valid_ranges(self):
         return FarField2DSourcePlacement.VALID_RANGES[self._units[0]]
 
@@ -364,9 +382,13 @@ class FarField2DSourcePlacement(SourcePlacement):
     def calc_spherical_coords(self, ref_locations):
         m = ref_locations.shape[0]
         k = self.size
+        # The coordinates do not depend on reference locations.
+        # Just repeat the rows.
         r = np.full((m, k), np.inf)
         az = convert_angles(self._locations[:, 0], self._units[0], 'rad')
+        az = np.tile(az, (m, 1))
         el = convert_angles(self._locations[:, 1], self._units[0], 'rad')
+        el = np.tile(el, (m, 1))
         return r, az, el
 
     def phase_delay_matrix(self, sensor_locations, wavelength, derivatives=False):
@@ -388,6 +410,8 @@ class FarField2DSourcePlacement(SourcePlacement):
             # Need to convert azimuth-elevation pairs to broadside angles.
             D = s * np.outer(sensor_locations, cos_el * np.cos(locations[:, 0]))
         else:
+            # Notes: the sum of outer products can also be rewritten using
+            #        matrix multiplications.
             cc = cos_el * np.cos(locations[:, 0])
             cs = cos_el * np.sin(locations[:, 0])
             if sensor_locations.shape[1] == 2:
@@ -416,6 +440,10 @@ class NearField2DSourcePlacement(SourcePlacement):
         if locations.ndim != 2 or locations.shape[1] != 2:
             raise ValueError('Expecting an K x 2 numpy array.')
         super().__init__(locations, ('m', 'm'))
+
+    @property
+    def is_far_field(self):
+        return False
 
     @property
     def valid_ranges(self):
@@ -462,7 +490,8 @@ class NearField2DSourcePlacement(SourcePlacement):
         # Align the number of dimensions
         source_locations, sensor_locations = self._align_location_dims(sensor_locations)
 
-        s = 2 * np.pi / wavelength
+        # Negative phase = arrive later
+        s = - 2 * np.pi / wavelength
         # Compute the pair-wise Euclidean distance.
         M = cdist(sensor_locations, source_locations, 'euclidean')
         M -= M[0, :].copy() # Use the first sensor as the reference sensor.

@@ -11,7 +11,8 @@ def ae2broad(doas):
     need to consider the plane that intersects with the xy-plane along the
     x-axis.
     
-    The azimuth angle is measured counter-clockwise starting from the x-axis.
+    The azimuth angle is measured counter-clockwise starting from the positive
+    x-axis.
 
     The elevation angle is measured with respect to the xy-plane and ranges
     from -pi/2 (below the xy-plane, z-neg) and pi/2 (above the xy-plane, z-pos).
@@ -67,7 +68,9 @@ def cart2spherical(coords):
     
     Returns:
         ~numpy.ndarray: A matrix where each row is a triplet of the range, the
-        azimuth angle and the elevation angle.
+        azimuth angle and the elevation angle. The azimuth angle is measured
+        counter-clockwise from the positive x-axis, and the elevation angle is
+        measured from the xy-plane.
     """
     s = np.zeros((coords.shape[0], 3))
     if coords.shape[1] == 1:
