@@ -98,7 +98,7 @@ class CovarianceBasedMLEstimator(ABC):
         Returns:
             tuple: A tuple of the following elements:
 
-            * f (:class:`abc.Callable`): The objective function.
+            * f (:class:`~collections.abc.Callable`): The objective function.
             * x0 (:class:`~numpy.ndarray`): The starting point for the  ML-based
               optimization problem, whose size is equal to the number of
               variables in the optimization problem.
