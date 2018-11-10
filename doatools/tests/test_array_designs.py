@@ -2,13 +2,14 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 from scipy.linalg import toeplitz
+from doatools.model.array_elements import CustomNonisotropicSensor
 from doatools.model.arrays import GridBasedArrayDesign
 from doatools.model.arrays import UniformLinearArray, CoPrimeArray, \
                                   NestedArray, MinimumRedundancyLinearArray, \
                                   UniformCircularArray, UniformRectangularArray
 from doatools.model.sources import FarField1DSourcePlacement
 
-class Test1DArrays(unittest.TestCase):
+class Test1DArrayDesigns(unittest.TestCase):
 
     def setUp(self):
         self.wavelength = 1
@@ -101,33 +102,7 @@ class Test1DArrays(unittest.TestCase):
             np.array([0.0, 0.5, 2.0, 3.5, 4.5]).reshape((-1, 1))
         )
 
-    def test_steering_matrix_without_perturbations(self):
-        cpa = CoPrimeArray(2, 3, self.wavelength / 2)
-        sources = FarField1DSourcePlacement(np.linspace(-np.pi/3, np.pi/3, 3))
-        A, DA = cpa.steering_matrix(sources, self.wavelength, True)
-        A_expected = np.array([
-            [ 1.000000+0.000000j, 1.000000+0.000000j,  1.000000+0.000000j],
-            [ 0.666131+0.745835j, 1.000000+0.000000j,  0.666131-0.745835j],
-            [-0.112539+0.993647j, 1.000000+0.000000j, -0.112539-0.993647j],
-            [-0.303263-0.952907j, 1.000000+0.000000j, -0.303263+0.952907j],
-            [-0.816063+0.577964j, 1.000000+0.000000j, -0.816063-0.577964j],
-            [ 0.798227+0.602356j, 1.000000+0.000000j,  0.798227-0.602356j]
-        ])
-        DA_expected = np.array([
-            [ 0.000000+ 0.000000j, 0.000000+ 0.000000j,  0.000000+ 0.000000j],
-            [-2.343109+ 2.092712j, 0.000000+ 6.283185j,  2.343109+ 2.092712j],
-            [-6.243270- 0.707105j, 0.000000+12.566371j,  6.243270- 0.707105j],
-            [ 4.490467- 1.429095j, 0.000000+ 9.424778j, -4.490467- 1.429095j],
-            [-5.447178- 7.691209j, 0.000000+18.849556j,  5.447178- 7.691209j],
-            [-8.515612+11.284673j, 0.000000+28.274334j,  8.515612+11.284673j]
-        ])
-        npt.assert_allclose(A, A_expected, rtol=1e-6)
-        npt.assert_allclose(DA, DA_expected, rtol=1e-6)
-
-    def test_steering_matrix_with_perturbations(self):
-        pass
-
-class Test2DArrays(unittest.TestCase):
+class Test2DArrayDesigns(unittest.TestCase):
 
     def setUp(self):
         self.wavelength = 1
@@ -202,6 +177,81 @@ class TestGeneralGridBasedArrays(unittest.TestCase):
         npt.assert_allclose(array.element_indices, indices)
         npt.assert_allclose(array.bases, bases)
         npt.assert_allclose(array.element_locations, locations_expected)
+
+class TestSteeringMatrix(unittest.TestCase):
+
+    def setUp(self):
+        self.wavelength = 1.0
+
+    def test_without_perturbations(self):
+        cpa = CoPrimeArray(2, 3, self.wavelength / 2)
+        sources = FarField1DSourcePlacement(np.linspace(-np.pi/3, np.pi/3, 3))
+        A, DA = cpa.steering_matrix(sources, self.wavelength, True)
+        A_expected = np.array([
+            [ 1.000000+0.000000j, 1.000000+0.000000j,  1.000000+0.000000j],
+            [ 0.666131+0.745835j, 1.000000+0.000000j,  0.666131-0.745835j],
+            [-0.112539+0.993647j, 1.000000+0.000000j, -0.112539-0.993647j],
+            [-0.303263-0.952907j, 1.000000+0.000000j, -0.303263+0.952907j],
+            [-0.816063+0.577964j, 1.000000+0.000000j, -0.816063-0.577964j],
+            [ 0.798227+0.602356j, 1.000000+0.000000j,  0.798227-0.602356j]
+        ])
+        DA_expected = np.array([
+            [ 0.000000+ 0.000000j, 0.000000+ 0.000000j,  0.000000+ 0.000000j],
+            [-2.343109+ 2.092712j, 0.000000+ 6.283185j,  2.343109+ 2.092712j],
+            [-6.243270- 0.707105j, 0.000000+12.566371j,  6.243270- 0.707105j],
+            [ 4.490467- 1.429095j, 0.000000+ 9.424778j, -4.490467- 1.429095j],
+            [-5.447178- 7.691209j, 0.000000+18.849556j,  5.447178- 7.691209j],
+            [-8.515612+11.284673j, 0.000000+28.274334j,  8.515612+11.284673j]
+        ])
+        npt.assert_allclose(A, A_expected, rtol=1e-6)
+        npt.assert_allclose(DA, DA_expected, rtol=1e-6)
+
+    def test_with_perturbations(self):
+        pass
+
+    def test_custom_nonisotropic_1d(self):
+        # Sine response for azimuth angles (cosine for broadside angles)
+        f_sr = lambda r, az, el, pol: np.sin(az)
+        element = CustomNonisotropicSensor(f_sr)
+        ula = UniformLinearArray(5, self.wavelength / 2, element=element)
+        sources = FarField1DSourcePlacement(np.linspace(-np.pi/3, np.pi/4, 3))
+        A_expected = np.array([
+            [ 5.000000e-1+0.000000e+0j,  9.914449e-1+0.000000e+0j,  7.071068e-1+0.000000e+0j],
+            [-4.563621e-1-2.042881e-1j,  9.092510e-1-3.952538e-1j, -4.282945e-1+5.626401e-1j],
+            [ 3.330655e-1+3.729174e-1j,  6.762975e-1-7.249721e-1j, -1.882710e-1-6.815820e-1j],
+            [-1.516317e-1-4.764534e-1j,  3.312097e-1-9.344854e-1j,  6.563659e-1+2.630282e-1j],
+            [-5.626959e-2+4.968236e-1j, -6.879475e-2-9.890552e-1j, -6.068505e-1+3.629497e-1j]
+        ])
+        A = ula.steering_matrix(sources, self.wavelength)
+        npt.assert_allclose(A, A_expected, rtol=1e-6)
+    
+    def test_custom_vector_sensor_1d(self):
+        # Each sensor has three outputs with different gains.
+        gains = [1.0, 0.5, 0.1]
+        output_size = len(gains)
+        def f_sr(r, az, el, pol):
+            # Sine response.
+            res = np.sin(az)
+            return np.stack([res * g for g in gains])
+        element = CustomNonisotropicSensor(f_sr, output_size=output_size)
+        ula = UniformLinearArray(4, self.wavelength / 2, element=element)
+        sources = FarField1DSourcePlacement(np.linspace(-np.pi/3, np.pi/4, 3))
+        A_expected = np.array([
+            [ 5.000000e-1+0.000000e+0j, 9.914449e-1+0.000000e+0j,  7.071068e-1+0.000000e+0j],
+            [-4.563621e-1-2.042881e-1j, 9.092510e-1-3.952538e-1j, -4.282945e-1+5.626401e-1j],
+            [ 3.330655e-1+3.729174e-1j, 6.762975e-1-7.249721e-1j, -1.882710e-1-6.815820e-1j],
+            [-1.516317e-1-4.764534e-1j, 3.312097e-1-9.344854e-1j,  6.563659e-1+2.630282e-1j],
+            [ 2.500000e-1+0.000000e+0j, 4.957224e-1+0.000000e+0j,  3.535534e-1+0.000000e+0j],
+            [-2.281810e-1-1.021441e-1j, 4.546255e-1-1.976269e-1j, -2.141472e-1+2.813200e-1j],
+            [ 1.665327e-1+1.864587e-1j, 3.381488e-1-3.624861e-1j, -9.413548e-2-3.407910e-1j],
+            [-7.581586e-2-2.382267e-1j, 1.656049e-1-4.672427e-1j,  3.281829e-1+1.315141e-1j],
+            [ 5.000000e-2+0.000000e+0j, 9.914449e-2+0.000000e+0j,  7.071068e-2+0.000000e+0j],
+            [-4.563621e-2-2.042881e-2j, 9.092510e-2-3.952538e-2j, -4.282945e-2+5.626401e-2j],
+            [ 3.330655e-2+3.729174e-2j, 6.762975e-2-7.249721e-2j, -1.882710e-2-6.815820e-2j],
+            [-1.516317e-2-4.764534e-2j, 3.312097e-2-9.344854e-2j,  6.563659e-2+2.630282e-2j]
+        ])
+        A = ula.steering_matrix(sources, self.wavelength)
+        npt.assert_allclose(A, A_expected, rtol=1e-6)
 
 class TestArrayPerturbations(unittest.TestCase):
 

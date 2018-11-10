@@ -1,3 +1,4 @@
+from .array_elements import ISOTROPIC_SCALAR_SENSOR, CustomNonisotropicSensor
 from .arrays import *
 from .coarray import WeightFunction1D
 from .signals import ComplexStochasticSignal

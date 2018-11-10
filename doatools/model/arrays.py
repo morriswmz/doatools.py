@@ -3,6 +3,7 @@ from ..utils.math import cartesian
 import numpy as np
 import warnings
 import copy
+from .array_elements import ISOTROPIC_SCALAR_SENSOR
 
 PERTURBATION_TYPES = [
     'location_errors',
@@ -83,6 +84,9 @@ class ArrayDesign:
             The values are two-element tuples where the first element is an
             ndarray representing the parameters and the second element is
             a bool specifying whether these parameters are known in prior.
+        element (~doatools.model.array_elements.ArrayElement): Array element
+            (sensor) used in this array. Default value is an instance of
+            :class:`~doatools.model.array_elements.IsotropicScalarSensor`.
 
     Notes:
         Array designs are supposed to be **immutable**. Because array
@@ -93,7 +97,8 @@ class ArrayDesign:
         them.
     """
 
-    def __init__(self, locations, name, perturbations={}):
+    def __init__(self, locations, name, perturbations={},
+                 element=ISOTROPIC_SCALAR_SENSOR):
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
         if locations.ndim > 2:
@@ -104,6 +109,7 @@ class ArrayDesign:
             raise ValueError('Array can only be 1D, 2D or 3D.')
         self._locations = locations
         self._name = name
+        self._element = element
         # Validate perturbations
         self._perturbations = self._validate_and_copy_perturbations(perturbations)
     
@@ -122,7 +128,7 @@ class ArrayDesign:
     def size(self):
         """Retrieves the number of elements in the array."""
         return self._locations.shape[0]
-    
+
     @property
     def output_size(self):
         """Retrieves the output size of the array.
@@ -157,6 +163,11 @@ class ArrayDesign:
             return self._compute_actual_locations(self._perturbations['location_errors'][0])
         else:
             return self.element_locations
+
+    @property
+    def element(self):
+        """Retrieves the array element."""
+        return self._element
     
     def _compute_actual_locations(self, location_errors):
         actual_ndim = self.ndim
@@ -277,11 +288,12 @@ class ArrayDesign:
         return array
 
     def steering_matrix(self, sources, wavelength, compute_derivatives=False,
-                        perturbations='all'):
+                        perturbations='all', flatten=True):
         r"""Creates the steering matrix for the given DOAs.
 
         Args:
-            sources: An instance of :class:`~doatools.model.sources.SourcePlacement`.
+            sources (~doatools.model.sources.SourcePlacement):
+                An instance of :class:`~doatools.model.sources.SourcePlacement`.
 
                 1. 1D arrays are placed along the x-axis. 2D arrays are placed
                    within the xy-plane.
@@ -291,14 +303,15 @@ class ArrayDesign:
                    (broadside -> azimuth). The elevation angles are set to zeros
                    (within the xy-plane).
             
-            wavelength: Wavelength of the carrier wave.
-            compute_derivatives: If set to True, also outputs the derivative
-                matrix DA with respect to the DOAs, where the k-th column of
-                DA is the derivative of the k-th column of A with respect to the
-                k-th DOA. DA is used when computing the CRBs. Only available to
-                1D DOAs.
-            perturbations: Specifies which perturbations are considered when
-                constructing the steering matrix:
+            wavelength (float): Wavelength of the carrier wave.
+            compute_derivatives (bool): If set to True, also outputs the
+                derivative matrices with respect to the DOAs. The k-th column of
+                the i-th derivative matrix contains the derivatives of the k-th
+                column of A with respect to the i-th parameter associated with
+                the k-th DOA. The derivative matrices are used when computing
+                the CRBs. Not always available.
+            perturbations (str): Specifies which perturbations are considered
+                when constructing the steering matrix:
 
                 * ``'all'`` - All perturbations are considered. This is the
                   default value.
@@ -307,6 +320,15 @@ class ArrayDesign:
                   option is used by DOA estimators when the exact knowledge of
                   these perturbations are known in prior.
                 * ``'none'`` - None of the perturbations are considered.
+            flatten (bool): Specifies whether the output should be flattend to
+                matrices. This option does not have any effect if the array
+                element has a scalar output. For an array element of non-scalar
+                outputs (e.g., a vector sensor), the resulting steering matrix
+                is actually a :math:`L \times M \times K` tensor, where]
+                :math:`L` is the output size of each array element, :math:`M` is
+                the array size, and :math:`K` is the number of sources. Setting
+                ``flatten`` to ``True`` will flatten the tensor into a
+                :math:`LM \times K` matrix. Default value is ``True``.
         
         Notes:
             The steering matrix calculation is bound to array designs. This is
@@ -322,12 +344,21 @@ class ArrayDesign:
             perturb_dict = {}
         else:
             raise ValueError('Perturbation can only be "all", "known", or "none".')
-        
+        # Check array element.
+        if not self._element.is_isotropic or not self._element.is_scalar:
+            require_spatial_response = True
+            if compute_derivatives:
+                raise RuntimeError(
+                    'Derivative computation is not supported when the array '
+                    'elements are non-isotropic or non-scalar.'
+                )
+        else:
+            require_spatial_response = False
+        # Compute actual element locations.
         if 'location_errors' in perturb_dict:
             actual_locations = self._compute_actual_locations(perturb_dict['location_errors'][0])
         else:
             actual_locations = self._locations
-
         # Compute the steering matrix
         T = sources.phase_delay_matrix(actual_locations, wavelength, compute_derivatives)
         if compute_derivatives:
@@ -335,7 +366,15 @@ class ArrayDesign:
             DA = [A * (1j * X) for X in T[1:]]
         else:
             A = np.exp(1j * T)
-        
+        # Apply spatial response
+        if require_spatial_response:
+            if sources.is_far_field:
+                # For far-field sources, the source locations do not matter.
+                r, az, el = sources.calc_spherical_coords(np.zeros((1, 1)))
+            else:
+                r, az, el = sources.calc_spherical_coords(actual_locations)
+            S = self._element.calc_spatial_response(r, az, el)
+            A = S * A
         # Apply other perturbations
         if 'gain_errors' in perturb_dict:
             gain_coeff = 1. + perturb_dict['gain_errors'][0]
@@ -351,7 +390,11 @@ class ArrayDesign:
             A = perturb_dict['mutual_coupling'][0] @ A
             if compute_derivatives:
                 DA = [perturb_dict['mutual_coupling'][0] @ X for X in DA]
-
+        # Prepare for returns.
+        if A.ndim > 2 and flatten:
+            A = A.reshape((-1, sources.size))
+            if compute_derivatives:
+                DA = [X.reshape((-1, sources.size)) for X in DA]
         if compute_derivatives:
             return (A,) + tuple(DA)
         else:
@@ -406,7 +449,7 @@ class GridBasedArrayDesign(ArrayDesign):
         else:
             if indices.shape[1] != bases.shape[0]:
                 raise ValueError(
-                    'The number of rows of the bases matrix does not match'
+                    'The number of rows of the bases matrix does not match '
                     'the number of columns of the indices ({0} != {1}).'
                     .format(bases.shape[0], indices.shape[1])
                 )
