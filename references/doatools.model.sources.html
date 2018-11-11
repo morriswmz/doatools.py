@@ -17,7 +17,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Modeling source signals" href="doatools.model.signals.html" />
-    <link rel="prev" title="Modeling arrays" href="doatools.model.arrays.html" />
+    <link rel="prev" title="Modeling array elements" href="doatools.model.array_elements.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -111,6 +111,14 @@ discourage because modified values are not checked for validity.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="doatools.model.sources.SourcePlacement.is_far_field">
+<code class="descname">is_far_field</code><a class="headerlink" href="#doatools.model.sources.SourcePlacement.is_far_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves whether the source placement is considered far-field.</p>
+<p>A far-field source’s distance to a sensor array is defined to be
+infinity.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="doatools.model.sources.SourcePlacement.units">
 <code class="descname">units</code><a class="headerlink" href="#doatools.model.sources.SourcePlacement.units" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieves a tuple consisting of units used for each dimension.</p>
@@ -136,6 +144,30 @@ discourage because modified values are not checked for validity.</p>
 <dt id="doatools.model.sources.SourcePlacement.as_unit">
 <code class="descname">as_unit</code><span class="sig-paren">(</span><em>new_unit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#SourcePlacement.as_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.SourcePlacement.as_unit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a copy with the source locations converted to the new unit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.sources.SourcePlacement.calc_spherical_coords">
+<code class="descname">calc_spherical_coords</code><span class="sig-paren">(</span><em>ref_locations</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#SourcePlacement.calc_spherical_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.SourcePlacement.calc_spherical_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the spherical coordinates relative to reference locations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ref_locations</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An M x D matrix storing the
+Cartesian coordinates (measured in meters), where M is the
+number of reference locations, and D is the number of dimensions
+of the coordinates (1, 2, or 3).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of three M by K matrices containing the ranges, the
+azimuth angles and the elevation angles, respectively. The (m,k)-th
+elements from the three matrices form the spherical coordinates for
+the k-th source relative to the m-th reference location.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -185,6 +217,18 @@ types of sources (e.g. far-field vs. near-field).</p>
 <em class="property">class </em><code class="descclassname">doatools.model.sources.</code><code class="descname">FarField1DSourcePlacement</code><span class="sig-paren">(</span><em>locations</em>, <em>unit='rad'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField1DSourcePlacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField1DSourcePlacement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.sources.SourcePlacement</span></code></a></p>
 <p>Creates a far-field 1D source placement.</p>
+<p>Far-field 1D sources are placed within the xy-plane and represented by
+the angles relative to the y-axis (broadside angles for an array placed
+along the x-axis).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>         <span class="n">y</span>
+         <span class="o">^</span>
+         <span class="o">|</span>   <span class="o">/</span>
+         <span class="o">|</span>  <span class="o">/</span>
+         <span class="o">|-/</span>
+         <span class="o">|/</span>
+<span class="o">---------+---------&gt;</span> <span class="n">x</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -226,6 +270,14 @@ is <code class="docutils literal notranslate"><span class="pre">'rad'</span></co
 </dd></dl>
 
 <dl class="attribute">
+<dt id="doatools.model.sources.FarField1DSourcePlacement.is_far_field">
+<code class="descname">is_far_field</code><a class="headerlink" href="#doatools.model.sources.FarField1DSourcePlacement.is_far_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves whether the source placement is considered far-field.</p>
+<p>A far-field source’s distance to a sensor array is defined to be
+infinity.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="doatools.model.sources.FarField1DSourcePlacement.valid_ranges">
 <code class="descname">valid_ranges</code><a class="headerlink" href="#doatools.model.sources.FarField1DSourcePlacement.valid_ranges" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieves the valid ranges for each dimension.</p>
@@ -248,6 +300,30 @@ is <code class="docutils literal notranslate"><span class="pre">'rad'</span></co
 </dd></dl>
 
 <dl class="method">
+<dt id="doatools.model.sources.FarField1DSourcePlacement.calc_spherical_coords">
+<code class="descname">calc_spherical_coords</code><span class="sig-paren">(</span><em>ref_locations</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField1DSourcePlacement.calc_spherical_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField1DSourcePlacement.calc_spherical_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the spherical coordinates relative to reference locations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ref_locations</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An M x D matrix storing the
+Cartesian coordinates (measured in meters), where M is the
+number of reference locations, and D is the number of dimensions
+of the coordinates (1, 2, or 3).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of three M by K matrices containing the ranges, the
+azimuth angles and the elevation angles, respectively. The (m,k)-th
+elements from the three matrices form the spherical coordinates for
+the k-th source relative to the m-th reference location.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="doatools.model.sources.FarField1DSourcePlacement.phase_delay_matrix">
 <code class="descname">phase_delay_matrix</code><span class="sig-paren">(</span><em>sensor_locations</em>, <em>wavelength</em>, <em>derivatives=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField1DSourcePlacement.phase_delay_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField1DSourcePlacement.phase_delay_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the phase delay matrix for 1D far-field sources.</p>
@@ -260,6 +336,9 @@ is <code class="docutils literal notranslate"><span class="pre">'rad'</span></co
 <em class="property">class </em><code class="descclassname">doatools.model.sources.</code><code class="descname">FarField2DSourcePlacement</code><span class="sig-paren">(</span><em>locations</em>, <em>unit='rad'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField2DSourcePlacement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField2DSourcePlacement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">doatools.model.sources.SourcePlacement</span></code></a></p>
 <p>Creates a far-field 2D source placement.</p>
+<p>Far-field 2D sources are represented by azimuth and elevation angles. The
+azimuth angles start from the x-axis and the elevation angles are measured
+with respect to the xy-plane.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -275,6 +354,14 @@ be modified after creation.</li>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="doatools.model.sources.FarField2DSourcePlacement.is_far_field">
+<code class="descname">is_far_field</code><a class="headerlink" href="#doatools.model.sources.FarField2DSourcePlacement.is_far_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves whether the source placement is considered far-field.</p>
+<p>A far-field source’s distance to a sensor array is defined to be
+infinity.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="doatools.model.sources.FarField2DSourcePlacement.valid_ranges">
 <code class="descname">valid_ranges</code><a class="headerlink" href="#doatools.model.sources.FarField2DSourcePlacement.valid_ranges" title="Permalink to this definition">¶</a></dt>
@@ -295,6 +382,30 @@ be modified after creation.</li>
 <dt id="doatools.model.sources.FarField2DSourcePlacement.as_unit">
 <code class="descname">as_unit</code><span class="sig-paren">(</span><em>new_unit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField2DSourcePlacement.as_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField2DSourcePlacement.as_unit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a copy with the source locations converted to the new unit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.sources.FarField2DSourcePlacement.calc_spherical_coords">
+<code class="descname">calc_spherical_coords</code><span class="sig-paren">(</span><em>ref_locations</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#FarField2DSourcePlacement.calc_spherical_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.FarField2DSourcePlacement.calc_spherical_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the spherical coordinates relative to reference locations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ref_locations</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An M x D matrix storing the
+Cartesian coordinates (measured in meters), where M is the
+number of reference locations, and D is the number of dimensions
+of the coordinates (1, 2, or 3).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of three M by K matrices containing the ranges, the
+azimuth angles and the elevation angles, respectively. The (m,k)-th
+elements from the three matrices form the spherical coordinates for
+the k-th source relative to the m-th reference location.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -322,6 +433,14 @@ modified after creation.</td>
 </tbody>
 </table>
 <dl class="attribute">
+<dt id="doatools.model.sources.NearField2DSourcePlacement.is_far_field">
+<code class="descname">is_far_field</code><a class="headerlink" href="#doatools.model.sources.NearField2DSourcePlacement.is_far_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves whether the source placement is considered far-field.</p>
+<p>A far-field source’s distance to a sensor array is defined to be
+infinity.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="doatools.model.sources.NearField2DSourcePlacement.valid_ranges">
 <code class="descname">valid_ranges</code><a class="headerlink" href="#doatools.model.sources.NearField2DSourcePlacement.valid_ranges" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieves the valid ranges for each dimension.</p>
@@ -341,6 +460,30 @@ modified after creation.</td>
 <dt id="doatools.model.sources.NearField2DSourcePlacement.as_unit">
 <code class="descname">as_unit</code><span class="sig-paren">(</span><em>new_unit</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#NearField2DSourcePlacement.as_unit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.NearField2DSourcePlacement.as_unit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a copy with the source locations converted to the new unit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="doatools.model.sources.NearField2DSourcePlacement.calc_spherical_coords">
+<code class="descname">calc_spherical_coords</code><span class="sig-paren">(</span><em>ref_locations</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/sources.html#NearField2DSourcePlacement.calc_spherical_coords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.sources.NearField2DSourcePlacement.calc_spherical_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the spherical coordinates relative to reference locations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ref_locations</strong> (<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><em>ndarray</em></a>) – An M x D matrix storing the
+Cartesian coordinates (measured in meters), where M is the
+number of reference locations, and D is the number of dimensions
+of the coordinates (1, 2, or 3).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple of three M by K matrices containing the ranges, the
+azimuth angles and the elevation angles, respectively. The (m,k)-th
+elements from the three matrices form the spherical coordinates for
+the k-th source relative to the m-th reference location.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -374,6 +517,7 @@ modified after creation.</td>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="doatools.model.html">Modeling</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.arrays.html">Modeling arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.array_elements.html">Modeling array elements</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Modeling source placements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.signals.html">Modeling source signals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.snapshots.html">Collecting snapshots</a></li>
@@ -391,7 +535,7 @@ modified after creation.</td>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="doatools.model.html">Modeling</a><ul>
-      <li>Previous: <a href="doatools.model.arrays.html" title="previous chapter">Modeling arrays</a></li>
+      <li>Previous: <a href="doatools.model.array_elements.html" title="previous chapter">Modeling array elements</a></li>
       <li>Next: <a href="doatools.model.signals.html" title="next chapter">Modeling source signals</a></li>
   </ul></li>
   </ul></li>

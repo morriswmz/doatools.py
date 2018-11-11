@@ -38,6 +38,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">.array_elements</span> <span class="k">import</span> <span class="n">ISOTROPIC_SCALAR_SENSOR</span>
 
 <span class="n">PERTURBATION_TYPES</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s1">&#39;location_errors&#39;</span><span class="p">,</span>
@@ -118,6 +119,9 @@
 <span class="sd">            The values are two-element tuples where the first element is an</span>
 <span class="sd">            ndarray representing the parameters and the second element is</span>
 <span class="sd">            a bool specifying whether these parameters are known in prior.</span>
+<span class="sd">        element (~doatools.model.array_elements.ArrayElement): Array element</span>
+<span class="sd">            (sensor) used in this array. Default value is an instance of</span>
+<span class="sd">            :class:`~doatools.model.array_elements.IsotropicScalarSensor`.</span>
 
 <span class="sd">    Notes:</span>
 <span class="sd">        Array designs are supposed to be **immutable**. Because array</span>
@@ -128,7 +132,8 @@
 <span class="sd">        them.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">perturbations</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">perturbations</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">element</span><span class="o">=</span><span class="n">ISOTROPIC_SCALAR_SENSOR</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">locations</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
@@ -139,6 +144,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Array can only be 1D, 2D or 3D.&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="n">locations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_element</span> <span class="o">=</span> <span class="n">element</span>
         <span class="c1"># Validate perturbations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_copy_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">)</span>
     
@@ -157,6 +163,15 @@
     <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieves the number of elements in the array.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the output size of the array.</span>
+<span class="sd">        </span>
+<span class="sd">        In generate, the output size should be equal to ``size``. However, for</span>
+<span class="sd">        vector sensor arrays, the output size is greater than the array size.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
     
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">element_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -183,6 +198,11 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_actual_locations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_locations</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">element</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the array element.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element</span>
     
     <span class="k">def</span> <span class="nf">_compute_actual_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_errors</span><span class="p">):</span>
         <span class="n">actual_ndim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span>
@@ -253,7 +273,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Perturbation details should be specified by a two-element tuple.&#39;</span><span class="p">)</span>
             <span class="c1"># Validate and copy</span>
-            <span class="n">PERTURBATION_VALIDATORS</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">PERTURBATION_VALIDATORS</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">params_copy</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">params_copy</span><span class="o">.</span><span class="n">setflags</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">p_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">params_copy</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -303,11 +323,12 @@
         <span class="k">return</span> <span class="n">array</span></div>
 
 <div class="viewcode-block" id="ArrayDesign.steering_matrix"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.steering_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">steering_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">compute_derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">perturbations</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">):</span>
+                        <span class="n">perturbations</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Creates the steering matrix for the given DOAs.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            sources: An instance of :class:`~doatools.model.sources.SourcePlacement`.</span>
+<span class="sd">            sources (~doatools.model.sources.SourcePlacement):</span>
+<span class="sd">                An instance of :class:`~doatools.model.sources.SourcePlacement`.</span>
 
 <span class="sd">                1. 1D arrays are placed along the x-axis. 2D arrays are placed</span>
 <span class="sd">                   within the xy-plane.</span>
@@ -317,14 +338,15 @@
 <span class="sd">                   (broadside -&gt; azimuth). The elevation angles are set to zeros</span>
 <span class="sd">                   (within the xy-plane).</span>
 <span class="sd">            </span>
-<span class="sd">            wavelength: Wavelength of the carrier wave.</span>
-<span class="sd">            compute_derivatives: If set to True, also outputs the derivative</span>
-<span class="sd">                matrix DA with respect to the DOAs, where the k-th column of</span>
-<span class="sd">                DA is the derivative of the k-th column of A with respect to the</span>
-<span class="sd">                k-th DOA. DA is used when computing the CRBs. Only available to</span>
-<span class="sd">                1D DOAs.</span>
-<span class="sd">            perturbations: Specifies which perturbations are considered when</span>
-<span class="sd">                constructing the steering matrix:</span>
+<span class="sd">            wavelength (float): Wavelength of the carrier wave.</span>
+<span class="sd">            compute_derivatives (bool): If set to True, also outputs the</span>
+<span class="sd">                derivative matrices with respect to the DOAs. The k-th column of</span>
+<span class="sd">                the i-th derivative matrix contains the derivatives of the k-th</span>
+<span class="sd">                column of A with respect to the i-th parameter associated with</span>
+<span class="sd">                the k-th DOA. The derivative matrices are used when computing</span>
+<span class="sd">                the CRBs. Not always available.</span>
+<span class="sd">            perturbations (str): Specifies which perturbations are considered</span>
+<span class="sd">                when constructing the steering matrix:</span>
 
 <span class="sd">                * ``&#39;all&#39;`` - All perturbations are considered. This is the</span>
 <span class="sd">                  default value.</span>
@@ -333,6 +355,15 @@
 <span class="sd">                  option is used by DOA estimators when the exact knowledge of</span>
 <span class="sd">                  these perturbations are known in prior.</span>
 <span class="sd">                * ``&#39;none&#39;`` - None of the perturbations are considered.</span>
+<span class="sd">            flatten (bool): Specifies whether the output should be flattend to</span>
+<span class="sd">                matrices. This option does not have any effect if the array</span>
+<span class="sd">                element has a scalar output. For an array element of non-scalar</span>
+<span class="sd">                outputs (e.g., a vector sensor), the resulting steering matrix</span>
+<span class="sd">                is actually a :math:`L \times M \times K` tensor, where]</span>
+<span class="sd">                :math:`L` is the output size of each array element, :math:`M` is</span>
+<span class="sd">                the array size, and :math:`K` is the number of sources. Setting</span>
+<span class="sd">                ``flatten`` to ``True`` will flatten the tensor into a</span>
+<span class="sd">                :math:`LM \times K` matrix. Default value is ``True``.</span>
 <span class="sd">        </span>
 <span class="sd">        Notes:</span>
 <span class="sd">            The steering matrix calculation is bound to array designs. This is</span>
@@ -348,12 +379,21 @@
             <span class="n">perturb_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Perturbation can only be &quot;all&quot;, &quot;known&quot;, or &quot;none&quot;.&#39;</span><span class="p">)</span>
-        
+        <span class="c1"># Check array element.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element</span><span class="o">.</span><span class="n">is_isotropic</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element</span><span class="o">.</span><span class="n">is_scalar</span><span class="p">:</span>
+            <span class="n">require_spatial_response</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s1">&#39;Derivative computation is not supported when the array &#39;</span>
+                    <span class="s1">&#39;elements are non-isotropic or non-scalar.&#39;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">require_spatial_response</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Compute actual element locations.</span>
         <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
             <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_actual_locations</span><span class="p">(</span><span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
-
         <span class="c1"># Compute the steering matrix</span>
         <span class="n">T</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">phase_delay_matrix</span><span class="p">(</span><span class="n">actual_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">compute_derivatives</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
@@ -361,8 +401,17 @@
             <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">A</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span>
-        
+        <span class="c1"># Apply spatial response</span>
+        <span class="k">if</span> <span class="n">require_spatial_response</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sources</span><span class="o">.</span><span class="n">is_far_field</span><span class="p">:</span>
+                <span class="c1"># For far-field sources, the source locations do not matter.</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">az</span><span class="p">,</span> <span class="n">el</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">calc_spherical_coords</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">,</span> <span class="n">az</span><span class="p">,</span> <span class="n">el</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">calc_spherical_coords</span><span class="p">(</span><span class="n">actual_locations</span><span class="p">)</span>
+            <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element</span><span class="o">.</span><span class="n">calc_spatial_response</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">)</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">S</span> <span class="o">*</span> <span class="n">A</span>
         <span class="c1"># Apply other perturbations</span>
+        <span class="c1"># TODO: avoid hard-coded perturbations</span>
         <span class="k">if</span> <span class="s1">&#39;gain_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
             <span class="n">gain_coeff</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;gain_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">A</span> <span class="o">=</span> <span class="n">gain_coeff</span> <span class="o">*</span> <span class="n">A</span>
@@ -377,7 +426,11 @@
             <span class="n">A</span> <span class="o">=</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;mutual_coupling&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">A</span>
             <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
                 <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;mutual_coupling&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
-
+        <span class="c1"># Prepare for returns.</span>
+        <span class="k">if</span> <span class="n">A</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">flatten</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sources</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
+                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sources</span><span class="o">.</span><span class="n">size</span><span class="p">))</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">DA</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -432,7 +485,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">bases</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s1">&#39;The number of rows of the bases matrix does not match&#39;</span>
+                    <span class="s1">&#39;The number of rows of the bases matrix does not match &#39;</span>
                     <span class="s1">&#39;the number of columns of the indices (</span><span class="si">{0}</span><span class="s1"> != </span><span class="si">{1}</span><span class="s1">).&#39;</span>
                     <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bases</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">indices</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
                 <span class="p">)</span>

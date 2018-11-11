@@ -39,7 +39,7 @@
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="k">import</span> <span class="n">cdist</span>
-<span class="kn">from</span> <span class="nn">..utils.conversion</span> <span class="k">import</span> <span class="n">convert_angles</span>
+<span class="kn">from</span> <span class="nn">..utils.conversion</span> <span class="k">import</span> <span class="n">convert_angles</span><span class="p">,</span> <span class="n">cart2spherical</span>
 
 <span class="k">def</span> <span class="nf">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
@@ -109,6 +109,16 @@
 <span class="sd">        discourage because modified values are not checked for validity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+    
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">is_far_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves whether the source placement is considered far-field.</span>
+<span class="sd">        </span>
+<span class="sd">        A far-field source&#39;s distance to a sensor array is defined to be</span>
+<span class="sd">        infinity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -128,6 +138,24 @@
 <div class="viewcode-block" id="SourcePlacement.as_unit"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement.as_unit">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">as_unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_unit</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates a copy with the source locations converted to the new unit.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SourcePlacement.calc_spherical_coords"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement.calc_spherical_coords">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">calc_spherical_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_locations</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the spherical coordinates relative to reference locations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ref_locations (~numpy.ndarray): An M x D matrix storing the</span>
+<span class="sd">                Cartesian coordinates (measured in meters), where M is the</span>
+<span class="sd">                number of reference locations, and D is the number of dimensions</span>
+<span class="sd">                of the coordinates (1, 2, or 3).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A tuple of three M by K matrices containing the ranges, the</span>
+<span class="sd">            azimuth angles and the elevation angles, respectively. The (m,k)-th</span>
+<span class="sd">            elements from the three matrices form the spherical coordinates for</span>
+<span class="sd">            the k-th source relative to the m-th reference location.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="SourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.SourcePlacement.phase_delay_matrix">[docs]</a>    <span class="nd">@abstractmethod</span>
@@ -163,6 +191,20 @@
 
 <div class="viewcode-block" id="FarField1DSourcePlacement"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement">[docs]</a><span class="k">class</span> <span class="nc">FarField1DSourcePlacement</span><span class="p">(</span><span class="n">SourcePlacement</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a far-field 1D source placement.</span>
+
+<span class="sd">    Far-field 1D sources are placed within the xy-plane and represented by</span>
+<span class="sd">    the angles relative to the y-axis (broadside angles for an array placed</span>
+<span class="sd">    along the x-axis).</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">                 y   </span>
+<span class="sd">                 ^</span>
+<span class="sd">                 |   /</span>
+<span class="sd">                 |  /</span>
+<span class="sd">                 |-/</span>
+<span class="sd">                 |/</span>
+<span class="sd">        ---------+---------&gt; x</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        locations: A list or 1D numpy array representing the source locations.</span>
@@ -225,6 +267,10 @@
             <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">locations</span><span class="p">),</span> <span class="s1">&#39;deg&#39;</span><span class="p">)</span></div>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_far_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">FarField1DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
 
@@ -233,6 +279,16 @@
             <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_unit</span><span class="p">),</span>
             <span class="n">new_unit</span>
         <span class="p">)</span></div>
+
+<div class="viewcode-block" id="FarField1DSourcePlacement.calc_spherical_coords"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement.calc_spherical_coords">[docs]</a>    <span class="k">def</span> <span class="nf">calc_spherical_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_locations</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">ref_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">el</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+        <span class="c1"># Broadside angles are defined relative to the y-axis</span>
+        <span class="n">az</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="o">-</span> <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;rad&#39;</span><span class="p">)</span>
+        <span class="n">az</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">az</span><span class="p">,</span> <span class="n">el</span></div>
 
 <div class="viewcode-block" id="FarField1DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField1DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 1D far-field sources.&quot;&quot;&quot;</span>
@@ -304,6 +360,10 @@
 <div class="viewcode-block" id="FarField2DSourcePlacement"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField2DSourcePlacement">[docs]</a><span class="k">class</span> <span class="nc">FarField2DSourcePlacement</span><span class="p">(</span><span class="n">SourcePlacement</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a far-field 2D source placement.</span>
 
+<span class="sd">    Far-field 2D sources are represented by azimuth and elevation angles. The</span>
+<span class="sd">    azimuth angles start from the x-axis and the elevation angles are measured</span>
+<span class="sd">    with respect to the xy-plane.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        locations: An k x 2 numpy array representing the source locations,</span>
 <span class="sd">            where k is the number of sources, and the k-th row consists of</span>
@@ -341,6 +401,10 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="p">(</span><span class="n">unit</span><span class="p">,</span> <span class="n">unit</span><span class="p">))</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_far_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">FarField2DSourcePlacement</span><span class="o">.</span><span class="n">VALID_RANGES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
 
@@ -349,6 +413,18 @@
             <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">new_unit</span><span class="p">),</span>
             <span class="n">new_unit</span>
         <span class="p">)</span></div>
+
+<div class="viewcode-block" id="FarField2DSourcePlacement.calc_spherical_coords"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField2DSourcePlacement.calc_spherical_coords">[docs]</a>    <span class="k">def</span> <span class="nf">calc_spherical_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_locations</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">ref_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="c1"># The coordinates do not depend on reference locations.</span>
+        <span class="c1"># Just repeat the rows.</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">az</span> <span class="o">=</span> <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;rad&#39;</span><span class="p">)</span>
+        <span class="n">az</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">az</span><span class="p">,</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">el</span> <span class="o">=</span> <span class="n">convert_angles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_units</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;rad&#39;</span><span class="p">)</span>
+        <span class="n">el</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">az</span><span class="p">,</span> <span class="n">el</span></div>
 
 <div class="viewcode-block" id="FarField2DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.FarField2DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 2D far-field sources.&quot;&quot;&quot;</span>
@@ -369,6 +445,8 @@
             <span class="c1"># Need to convert azimuth-elevation pairs to broadside angles.</span>
             <span class="n">D</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">cos_el</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Notes: the sum of outer products can also be rewritten using</span>
+            <span class="c1">#        matrix multiplications.</span>
             <span class="n">cc</span> <span class="o">=</span> <span class="n">cos_el</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
             <span class="n">cs</span> <span class="o">=</span> <span class="n">cos_el</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">locations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
@@ -399,6 +477,10 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">))</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_far_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">valid_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
 
@@ -407,13 +489,14 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;new_unit must be &#39;m&#39;.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">NearField2DSourcePlacement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
 
-<div class="viewcode-block" id="NearField2DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.NearField2DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 2D near-field sources.&quot;&quot;&quot;</span>
-        <span class="n">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Derivative matrix computation is not supported for near-field 2D DOAs.&#39;</span><span class="p">)</span>
-
-        <span class="c1"># Align the number of dimensions</span>
+    <span class="k">def</span> <span class="nf">_align_location_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds necessary paddings when the sources locations and sensor</span>
+<span class="sd">        locations have different number of dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: A two-element tuple containing padded sources locations and</span>
+<span class="sd">            sensor locations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">source_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
         <span class="k">if</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="c1"># 1D arrays</span>
@@ -421,8 +504,29 @@
         <span class="k">elif</span> <span class="n">sensor_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="c1"># 3D arrays</span>
             <span class="n">source_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">source_locations</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="s1">&#39;constant&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">source_locations</span><span class="p">,</span> <span class="n">sensor_locations</span>
 
-        <span class="n">s</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span>
+<div class="viewcode-block" id="NearField2DSourcePlacement.calc_spherical_coords"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.NearField2DSourcePlacement.calc_spherical_coords">[docs]</a>    <span class="k">def</span> <span class="nf">calc_spherical_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref_locations</span><span class="p">):</span>
+        <span class="n">source_locations</span><span class="p">,</span> <span class="n">ref_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_location_dims</span><span class="p">(</span><span class="n">ref_locations</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">ref_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">source_locations</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Compute pair-wise differences.</span>
+        <span class="n">diffs</span> <span class="o">=</span> <span class="n">source_locations</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span> <span class="o">-</span> <span class="n">ref_locations</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="n">diffs</span> <span class="o">=</span> <span class="n">diffs</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">cart2spherical</span><span class="p">(</span><span class="n">diffs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">)),</span> <span class="n">s</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">)),</span> <span class="n">s</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="NearField2DSourcePlacement.phase_delay_matrix"><a class="viewcode-back" href="../../../references/doatools.model.sources.html#doatools.model.sources.NearField2DSourcePlacement.phase_delay_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">phase_delay_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sensor_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">derivatives</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Computes the phase delay matrix for 2D near-field sources.&quot;&quot;&quot;</span>
+        <span class="n">_validate_sensor_location_ndim</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">derivatives</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Derivative matrix computation is not supported for near-field 2D DOAs.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Align the number of dimensions</span>
+        <span class="n">source_locations</span><span class="p">,</span> <span class="n">sensor_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_align_location_dims</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">)</span>
+
+        <span class="c1"># Negative phase = arrive later</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">wavelength</span>
         <span class="c1"># Compute the pair-wise Euclidean distance.</span>
         <span class="n">M</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">sensor_locations</span><span class="p">,</span> <span class="n">source_locations</span><span class="p">,</span> <span class="s1">&#39;euclidean&#39;</span><span class="p">)</span>
         <span class="n">M</span> <span class="o">-=</span> <span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1"># Use the first sensor as the reference sensor.</span>

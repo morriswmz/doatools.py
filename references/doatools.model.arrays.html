@@ -16,7 +16,7 @@
     <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Modeling source placements" href="doatools.model.sources.html" />
+    <link rel="next" title="Modeling array elements" href="doatools.model.array_elements.html" />
     <link rel="prev" title="Modeling" href="doatools.model.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -50,7 +50,7 @@ direction-of-arrival (DOA) estimation.</p>
 <span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.model.arrays" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="doatools.model.arrays.ArrayDesign">
-<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">ArrayDesign</code><span class="sig-paren">(</span><em>locations</em>, <em>name</em>, <em>perturbations={}</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">ArrayDesign</code><span class="sig-paren">(</span><em>locations</em>, <em>name</em>, <em>perturbations={}</em>, <em>element=&lt;doatools.model.array_elements.IsotropicScalarSensor object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Base class for all array designs.</p>
 <p>Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate
@@ -99,6 +99,9 @@ parameters. The keys should be among the following:</p>
 ndarray representing the parameters and the second element is
 a bool specifying whether these parameters are known in prior.</p>
 </li>
+<li><strong>element</strong> (<a class="reference internal" href="doatools.model.array_elements.html#doatools.model.array_elements.ArrayElement" title="doatools.model.array_elements.ArrayElement"><em>ArrayElement</em></a>) – Array element
+(sensor) used in this array. Default value is an instance of
+<a class="reference internal" href="doatools.model.array_elements.html#doatools.model.array_elements.IsotropicScalarSensor" title="doatools.model.array_elements.IsotropicScalarSensor"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsotropicScalarSensor</span></code></a>.</li>
 </ul>
 </td>
 </tr>
@@ -127,6 +130,14 @@ them.</p>
 <dt id="doatools.model.arrays.ArrayDesign.size">
 <code class="descname">size</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieves the number of elements in the array.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.output_size">
+<code class="descname">output_size</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.output_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the output size of the array.</p>
+<p>In generate, the output size should be equal to <code class="docutils literal notranslate"><span class="pre">size</span></code>. However, for
+vector sensor arrays, the output size is greater than the array size.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -161,6 +172,12 @@ maximum of the following two:<ol class="arabic simple">
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="doatools.model.arrays.ArrayDesign.element">
+<code class="descname">element</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.element" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the array element.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -263,14 +280,14 @@ used.</td>
 
 <dl class="method">
 <dt id="doatools.model.arrays.ArrayDesign.steering_matrix">
-<code class="descname">steering_matrix</code><span class="sig-paren">(</span><em>sources</em>, <em>wavelength</em>, <em>compute_derivatives=False</em>, <em>perturbations='all'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.steering_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.steering_matrix" title="Permalink to this definition">¶</a></dt>
+<code class="descname">steering_matrix</code><span class="sig-paren">(</span><em>sources</em>, <em>wavelength</em>, <em>compute_derivatives=False</em>, <em>perturbations='all'</em>, <em>flatten=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.steering_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.steering_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates the steering matrix for the given DOAs.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>sources</strong> – <p>An instance of <a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a>.</p>
+<li><strong>sources</strong> (<a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><em>SourcePlacement</em></a>) – <p>An instance of <a class="reference internal" href="doatools.model.sources.html#doatools.model.sources.SourcePlacement" title="doatools.model.sources.SourcePlacement"><code class="xref py py-class docutils literal notranslate"><span class="pre">SourcePlacement</span></code></a>.</p>
 <ol class="arabic">
 <li>1D arrays are placed along the x-axis. 2D arrays are placed
 within the xy-plane.</li>
@@ -281,14 +298,15 @@ calculated as <span class="math notranslate nohighlight">\(\pi/2\)</span> minus 
 (within the xy-plane).</li>
 </ol>
 </li>
-<li><strong>wavelength</strong> – Wavelength of the carrier wave.</li>
-<li><strong>compute_derivatives</strong> – If set to True, also outputs the derivative
-matrix DA with respect to the DOAs, where the k-th column of
-DA is the derivative of the k-th column of A with respect to the
-k-th DOA. DA is used when computing the CRBs. Only available to
-1D DOAs.</li>
-<li><strong>perturbations</strong> – <p>Specifies which perturbations are considered when
-constructing the steering matrix:</p>
+<li><strong>wavelength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.7)"><em>float</em></a>) – Wavelength of the carrier wave.</li>
+<li><strong>compute_derivatives</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – If set to True, also outputs the
+derivative matrices with respect to the DOAs. The k-th column of
+the i-th derivative matrix contains the derivatives of the k-th
+column of A with respect to the i-th parameter associated with
+the k-th DOA. The derivative matrices are used when computing
+the CRBs. Not always available.</li>
+<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – <p>Specifies which perturbations are considered
+when constructing the steering matrix:</p>
 <ul>
 <li><code class="docutils literal notranslate"><span class="pre">'all'</span></code> - All perturbations are considered. This is the
 default value.</li>
@@ -299,6 +317,15 @@ these perturbations are known in prior.</li>
 <li><code class="docutils literal notranslate"><span class="pre">'none'</span></code> - None of the perturbations are considered.</li>
 </ul>
 </li>
+<li><strong>flatten</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – Specifies whether the output should be flattend to
+matrices. This option does not have any effect if the array
+element has a scalar output. For an array element of non-scalar
+outputs (e.g., a vector sensor), the resulting steering matrix
+is actually a <span class="math notranslate nohighlight">\(L \times M \times K\)</span> tensor, where]
+<span class="math notranslate nohighlight">\(L\)</span> is the output size of each array element, <span class="math notranslate nohighlight">\(M\)</span> is
+the array size, and <span class="math notranslate nohighlight">\(K\)</span> is the number of sources. Setting
+<code class="docutils literal notranslate"><span class="pre">flatten</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> will flatten the tensor into a
+<span class="math notranslate nohighlight">\(LM \times K\)</span> matrix. Default value is <code class="docutils literal notranslate"><span class="pre">True</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -603,6 +630,7 @@ scalar or a two-element list-like object.</li>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="doatools.model.html">Modeling</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Modeling arrays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.array_elements.html">Modeling array elements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.sources.html">Modeling source placements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.signals.html">Modeling source signals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.snapshots.html">Collecting snapshots</a></li>
@@ -621,7 +649,7 @@ scalar or a two-element list-like object.</li>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="doatools.model.html">Modeling</a><ul>
       <li>Previous: <a href="doatools.model.html" title="previous chapter">Modeling</a></li>
-      <li>Next: <a href="doatools.model.sources.html" title="next chapter">Modeling source placements</a></li>
+      <li>Next: <a href="doatools.model.array_elements.html" title="next chapter">Modeling array elements</a></li>
   </ul></li>
   </ul></li>
 </ul>
