@@ -48,10 +48,14 @@ def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
         )
         show_location_errors = False
     # Create a new axes if necessary.
+    if show_location_errors:
+        plt_dim = array.actual_ndim
+    else:
+        plt_dim = array.ndim
     if ax is None:
         new_plot = True
         fig = plt.figure()
-        if array.actual_ndim == 3:
+        if plt_dim == 3:
             ax = fig.add_subplot(111, projection='3d')
         else:
             ax = fig.add_subplot(111)
@@ -70,7 +74,7 @@ def _plot_array_impl(array, ax=None, coarray=False, show_location_errors=False):
         _auto_scatter(ax, element_locations, marker='x', label='Actual locations')
     ax.set_xlabel('x')
     ax.set_ylabel('y')
-    if array.actual_ndim < 3:
+    if plt_dim < 3:
         ax.set_aspect('equal', adjustable='datalim')
         ax.grid(True)
         ax.set_axisbelow(True) # Move grid lines behind.
