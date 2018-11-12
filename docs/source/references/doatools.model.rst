@@ -6,6 +6,7 @@ Modeling
     
     doatools.model.arrays
     doatools.model.array_elements
+    doatools.model.perturbations
     doatools.model.sources
     doatools.model.signals
     doatools.model.snapshots

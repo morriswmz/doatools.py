@@ -3,6 +3,8 @@ import numpy as np
 import numpy.testing as npt
 from scipy.linalg import toeplitz
 from doatools.model.array_elements import CustomNonisotropicSensor
+from doatools.model.perturbations import LocationErrors, GainErrors, \
+                                         PhaseErrors, MutualCoupling
 from doatools.model.arrays import GridBasedArrayDesign
 from doatools.model.arrays import UniformLinearArray, CoPrimeArray, \
                                   NestedArray, MinimumRedundancyLinearArray, \
@@ -261,9 +263,16 @@ class TestArrayPerturbations(unittest.TestCase):
     def test_array_perturbations(self):
         d0 = self.wavelength / 2
         ula = UniformLinearArray(5, d0)
+        ptype2str = {
+            LocationErrors: 'location_errors',
+            GainErrors: 'gain_errors',
+            PhaseErrors: 'phase_errors',
+            MutualCoupling: 'mutual_coupling'
+        }
+        str2ptype = {v: k for k, v in ptype2str.items()}
         # No perturbations yet.
         self.assertFalse(ula.is_perturbed)
-        for ptype in ['gain_errors', 'phase_errors', 'location_errors', 'mutual_coupling']:
+        for ptype in ptype2str.keys():
             self.assertFalse(ula.has_perturbation(ptype))
         # Now we add perturbations.         
         gain_errors = np.random.uniform(-0.5, 0.5, (ula.size,))
@@ -273,32 +282,33 @@ class TestArrayPerturbations(unittest.TestCase):
         # Test for 1D, 2D, 3D location errors.
         for ndim in [1, 2, 3]:
             location_errors = np.random.uniform(-0.1 * d0, 0.1 * d0, (ula.size, ndim))
-            perturbations = {
+            perturb_defs = {
                 'gain_errors': (gain_errors, True),
                 'phase_errors': (phase_errors, True),
                 'location_errors': (location_errors, False),
                 'mutual_coupling': (mutual_coupling, True)
             }
-            ula_perturbed = ula.get_perturbed_copy(perturbations, perturbed_name)
+            ula_perturbed = ula.get_perturbed_copy(perturb_defs, perturbed_name)
             self.assertEqual(ula_perturbed.name, perturbed_name)
             self.assertTrue(ula_perturbed.is_perturbed)
-            for k, v in perturbations.items():
-                self.assertEqual(ula_perturbed.has_perturbation(k), True)
-                npt.assert_allclose(ula_perturbed.get_perturbation_params(k), v[0])
-                self.assertEqual(ula_perturbed.is_perturbation_known(k), v[1])
-            # Verify location error calulations.
+            for k, v in perturb_defs.items():
+                cur_ptype = str2ptype[k]
+                self.assertEqual(ula_perturbed.has_perturbation(cur_ptype), True)
+                npt.assert_allclose(ula_perturbed.get_perturbation_params(cur_ptype), v[0])
+                self.assertEqual(ula_perturbed.is_perturbation_known(cur_ptype), v[1])
+            # Verify location error calculations.
             self.assertEqual(ula_perturbed.actual_ndim, ndim)
             npt.assert_allclose(
                 ula_perturbed.actual_element_locations,
                 np.pad(ula.element_locations, ((0, 0), (0, ndim - 1)), 'constant') + location_errors
             )
-            # The `perturbation` property should return a dictionary of
-            # perturbations.
-            perturbations_actual = ula_perturbed.perturbations
-            self.assertEqual(len(perturbations_actual), len(perturbations))
-            for k, v in perturbations.items():
-                npt.assert_allclose(perturbations_actual[k][0], v[0])
-                self.assertEqual(perturbations_actual[k][1], v[1])
+            # The `perturbation` property should return a list of perturbations.
+            perturbs_actual = ula_perturbed.perturbations
+            self.assertEqual(len(perturbs_actual), len(perturb_defs))
+            for perturb in perturbs_actual:
+                params_expected, known_expected = perturb_defs[ptype2str[perturb.__class__]]
+                npt.assert_allclose(perturb.params, params_expected)
+                self.assertEqual(perturb.is_known, known_expected)
             # Perturbation-free copies should not have perturbations.
             self.assertFalse(ula_perturbed.get_perturbation_free_copy().is_perturbed)
 
@@ -306,29 +316,28 @@ class TestArrayPerturbations(unittest.TestCase):
         d0 = self.wavelength / 2
         ula = UniformLinearArray(5, d0)
         gain_errors = np.random.uniform(-0.5, 0.5, (ula.size,))
-        ula_perturbed = ula.get_perturbed_copy({
-            'gain_errors': (gain_errors, True)
-        })
+        ula_perturbed = ula.get_perturbed_copy([
+            GainErrors(gain_errors, True)
+        ])
         for known in [False, True, True, False]:
             phase_errors = np.random.uniform(-np.pi, np.pi, (ula.size, ))
-            ula_perturbed = ula_perturbed.get_perturbed_copy({
-                'phase_errors': (phase_errors, known)
-            })
+            ula_perturbed = ula_perturbed.get_perturbed_copy([
+                PhaseErrors(phase_errors, known)
+            ])
             # The gain errors should remain there.
-            self.assertTrue(ula_perturbed.has_perturbation('gain_errors'))
-            self.assertTrue(ula_perturbed.is_perturbation_known('gain_errors'))
+            self.assertTrue(ula_perturbed.has_perturbation(GainErrors))
+            self.assertTrue(ula_perturbed.is_perturbation_known(GainErrors))
             npt.assert_allclose(
-                ula_perturbed.get_perturbation_params('gain_errors'),
+                ula_perturbed.get_perturbation_params(GainErrors),
                 gain_errors
             )
             # The phase errors should be updated.
-            self.assertTrue(ula_perturbed.has_perturbation('phase_errors'))
-            self.assertEqual(ula_perturbed.is_perturbation_known('phase_errors'), known)
+            self.assertTrue(ula_perturbed.has_perturbation(PhaseErrors))
+            self.assertEqual(ula_perturbed.is_perturbation_known(PhaseErrors), known)
             npt.assert_allclose(
-                ula_perturbed.get_perturbation_params('phase_errors'),
+                ula_perturbed.get_perturbation_params(PhaseErrors),
                 phase_errors
             )
-
 
 if __name__ == '__main__':
     unittest.main()

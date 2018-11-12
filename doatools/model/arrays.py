@@ -4,40 +4,8 @@ import numpy as np
 import warnings
 import copy
 from .array_elements import ISOTROPIC_SCALAR_SENSOR
-
-PERTURBATION_TYPES = [
-    'location_errors',
-    'gain_errors',
-    'phase_errors',
-    'mutual_coupling'
-]
-
-def validate_location_errors(m, params):
-    if params.ndim != 2:
-        raise ValueError('Expecting a 2D array.')
-    if params.shape[1] > 3:
-        raise ValueError('Locations errors cannot be more than 3-dimensional.')
-    if params.shape[0] != m:
-        raise ValueError('The shape of the location errors matrix does not much the array size.')
-
-def validate_gain_and_phase_errors(m, params):
-    if params.ndim != 1:
-        raise ValueError('Expecting a 1D array.')
-    if params.size != m:
-        raise ValueError('The size of the gain/phase errors vector does not much the array size.')
-
-def validate_mutual_coupling(m, params):
-    if params.ndim != 2:
-        raise ValueError('Expecting a 2D array.')
-    if params.shape[0] != m or params.shape[1] != m:
-        raise ValueError('The mutual coupling matrix must be {0}x{0}.'.format(m))
-
-PERTURBATION_VALIDATORS = {
-    'location_errors': validate_location_errors,
-    'gain_errors': validate_gain_and_phase_errors,
-    'phase_errors': validate_gain_and_phase_errors,
-    'mutual_coupling': validate_mutual_coupling
-}
+from .perturbations import LocationErrors, GainErrors, PhaseErrors, \
+                           MutualCoupling
 
 class ArrayDesign:
     """Base class for all array designs.
@@ -73,31 +41,37 @@ class ArrayDesign:
             not be copied and should not be changed after creating the
             array design.
         name (str): Name of the array design.
-        perturbations (dict): A dictionary containing the perturbation 
-            parameters. The keys should be among the following:
+        perturbations (list or dict): If a list is given, it should be a list of
+            :class:`~doatools.model.perturbations.ArrayPerturbation`.
+
+            If a dictionary is given, it should be a dictionary containing the
+            perturbation definitions. Correspinding
+            :class:`~doatools.model.perturbations.ArrayPerturbation` will be
+            created automatically. The keys should be among the following:
 
             * ``'location_errors'``
             * ``'gain_errors'`` (relative, -0.2 means 0.8 * original gain)
             * ``'phase_errors'`` (in radians)
             * ``'mutual_coupling'``
 
-            The values are two-element tuples where the first element is an
-            ndarray representing the parameters and the second element is
-            a bool specifying whether these parameters are known in prior.
+            The values in the dictionary are two-element tuples. The first
+            element is an :class:`~numpy.ndarray` representing the parameters,
+            and the second element is a boolean specifying whether these
+            parameters are known in prior.
         element (~doatools.model.array_elements.ArrayElement): Array element
             (sensor) used in this array. Default value is an instance of
             :class:`~doatools.model.array_elements.IsotropicScalarSensor`.
 
     Notes:
-        Array designs are supposed to be **immutable**. Because array
+        Array designs are generally not changed after creation. Because array
         design objects are passed around when computing steering matrices,
         weight functions, etc., having a mutable internal state leads to more
         complexities and potential unexpected results. Although the internal
         states are generally accessible in Python, please refrain from modifying
-        them.
+        them unless you are aware of the side effects.
     """
 
-    def __init__(self, locations, name, perturbations={},
+    def __init__(self, locations, name, perturbations=[],
                  element=ISOTROPIC_SCALAR_SENSOR):
         if not isinstance(locations, np.ndarray):
             locations = np.array(locations)
@@ -110,19 +84,14 @@ class ArrayDesign:
         self._locations = locations
         self._name = name
         self._element = element
-        # Validate perturbations
-        self._perturbations = self._validate_and_copy_perturbations(perturbations)
+        # Validate and add perturbations
+        self._perturbations = {}
+        self._add_perturbation_from_list(self._parse_input_perturbations(perturbations))
     
     @property
     def name(self):
         """Retrieves the name of this array."""
         return self._name
-    
-    @property
-    def element_count(self):
-        """(Deprecated) Retrieves the number of elements in the array."""
-        warnings.warn('Use size instead of element_count in the future.', DeprecationWarning)
-        return self.size
 
     @property
     def size(self):
@@ -159,31 +128,16 @@ class ArrayDesign:
             1. number of dimensions of the nominal array;
             2. number of dimensions of the sensor location errors.
         """
-        if 'location_errors' in self._perturbations:
-            return self._compute_actual_locations(self._perturbations['location_errors'][0])
-        else:
-            return self.element_locations
+        locations = self._locations
+        for p in self._perturbations.values():
+            locations = p.perturb_sensor_locations(locations)
+        return locations
 
     @property
     def element(self):
         """Retrieves the array element."""
         return self._element
     
-    def _compute_actual_locations(self, location_errors):
-        actual_ndim = self.ndim
-        loc_err_dim = location_errors.shape[1]
-        if loc_err_dim <= actual_ndim:
-            # It is possible that the location errors only exist along the
-            # first one or two axis.
-            actual_locations = self._locations.copy()
-            actual_locations[:, :loc_err_dim] += location_errors
-        else:
-            # Actual dimension is higher. This happens if a linear array,
-            # which is 1D, has location errors along both x- and y-axis.
-            actual_locations = location_errors.copy()
-            actual_locations[:, :actual_ndim] += self._locations
-        return actual_locations
-
     @property
     def is_perturbed(self):
         """Returns if the array contains perturbations."""
@@ -207,10 +161,7 @@ class ArrayDesign:
     @property
     def actual_ndim(self):
         """Retrieves the number of dimensions of the array, considering location errors."""
-        if 'location_errors' in self._perturbations:
-            return max(self._perturbations['location_errors'][0].shape[1], self.ndim)
-        else:
-            return self.ndim
+        return self.actual_element_locations.shape[1]
     
     def has_perturbation(self, ptype):
         """Checks if the array has the given type of perturbation."""
@@ -218,62 +169,99 @@ class ArrayDesign:
     
     def is_perturbation_known(self, ptype):
         """Checks if the specified perturbation is known in prior."""
-        return self._perturbations[ptype][1]
+        return self._perturbations[ptype].is_known
     
     def get_perturbation_params(self, ptype):
         """Retrieves the parameters for the specified perturbation type."""
-        return self._perturbations[ptype][0]
+        return self._perturbations[ptype].params
     
     @property
     def perturbations(self):
-        """Retrieves a copy of the dictionary of all perturbations."""
+        """Retrieves a list of all perturbations."""
         # Here we have a deep copy.
-        return copy.deepcopy(self._perturbations)
-    
-    def _validate_and_copy_perturbations(self, perturbations):
-        p_copy = {}
-        for k, v in perturbations.items():
-            if k not in PERTURBATION_TYPES:
-                raise ValueError('Unsupported perturbation type "{0}".'.format(k))
-            if not isinstance(v, tuple) and len(v) != 2:
-                raise ValueError('Perturbation details should be specified by a two-element tuple.')
-            # Validate and copy
-            PERTURBATION_VALIDATORS[k](self.output_size, v[0])
-            params_copy = v[0].copy()
-            params_copy.setflags(write=False)
-            p_copy[k] = (params_copy, v[1])
-        return p_copy
+        return list(self._perturbations.values())
 
+    def _add_perturbation_from_list(self, perturbations, raise_on_override=True):
+        """Adds perturbations from a list of perturbations.
+        
+        Args:
+            perturbations (list): A list of
+                :class:`~doatools.model.perturbations.ArrayPerturbation.`.
+            raise_on_override: Specifies whether an error should be raised when
+                a new perturbation of the same type overrides the existing one.
+        """
+        for p in perturbations:
+            applicable, msg = p.is_applicable_to(self)
+            if not applicable:
+                raise RuntimeError(msg)
+            p_class = p.__class__
+            if p_class in self._perturbations and raise_on_override:
+                raise RuntimeError(
+                    'Cannot have more than one perturbations of the same type. '
+                    'Attempting to add another perturbation of the type {0}.'
+                    .format(p_class.__name__)
+                )
+            self._perturbations[p_class] = p
+    
+    def _parse_input_perturbations(self, perturbations):
+        if isinstance(perturbations, dict):
+            factories = {
+                'location_errors': (lambda p, k: LocationErrors(p, k)),
+                'gain_errors': (lambda p, k: GainErrors(p, k)),
+                'phase_errors': (lambda p, k: PhaseErrors(p, k)),
+                'mutual_coupling': (lambda p, k: MutualCoupling(p, k))
+            }
+            perturbations = [factories[k](v[0], v[1]) for k, v in perturbations.items()]
+        return perturbations
+        
     def get_perturbed_copy(self, perturbations, new_name=None):
         """Returns a copy of this array design but with the specified
         perturbations.
         
         The specified perturbations will replace the existing ones.
 
+        Notes:
+            The default implementation performs a shallow copy of all existing
+            fields using :meth:``~copy.copy``. Override this method if special
+            operations are required.
+
         Args:
-            perturbations (dict): A dictionary containing the perturbation
-                parameters. The keys should be among the following:
+            perturbations (list or dict): If a list is given, it should be a
+                list of
+                :class:`~doatools.model.perturbations.ArrayPerturbation`.
 
-                * 'location_errors'
-                * 'gain_errors' (relative, -0.2 means 0.8 * original gain)
-                * 'phase_errors' (in radians)
-                * 'mutual_coupling'
+                If a dictionary is given, it should be a dictionary containing
+                the perturbation definitions. Correspinding
+                :class:`~doatools.model.perturbations.ArrayPerturbation` will be
+                created automatically. The keys should be among the following:
 
-                The values are two-element tuples where the first element is an
-                ndarray representing the parameters and the second element is
-                a bool specifying whether these parameters are known in prior.
+                * ``'location_errors'``
+                * ``'gain_errors'`` (relative, -0.2 means 0.8 * original gain)
+                * ``'phase_errors'`` (in radians)
+                * ``'mutual_coupling'``
+
+                The values in the dictionary are two-element tuples. The first
+                element is an :class:`~numpy.ndarray` representing the
+                parameters, and the second element is a boolean specifying
+                whether these parameters are known in prior.
             new_name (str): An optional new name for the resulting array design.
                 If not provided, the name of the original array design will be
                 used.
         """
         array = self.get_perturbation_free_copy(new_name)
         # Merge perturbation parameters.
-        perturbations = self._validate_and_copy_perturbations(perturbations)
-        array._perturbations = {**self._perturbations, **perturbations}
+        new_perturbations = self._parse_input_perturbations(perturbations)
+        array._perturbations = self._perturbations.copy()
+        array._add_perturbation_from_list(new_perturbations, False)
         return array
 
     def get_perturbation_free_copy(self, new_name=None):
         """Returns a perturbation-free copy of this array design.
+
+        Notes:
+            The default implementation performs a shallow copy of all existing
+            fields using :meth:``~copy.copy``. Override this method if special
+            operations are required.
 
         Args:
             new_name (str): An optional new name for the resulting array design.
@@ -291,6 +279,73 @@ class ArrayDesign:
                         perturbations='all', flatten=True):
         r"""Creates the steering matrix for the given DOAs.
 
+        Given :math:`K` sources, denoted by :math:`\mathbf{\theta}`, and
+        :math:`M` sensors whose the actual sensor locations (after considering
+        locations errors if exist) are denoted by :math:`\mathbf{d}`,
+        the steering matrix is calculated as
+
+        .. math::
+
+            \mathbf{A} = \mathbf{C} (\mathbf{F}(\mathbf{\theta}, \mathbf{d})
+                \odot \mathbf{A}_0(\mathbf{\theta}, \mathbf{d})).
+
+        Here :math:`\odot` denotes the Hadamard product.
+
+        * :math:`\mathbf{A}_0` is an :math:`M \times K` matrix calculated from
+          the phase delays between the sourcess, :math:`\mathbf{\theta}`, and
+          the sensor locations, :math:`\mathbf{d}`:
+
+          .. math::
+
+                \mathbf{A}_0 = \begin{bmatrix}
+                    \mathbf{a}_0(\mathbf{\theta}_1, \mathbf{d}) &
+                    \mathbf{a}_0(\mathbf{\theta}_2, \mathbf{d}) &
+                    \cdots &
+                    \mathbf{a}_0(\mathbf{\theta}_K, \mathbf{d})
+                \end{bmatrix}.
+            
+        * :math:`\mathbf{F}` is the spatial response matrix. For isotropic
+          scalar sensors, :math:`\mathbf{F}` is an :math:`M \times K` matrix of
+          ones. For vectors sensor arrays, each sensor's output is a vector of
+          size :math:`L`. Consequently, :math:`\mathbf{F}` is an
+          :math:`L \times M \times K` tensor and the broadcasting rule applies
+          when computing the element-wise multiplication between
+          :math:`\mathbf{F}` and :math:`\mathbf{A}_0`.
+        * :math:`\mathbf{C}(\cdot)` is a matrix function that applies other
+          perturbations such as gain errors, phase errors, and mutual coupling.
+
+        When ``compute_derivatives`` is ``True``, this method also computes the
+        derivative matrices associated with the source location parameters.
+        The :math:`k`-th column of the steering matrix, :math:`\mathbf{A}`,
+        should depend only on the :math:`k`-th source. Consequently,
+        :math:`\mathbf{A}` can be expressed as
+
+        .. math::
+
+            \mathbf{A} = \begin{bmatrix}
+                \mathbf{a}(\mathbf{\theta}_1) &
+                \mathbf{a}(\mathbf{\theta}_2) &
+                \cdots &
+                \mathbf{a}(\mathbf{\theta}_K)
+            \end{bmatrix}.
+        
+        Then the :math:`i`-th derivative matrix is computed as
+
+        .. math::
+
+            \dot{\mathbf{A}}_i = \begin{bmatrix}
+                \frac{\partial \mathbf{a}(\mathbf{\theta}_1)}{\partial \theta_{1i}} &
+                \frac{\partial \mathbf{a}(\mathbf{\theta}_2)}{\partial \theta_{2i}} &
+                \cdots &
+                \frac{\partial \mathbf{a}(\mathbf{\theta}_K)}{\partial \theta_{Ki}}
+            \end{bmatrix},
+        
+        where :math:`\theta_{ki}` is the :math:`i`-th parameter of the
+        :math:`k`-th source location.
+
+        The current implementation cannot compute the derivative matrices
+        when the array element is non-isotropic or non-scalar.
+        
         Args:
             sources (~doatools.model.sources.SourcePlacement):
                 An instance of :class:`~doatools.model.sources.SourcePlacement`.
@@ -337,11 +392,11 @@ class ArrayDesign:
         """
         # Filter perturbations.
         if perturbations == 'all':
-            perturb_dict = self._perturbations
+            perturb_list = self._perturbations.values()
         elif perturbations == 'known':
-            perturb_dict = {k: v for k, v in self._perturbations.items() if v[1]}
+            perturb_list = [v for v in self._perturbations.values() if v.is_known]
         elif perturbations == 'none':
-            perturb_dict = {}
+            perturb_list = []
         else:
             raise ValueError('Perturbation can only be "all", "known", or "none".')
         # Check array element.
@@ -355,10 +410,9 @@ class ArrayDesign:
         else:
             require_spatial_response = False
         # Compute actual element locations.
-        if 'location_errors' in perturb_dict:
-            actual_locations = self._compute_actual_locations(perturb_dict['location_errors'][0])
-        else:
-            actual_locations = self._locations
+        actual_locations = self._locations
+        for p in perturb_list:
+            actual_locations = p.perturb_sensor_locations(actual_locations)
         # Compute the steering matrix
         T = sources.phase_delay_matrix(actual_locations, wavelength, compute_derivatives)
         if compute_derivatives:
@@ -366,6 +420,7 @@ class ArrayDesign:
             DA = [A * (1j * X) for X in T[1:]]
         else:
             A = np.exp(1j * T)
+            DA = []
         # Apply spatial response
         if require_spatial_response:
             if sources.is_far_field:
@@ -376,25 +431,11 @@ class ArrayDesign:
             S = self._element.calc_spatial_response(r, az, el)
             A = S * A
         # Apply other perturbations
-        if 'gain_errors' in perturb_dict:
-            gain_coeff = 1. + perturb_dict['gain_errors'][0]
-            A = gain_coeff * A
-            if compute_derivatives:
-                DA = [gain_coeff * X for X in DA]
-        if 'phase_errors' in perturb_dict:
-            phase_coeff = np.exp(1j * perturb_dict['phase_errors'][0])
-            A = phase_coeff * A
-            if compute_derivatives:
-                DA = [phase_coeff * X for X in DA]
-        if 'mutual_coupling' in perturb_dict:
-            A = perturb_dict['mutual_coupling'][0] @ A
-            if compute_derivatives:
-                DA = [perturb_dict['mutual_coupling'][0] @ X for X in DA]
+        for p in perturb_list:
+            A, DA = p.perturb_steering_matrix(A, DA)
         # Prepare for returns.
         if A.ndim > 2 and flatten:
             A = A.reshape((-1, sources.size))
-            if compute_derivatives:
-                DA = [X.reshape((-1, sources.size)) for X in DA]
         if compute_derivatives:
             return (A,) + tuple(DA)
         else:
