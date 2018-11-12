@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Modeling arrays &#8212; DoaTools 0.2.1 documentation</title>
+    <title>Modeling arrays &#8212; DOATools 0.3.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -50,7 +50,7 @@ direction-of-arrival (DOA) estimation.</p>
 <span id="api-references"></span><h2>API references<a class="headerlink" href="#module-doatools.model.arrays" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="doatools.model.arrays.ArrayDesign">
-<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">ArrayDesign</code><span class="sig-paren">(</span><em>locations</em>, <em>name</em>, <em>perturbations={}</em>, <em>element=&lt;doatools.model.array_elements.IsotropicScalarSensor object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">doatools.model.arrays.</code><code class="descname">ArrayDesign</code><span class="sig-paren">(</span><em>locations</em>, <em>name</em>, <em>perturbations=[]</em>, <em>element=&lt;doatools.model.array_elements.IsotropicScalarSensor object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Base class for all array designs.</p>
 <p>Arrays can be 1D, 2D, or 3D. Consider the standard cartesian coordinate
@@ -87,17 +87,22 @@ m x d, where d is 2 or 3. If the input is an ndarray, it will
 not be copied and should not be changed after creating the
 array design.</li>
 <li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – Name of the array design.</li>
-<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>A dictionary containing the perturbation
-parameters. The keys should be among the following:</p>
+<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>If a list is given, it should be a list of
+<a class="reference internal" href="doatools.model.perturbations.html#doatools.model.perturbations.ArrayPerturbation" title="doatools.model.perturbations.ArrayPerturbation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayPerturbation</span></code></a>.</p>
+<p>If a dictionary is given, it should be a dictionary containing the
+perturbation definitions. Correspinding
+<a class="reference internal" href="doatools.model.perturbations.html#doatools.model.perturbations.ArrayPerturbation" title="doatools.model.perturbations.ArrayPerturbation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayPerturbation</span></code></a> will be
+created automatically. The keys should be among the following:</p>
 <ul>
 <li><code class="docutils literal notranslate"><span class="pre">'location_errors'</span></code></li>
 <li><code class="docutils literal notranslate"><span class="pre">'gain_errors'</span></code> (relative, -0.2 means 0.8 * original gain)</li>
 <li><code class="docutils literal notranslate"><span class="pre">'phase_errors'</span></code> (in radians)</li>
 <li><code class="docutils literal notranslate"><span class="pre">'mutual_coupling'</span></code></li>
 </ul>
-<p>The values are two-element tuples where the first element is an
-ndarray representing the parameters and the second element is
-a bool specifying whether these parameters are known in prior.</p>
+<p>The values in the dictionary are two-element tuples. The first
+element is an <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> representing the parameters,
+and the second element is a boolean specifying whether these
+parameters are known in prior.</p>
 </li>
 <li><strong>element</strong> (<a class="reference internal" href="doatools.model.array_elements.html#doatools.model.array_elements.ArrayElement" title="doatools.model.array_elements.ArrayElement"><em>ArrayElement</em></a>) – Array element
 (sensor) used in this array. Default value is an instance of
@@ -108,22 +113,16 @@ a bool specifying whether these parameters are known in prior.</p>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>Array designs are supposed to be <strong>immutable</strong>. Because array
+<p>Array designs are generally not changed after creation. Because array
 design objects are passed around when computing steering matrices,
 weight functions, etc., having a mutable internal state leads to more
 complexities and potential unexpected results. Although the internal
 states are generally accessible in Python, please refrain from modifying
-them.</p>
+them unless you are aware of the side effects.</p>
 <dl class="attribute">
 <dt id="doatools.model.arrays.ArrayDesign.name">
 <code class="descname">name</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Retrieves the name of this array.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="doatools.model.arrays.ArrayDesign.element_count">
-<code class="descname">element_count</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.element_count" title="Permalink to this definition">¶</a></dt>
-<dd><p>(Deprecated) Retrieves the number of elements in the array.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -226,7 +225,7 @@ the fact that this array is a linear array.</p>
 <dl class="attribute">
 <dt id="doatools.model.arrays.ArrayDesign.perturbations">
 <code class="descname">perturbations</code><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.perturbations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Retrieves a copy of the dictionary of all perturbations.</p>
+<dd><p>Retrieves a list of all perturbations.</p>
 </dd></dl>
 
 <dl class="method">
@@ -235,22 +234,32 @@ the fact that this array is a linear array.</p>
 <dd><p>Returns a copy of this array design but with the specified
 perturbations.</p>
 <p>The specified perturbations will replace the existing ones.</p>
+<p class="rubric">Notes</p>
+<p>The default implementation performs a shallow copy of all existing
+fields using :meth:<code class="docutils literal notranslate"><span class="pre">~copy.copy</span></code>. Override this method if special
+operations are required.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>A dictionary containing the perturbation
-parameters. The keys should be among the following:</p>
+<li><strong>perturbations</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – <p>If a list is given, it should be a
+list of
+<a class="reference internal" href="doatools.model.perturbations.html#doatools.model.perturbations.ArrayPerturbation" title="doatools.model.perturbations.ArrayPerturbation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayPerturbation</span></code></a>.</p>
+<p>If a dictionary is given, it should be a dictionary containing
+the perturbation definitions. Correspinding
+<a class="reference internal" href="doatools.model.perturbations.html#doatools.model.perturbations.ArrayPerturbation" title="doatools.model.perturbations.ArrayPerturbation"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArrayPerturbation</span></code></a> will be
+created automatically. The keys should be among the following:</p>
 <ul>
-<li>’location_errors’</li>
-<li>’gain_errors’ (relative, -0.2 means 0.8 * original gain)</li>
-<li>’phase_errors’ (in radians)</li>
-<li>’mutual_coupling’</li>
+<li><code class="docutils literal notranslate"><span class="pre">'location_errors'</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">'gain_errors'</span></code> (relative, -0.2 means 0.8 * original gain)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'phase_errors'</span></code> (in radians)</li>
+<li><code class="docutils literal notranslate"><span class="pre">'mutual_coupling'</span></code></li>
 </ul>
-<p>The values are two-element tuples where the first element is an
-ndarray representing the parameters and the second element is
-a bool specifying whether these parameters are known in prior.</p>
+<p>The values in the dictionary are two-element tuples. The first
+element is an <a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> representing the
+parameters, and the second element is a boolean specifying
+whether these parameters are known in prior.</p>
 </li>
 <li><strong>new_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.7)"><em>str</em></a>) – An optional new name for the resulting array design.
 If not provided, the name of the original array design will be
@@ -266,6 +275,10 @@ used.</li>
 <dt id="doatools.model.arrays.ArrayDesign.get_perturbation_free_copy">
 <code class="descname">get_perturbation_free_copy</code><span class="sig-paren">(</span><em>new_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.get_perturbation_free_copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.get_perturbation_free_copy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a perturbation-free copy of this array design.</p>
+<p class="rubric">Notes</p>
+<p>The default implementation performs a shallow copy of all existing
+fields using :meth:<code class="docutils literal notranslate"><span class="pre">~copy.copy</span></code>. Override this method if special
+operations are required.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -282,6 +295,62 @@ used.</td>
 <dt id="doatools.model.arrays.ArrayDesign.steering_matrix">
 <code class="descname">steering_matrix</code><span class="sig-paren">(</span><em>sources</em>, <em>wavelength</em>, <em>compute_derivatives=False</em>, <em>perturbations='all'</em>, <em>flatten=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/doatools/model/arrays.html#ArrayDesign.steering_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#doatools.model.arrays.ArrayDesign.steering_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates the steering matrix for the given DOAs.</p>
+<p>Given <span class="math notranslate nohighlight">\(K\)</span> sources, denoted by <span class="math notranslate nohighlight">\(\mathbf{\theta}\)</span>, and
+<span class="math notranslate nohighlight">\(M\)</span> sensors whose the actual sensor locations (after considering
+locations errors if exist) are denoted by <span class="math notranslate nohighlight">\(\mathbf{d}\)</span>,
+the steering matrix is calculated as</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{A} = \mathbf{C} (\mathbf{F}(\mathbf{\theta}, \mathbf{d})
+    \odot \mathbf{A}_0(\mathbf{\theta}, \mathbf{d})).\]</div>
+<p>Here <span class="math notranslate nohighlight">\(\odot\)</span> denotes the Hadamard product.</p>
+<ul>
+<li><p class="first"><span class="math notranslate nohighlight">\(\mathbf{A}_0\)</span> is an <span class="math notranslate nohighlight">\(M \times K\)</span> matrix calculated from
+the phase delays between the sourcess, <span class="math notranslate nohighlight">\(\mathbf{\theta}\)</span>, and
+the sensor locations, <span class="math notranslate nohighlight">\(\mathbf{d}\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{A}_0 = \begin{bmatrix}
+    \mathbf{a}_0(\mathbf{\theta}_1, \mathbf{d}) &amp;
+    \mathbf{a}_0(\mathbf{\theta}_2, \mathbf{d}) &amp;
+    \cdots &amp;
+    \mathbf{a}_0(\mathbf{\theta}_K, \mathbf{d})
+\end{bmatrix}.\]</div>
+</li>
+<li><p class="first"><span class="math notranslate nohighlight">\(\mathbf{F}\)</span> is the spatial response matrix. For isotropic
+scalar sensors, <span class="math notranslate nohighlight">\(\mathbf{F}\)</span> is an <span class="math notranslate nohighlight">\(M \times K\)</span> matrix of
+ones. For vectors sensor arrays, each sensor’s output is a vector of
+size <span class="math notranslate nohighlight">\(L\)</span>. Consequently, <span class="math notranslate nohighlight">\(\mathbf{F}\)</span> is an
+<span class="math notranslate nohighlight">\(L \times M \times K\)</span> tensor and the broadcasting rule applies
+when computing the element-wise multiplication between
+<span class="math notranslate nohighlight">\(\mathbf{F}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{A}_0\)</span>.</p>
+</li>
+<li><p class="first"><span class="math notranslate nohighlight">\(\mathbf{C}(\cdot)\)</span> is a matrix function that applies other
+perturbations such as gain errors, phase errors, and mutual coupling.</p>
+</li>
+</ul>
+<p>When <code class="docutils literal notranslate"><span class="pre">compute_derivatives</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, this method also computes the
+derivative matrices associated with the source location parameters.
+The <span class="math notranslate nohighlight">\(k\)</span>-th column of the steering matrix, <span class="math notranslate nohighlight">\(\mathbf{A}\)</span>,
+should depend only on the <span class="math notranslate nohighlight">\(k\)</span>-th source. Consequently,
+<span class="math notranslate nohighlight">\(\mathbf{A}\)</span> can be expressed as</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{A} = \begin{bmatrix}
+    \mathbf{a}(\mathbf{\theta}_1) &amp;
+    \mathbf{a}(\mathbf{\theta}_2) &amp;
+    \cdots &amp;
+    \mathbf{a}(\mathbf{\theta}_K)
+\end{bmatrix}.\]</div>
+<p>Then the <span class="math notranslate nohighlight">\(i\)</span>-th derivative matrix is computed as</p>
+<div class="math notranslate nohighlight">
+\[\dot{\mathbf{A}}_i = \begin{bmatrix}
+    \frac{\partial \mathbf{a}(\mathbf{\theta}_1)}{\partial \theta_{1i}} &amp;
+    \frac{\partial \mathbf{a}(\mathbf{\theta}_2)}{\partial \theta_{2i}} &amp;
+    \cdots &amp;
+    \frac{\partial \mathbf{a}(\mathbf{\theta}_K)}{\partial \theta_{Ki}}
+\end{bmatrix},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\theta_{ki}\)</span> is the <span class="math notranslate nohighlight">\(i\)</span>-th parameter of the
+<span class="math notranslate nohighlight">\(k\)</span>-th source location.</p>
+<p>The current implementation cannot compute the derivative matrices
+when the array element is non-isotropic or non-scalar.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -617,7 +686,7 @@ scalar or a two-element list-like object.</li>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../index.html">DoaTools</a></h1>
+<h1 class="logo"><a href="../index.html">DOATools</a></h1>
 
 
 
@@ -631,6 +700,7 @@ scalar or a two-element list-like object.</li>
 <li class="toctree-l1 current"><a class="reference internal" href="doatools.model.html">Modeling</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Modeling arrays</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.array_elements.html">Modeling array elements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="doatools.model.perturbations.html">Modeling array perturbations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.sources.html">Modeling source placements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.signals.html">Modeling source signals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="doatools.model.snapshots.html">Collecting snapshots</a></li>
@@ -638,7 +708,7 @@ scalar or a two-element list-like object.</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.estimation.html">Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="doatools.performance.html">Performance Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.plotting.html">Plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="doatools.misc.html">Miscellaneous</a></li>
 </ul>

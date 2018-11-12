@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>doatools.model.arrays &#8212; DoaTools 0.2.1 documentation</title>
+    <title>doatools.model.arrays &#8212; DOATools 0.3.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -39,40 +39,8 @@
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">from</span> <span class="nn">.array_elements</span> <span class="k">import</span> <span class="n">ISOTROPIC_SCALAR_SENSOR</span>
-
-<span class="n">PERTURBATION_TYPES</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;location_errors&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;gain_errors&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;phase_errors&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;mutual_coupling&#39;</span>
-<span class="p">]</span>
-
-<span class="k">def</span> <span class="nf">validate_location_errors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 2D array.&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Locations errors cannot be more than 3-dimensional.&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The shape of the location errors matrix does not much the array size.&#39;</span><span class="p">)</span>
-
-<span class="k">def</span> <span class="nf">validate_gain_and_phase_errors</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 1D array.&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">m</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The size of the gain/phase errors vector does not much the array size.&#39;</span><span class="p">)</span>
-
-<span class="k">def</span> <span class="nf">validate_mutual_coupling</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Expecting a 2D array.&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span> <span class="ow">or</span> <span class="n">params</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">m</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The mutual coupling matrix must be </span><span class="si">{0}</span><span class="s1">x</span><span class="si">{0}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
-
-<span class="n">PERTURBATION_VALIDATORS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;location_errors&#39;</span><span class="p">:</span> <span class="n">validate_location_errors</span><span class="p">,</span>
-    <span class="s1">&#39;gain_errors&#39;</span><span class="p">:</span> <span class="n">validate_gain_and_phase_errors</span><span class="p">,</span>
-    <span class="s1">&#39;phase_errors&#39;</span><span class="p">:</span> <span class="n">validate_gain_and_phase_errors</span><span class="p">,</span>
-    <span class="s1">&#39;mutual_coupling&#39;</span><span class="p">:</span> <span class="n">validate_mutual_coupling</span>
-<span class="p">}</span>
+<span class="kn">from</span> <span class="nn">.perturbations</span> <span class="k">import</span> <span class="n">LocationErrors</span><span class="p">,</span> <span class="n">GainErrors</span><span class="p">,</span> <span class="n">PhaseErrors</span><span class="p">,</span> \
+                           <span class="n">MutualCoupling</span>
 
 <div class="viewcode-block" id="ArrayDesign"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign">[docs]</a><span class="k">class</span> <span class="nc">ArrayDesign</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Base class for all array designs.</span>
@@ -108,31 +76,37 @@
 <span class="sd">            not be copied and should not be changed after creating the</span>
 <span class="sd">            array design.</span>
 <span class="sd">        name (str): Name of the array design.</span>
-<span class="sd">        perturbations (dict): A dictionary containing the perturbation </span>
-<span class="sd">            parameters. The keys should be among the following:</span>
+<span class="sd">        perturbations (list or dict): If a list is given, it should be a list of</span>
+<span class="sd">            :class:`~doatools.model.perturbations.ArrayPerturbation`.</span>
+
+<span class="sd">            If a dictionary is given, it should be a dictionary containing the</span>
+<span class="sd">            perturbation definitions. Correspinding</span>
+<span class="sd">            :class:`~doatools.model.perturbations.ArrayPerturbation` will be</span>
+<span class="sd">            created automatically. The keys should be among the following:</span>
 
 <span class="sd">            * ``&#39;location_errors&#39;``</span>
 <span class="sd">            * ``&#39;gain_errors&#39;`` (relative, -0.2 means 0.8 * original gain)</span>
 <span class="sd">            * ``&#39;phase_errors&#39;`` (in radians)</span>
 <span class="sd">            * ``&#39;mutual_coupling&#39;``</span>
 
-<span class="sd">            The values are two-element tuples where the first element is an</span>
-<span class="sd">            ndarray representing the parameters and the second element is</span>
-<span class="sd">            a bool specifying whether these parameters are known in prior.</span>
+<span class="sd">            The values in the dictionary are two-element tuples. The first</span>
+<span class="sd">            element is an :class:`~numpy.ndarray` representing the parameters,</span>
+<span class="sd">            and the second element is a boolean specifying whether these</span>
+<span class="sd">            parameters are known in prior.</span>
 <span class="sd">        element (~doatools.model.array_elements.ArrayElement): Array element</span>
 <span class="sd">            (sensor) used in this array. Default value is an instance of</span>
 <span class="sd">            :class:`~doatools.model.array_elements.IsotropicScalarSensor`.</span>
 
 <span class="sd">    Notes:</span>
-<span class="sd">        Array designs are supposed to be **immutable**. Because array</span>
+<span class="sd">        Array designs are generally not changed after creation. Because array</span>
 <span class="sd">        design objects are passed around when computing steering matrices,</span>
 <span class="sd">        weight functions, etc., having a mutable internal state leads to more</span>
 <span class="sd">        complexities and potential unexpected results. Although the internal</span>
 <span class="sd">        states are generally accessible in Python, please refrain from modifying</span>
-<span class="sd">        them.</span>
+<span class="sd">        them unless you are aware of the side effects.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">perturbations</span><span class="o">=</span><span class="p">{},</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">perturbations</span><span class="o">=</span><span class="p">[],</span>
                  <span class="n">element</span><span class="o">=</span><span class="n">ISOTROPIC_SCALAR_SENSOR</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
@@ -145,19 +119,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="n">locations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_element</span> <span class="o">=</span> <span class="n">element</span>
-        <span class="c1"># Validate perturbations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_copy_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">)</span>
+        <span class="c1"># Validate and add perturbations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_perturbation_from_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_input_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">))</span>
     
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieves the name of this array.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
-    
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">element_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;(Deprecated) Retrieves the number of elements in the array.&quot;&quot;&quot;</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Use size instead of element_count in the future.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -194,31 +163,16 @@
 <span class="sd">            1. number of dimensions of the nominal array;</span>
 <span class="sd">            2. number of dimensions of the sensor location errors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_actual_locations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_locations</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">perturb_sensor_locations</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">locations</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">element</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieves the array element.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element</span>
     
-    <span class="k">def</span> <span class="nf">_compute_actual_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_errors</span><span class="p">):</span>
-        <span class="n">actual_ndim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span>
-        <span class="n">loc_err_dim</span> <span class="o">=</span> <span class="n">location_errors</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">loc_err_dim</span> <span class="o">&lt;=</span> <span class="n">actual_ndim</span><span class="p">:</span>
-            <span class="c1"># It is possible that the location errors only exist along the</span>
-            <span class="c1"># first one or two axis.</span>
-            <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">actual_locations</span><span class="p">[:,</span> <span class="p">:</span><span class="n">loc_err_dim</span><span class="p">]</span> <span class="o">+=</span> <span class="n">location_errors</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Actual dimension is higher. This happens if a linear array,</span>
-            <span class="c1"># which is 1D, has location errors along both x- and y-axis.</span>
-            <span class="n">actual_locations</span> <span class="o">=</span> <span class="n">location_errors</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">actual_locations</span><span class="p">[:,</span> <span class="p">:</span><span class="n">actual_ndim</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
-        <span class="k">return</span> <span class="n">actual_locations</span>
-
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_perturbed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns if the array contains perturbations.&quot;&quot;&quot;</span>
@@ -242,10 +196,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">actual_ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieves the number of dimensions of the array, considering location errors.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual_element_locations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     
 <div class="viewcode-block" id="ArrayDesign.has_perturbation"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.has_perturbation">[docs]</a>    <span class="k">def</span> <span class="nf">has_perturbation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if the array has the given type of perturbation.&quot;&quot;&quot;</span>
@@ -253,62 +204,99 @@
     
 <div class="viewcode-block" id="ArrayDesign.is_perturbation_known"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.is_perturbation_known">[docs]</a>    <span class="k">def</span> <span class="nf">is_perturbation_known</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Checks if the specified perturbation is known in prior.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">ptype</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">ptype</span><span class="p">]</span><span class="o">.</span><span class="n">is_known</span></div>
     
 <div class="viewcode-block" id="ArrayDesign.get_perturbation_params"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.get_perturbation_params">[docs]</a>    <span class="k">def</span> <span class="nf">get_perturbation_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieves the parameters for the specified perturbation type.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">ptype</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">ptype</span><span class="p">]</span><span class="o">.</span><span class="n">params</span></div>
     
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">perturbations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Retrieves a copy of the dictionary of all perturbations.&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves a list of all perturbations.&quot;&quot;&quot;</span>
         <span class="c1"># Here we have a deep copy.</span>
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">)</span>
-    
-    <span class="k">def</span> <span class="nf">_validate_and_copy_perturbations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbations</span><span class="p">):</span>
-        <span class="n">p_copy</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">perturbations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PERTURBATION_TYPES</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unsupported perturbation type &quot;</span><span class="si">{0}</span><span class="s1">&quot;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Perturbation details should be specified by a two-element tuple.&#39;</span><span class="p">)</span>
-            <span class="c1"># Validate and copy</span>
-            <span class="n">PERTURBATION_VALIDATORS</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">params_copy</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">params_copy</span><span class="o">.</span><span class="n">setflags</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">p_copy</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">params_copy</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">p_copy</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
+    <span class="k">def</span> <span class="nf">_add_perturbation_from_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbations</span><span class="p">,</span> <span class="n">raise_on_override</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds perturbations from a list of perturbations.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            perturbations (list): A list of</span>
+<span class="sd">                :class:`~doatools.model.perturbations.ArrayPerturbation.`.</span>
+<span class="sd">            raise_on_override: Specifies whether an error should be raised when</span>
+<span class="sd">                a new perturbation of the same type overrides the existing one.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">perturbations</span><span class="p">:</span>
+            <span class="n">applicable</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">is_applicable_to</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">applicable</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="n">p_class</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="vm">__class__</span>
+            <span class="k">if</span> <span class="n">p_class</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span> <span class="ow">and</span> <span class="n">raise_on_override</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s1">&#39;Cannot have more than one perturbations of the same type. &#39;</span>
+                    <span class="s1">&#39;Attempting to add another perturbation of the type </span><span class="si">{0}</span><span class="s1">.&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p_class</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">[</span><span class="n">p_class</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+    
+    <span class="k">def</span> <span class="nf">_parse_input_perturbations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbations</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">perturbations</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">factories</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;location_errors&#39;</span><span class="p">:</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">LocationErrors</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">)),</span>
+                <span class="s1">&#39;gain_errors&#39;</span><span class="p">:</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">GainErrors</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">)),</span>
+                <span class="s1">&#39;phase_errors&#39;</span><span class="p">:</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">PhaseErrors</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">)),</span>
+                <span class="s1">&#39;mutual_coupling&#39;</span><span class="p">:</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">MutualCoupling</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">k</span><span class="p">))</span>
+            <span class="p">}</span>
+            <span class="n">perturbations</span> <span class="o">=</span> <span class="p">[</span><span class="n">factories</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">perturbations</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">perturbations</span>
+        
 <div class="viewcode-block" id="ArrayDesign.get_perturbed_copy"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.get_perturbed_copy">[docs]</a>    <span class="k">def</span> <span class="nf">get_perturbed_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">perturbations</span><span class="p">,</span> <span class="n">new_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a copy of this array design but with the specified</span>
 <span class="sd">        perturbations.</span>
 <span class="sd">        </span>
 <span class="sd">        The specified perturbations will replace the existing ones.</span>
 
+<span class="sd">        Notes:</span>
+<span class="sd">            The default implementation performs a shallow copy of all existing</span>
+<span class="sd">            fields using :meth:``~copy.copy``. Override this method if special</span>
+<span class="sd">            operations are required.</span>
+
 <span class="sd">        Args:</span>
-<span class="sd">            perturbations (dict): A dictionary containing the perturbation</span>
-<span class="sd">                parameters. The keys should be among the following:</span>
+<span class="sd">            perturbations (list or dict): If a list is given, it should be a</span>
+<span class="sd">                list of</span>
+<span class="sd">                :class:`~doatools.model.perturbations.ArrayPerturbation`.</span>
 
-<span class="sd">                * &#39;location_errors&#39;</span>
-<span class="sd">                * &#39;gain_errors&#39; (relative, -0.2 means 0.8 * original gain)</span>
-<span class="sd">                * &#39;phase_errors&#39; (in radians)</span>
-<span class="sd">                * &#39;mutual_coupling&#39;</span>
+<span class="sd">                If a dictionary is given, it should be a dictionary containing</span>
+<span class="sd">                the perturbation definitions. Correspinding</span>
+<span class="sd">                :class:`~doatools.model.perturbations.ArrayPerturbation` will be</span>
+<span class="sd">                created automatically. The keys should be among the following:</span>
 
-<span class="sd">                The values are two-element tuples where the first element is an</span>
-<span class="sd">                ndarray representing the parameters and the second element is</span>
-<span class="sd">                a bool specifying whether these parameters are known in prior.</span>
+<span class="sd">                * ``&#39;location_errors&#39;``</span>
+<span class="sd">                * ``&#39;gain_errors&#39;`` (relative, -0.2 means 0.8 * original gain)</span>
+<span class="sd">                * ``&#39;phase_errors&#39;`` (in radians)</span>
+<span class="sd">                * ``&#39;mutual_coupling&#39;``</span>
+
+<span class="sd">                The values in the dictionary are two-element tuples. The first</span>
+<span class="sd">                element is an :class:`~numpy.ndarray` representing the</span>
+<span class="sd">                parameters, and the second element is a boolean specifying</span>
+<span class="sd">                whether these parameters are known in prior.</span>
 <span class="sd">            new_name (str): An optional new name for the resulting array design.</span>
 <span class="sd">                If not provided, the name of the original array design will be</span>
 <span class="sd">                used.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_perturbation_free_copy</span><span class="p">(</span><span class="n">new_name</span><span class="p">)</span>
         <span class="c1"># Merge perturbation parameters.</span>
-        <span class="n">perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_copy_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">)</span>
-        <span class="n">array</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="p">,</span> <span class="o">**</span><span class="n">perturbations</span><span class="p">}</span>
+        <span class="n">new_perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_input_perturbations</span><span class="p">(</span><span class="n">perturbations</span><span class="p">)</span>
+        <span class="n">array</span><span class="o">.</span><span class="n">_perturbations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">array</span><span class="o">.</span><span class="n">_add_perturbation_from_list</span><span class="p">(</span><span class="n">new_perturbations</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">array</span></div>
 
 <div class="viewcode-block" id="ArrayDesign.get_perturbation_free_copy"><a class="viewcode-back" href="../../../references/doatools.model.arrays.html#doatools.model.arrays.ArrayDesign.get_perturbation_free_copy">[docs]</a>    <span class="k">def</span> <span class="nf">get_perturbation_free_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a perturbation-free copy of this array design.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            The default implementation performs a shallow copy of all existing</span>
+<span class="sd">            fields using :meth:``~copy.copy``. Override this method if special</span>
+<span class="sd">            operations are required.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            new_name (str): An optional new name for the resulting array design.</span>
@@ -326,6 +314,73 @@
                         <span class="n">perturbations</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">flatten</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Creates the steering matrix for the given DOAs.</span>
 
+<span class="sd">        Given :math:`K` sources, denoted by :math:`\mathbf{\theta}`, and</span>
+<span class="sd">        :math:`M` sensors whose the actual sensor locations (after considering</span>
+<span class="sd">        locations errors if exist) are denoted by :math:`\mathbf{d}`,</span>
+<span class="sd">        the steering matrix is calculated as</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \mathbf{A} = \mathbf{C} (\mathbf{F}(\mathbf{\theta}, \mathbf{d})</span>
+<span class="sd">                \odot \mathbf{A}_0(\mathbf{\theta}, \mathbf{d})).</span>
+
+<span class="sd">        Here :math:`\odot` denotes the Hadamard product.</span>
+
+<span class="sd">        * :math:`\mathbf{A}_0` is an :math:`M \times K` matrix calculated from</span>
+<span class="sd">          the phase delays between the sourcess, :math:`\mathbf{\theta}`, and</span>
+<span class="sd">          the sensor locations, :math:`\mathbf{d}`:</span>
+
+<span class="sd">          .. math::</span>
+
+<span class="sd">                \mathbf{A}_0 = \begin{bmatrix}</span>
+<span class="sd">                    \mathbf{a}_0(\mathbf{\theta}_1, \mathbf{d}) &amp;</span>
+<span class="sd">                    \mathbf{a}_0(\mathbf{\theta}_2, \mathbf{d}) &amp;</span>
+<span class="sd">                    \cdots &amp;</span>
+<span class="sd">                    \mathbf{a}_0(\mathbf{\theta}_K, \mathbf{d})</span>
+<span class="sd">                \end{bmatrix}.</span>
+<span class="sd">            </span>
+<span class="sd">        * :math:`\mathbf{F}` is the spatial response matrix. For isotropic</span>
+<span class="sd">          scalar sensors, :math:`\mathbf{F}` is an :math:`M \times K` matrix of</span>
+<span class="sd">          ones. For vectors sensor arrays, each sensor&#39;s output is a vector of</span>
+<span class="sd">          size :math:`L`. Consequently, :math:`\mathbf{F}` is an</span>
+<span class="sd">          :math:`L \times M \times K` tensor and the broadcasting rule applies</span>
+<span class="sd">          when computing the element-wise multiplication between</span>
+<span class="sd">          :math:`\mathbf{F}` and :math:`\mathbf{A}_0`.</span>
+<span class="sd">        * :math:`\mathbf{C}(\cdot)` is a matrix function that applies other</span>
+<span class="sd">          perturbations such as gain errors, phase errors, and mutual coupling.</span>
+
+<span class="sd">        When ``compute_derivatives`` is ``True``, this method also computes the</span>
+<span class="sd">        derivative matrices associated with the source location parameters.</span>
+<span class="sd">        The :math:`k`-th column of the steering matrix, :math:`\mathbf{A}`,</span>
+<span class="sd">        should depend only on the :math:`k`-th source. Consequently,</span>
+<span class="sd">        :math:`\mathbf{A}` can be expressed as</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \mathbf{A} = \begin{bmatrix}</span>
+<span class="sd">                \mathbf{a}(\mathbf{\theta}_1) &amp;</span>
+<span class="sd">                \mathbf{a}(\mathbf{\theta}_2) &amp;</span>
+<span class="sd">                \cdots &amp;</span>
+<span class="sd">                \mathbf{a}(\mathbf{\theta}_K)</span>
+<span class="sd">            \end{bmatrix}.</span>
+<span class="sd">        </span>
+<span class="sd">        Then the :math:`i`-th derivative matrix is computed as</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \dot{\mathbf{A}}_i = \begin{bmatrix}</span>
+<span class="sd">                \frac{\partial \mathbf{a}(\mathbf{\theta}_1)}{\partial \theta_{1i}} &amp;</span>
+<span class="sd">                \frac{\partial \mathbf{a}(\mathbf{\theta}_2)}{\partial \theta_{2i}} &amp;</span>
+<span class="sd">                \cdots &amp;</span>
+<span class="sd">                \frac{\partial \mathbf{a}(\mathbf{\theta}_K)}{\partial \theta_{Ki}}</span>
+<span class="sd">            \end{bmatrix},</span>
+<span class="sd">        </span>
+<span class="sd">        where :math:`\theta_{ki}` is the :math:`i`-th parameter of the</span>
+<span class="sd">        :math:`k`-th source location.</span>
+
+<span class="sd">        The current implementation cannot compute the derivative matrices</span>
+<span class="sd">        when the array element is non-isotropic or non-scalar.</span>
+<span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            sources (~doatools.model.sources.SourcePlacement):</span>
 <span class="sd">                An instance of :class:`~doatools.model.sources.SourcePlacement`.</span>
@@ -372,11 +427,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Filter perturbations.</span>
         <span class="k">if</span> <span class="n">perturbations</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
-            <span class="n">perturb_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span>
+            <span class="n">perturb_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
         <span class="k">elif</span> <span class="n">perturbations</span> <span class="o">==</span> <span class="s1">&#39;known&#39;</span><span class="p">:</span>
-            <span class="n">perturb_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+            <span class="n">perturb_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perturbations</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">is_known</span><span class="p">]</span>
         <span class="k">elif</span> <span class="n">perturbations</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
-            <span class="n">perturb_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">perturb_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Perturbation can only be &quot;all&quot;, &quot;known&quot;, or &quot;none&quot;.&#39;</span><span class="p">)</span>
         <span class="c1"># Check array element.</span>
@@ -390,10 +445,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">require_spatial_response</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="c1"># Compute actual element locations.</span>
-        <span class="k">if</span> <span class="s1">&#39;location_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
-            <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_actual_locations</span><span class="p">(</span><span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;location_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        <span class="n">actual_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">perturb_list</span><span class="p">:</span>
+            <span class="n">actual_locations</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">perturb_sensor_locations</span><span class="p">(</span><span class="n">actual_locations</span><span class="p">)</span>
         <span class="c1"># Compute the steering matrix</span>
         <span class="n">T</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">phase_delay_matrix</span><span class="p">(</span><span class="n">actual_locations</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">compute_derivatives</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
@@ -401,6 +455,7 @@
             <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">A</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span>
+            <span class="n">DA</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># Apply spatial response</span>
         <span class="k">if</span> <span class="n">require_spatial_response</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">sources</span><span class="o">.</span><span class="n">is_far_field</span><span class="p">:</span>
@@ -411,26 +466,11 @@
             <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element</span><span class="o">.</span><span class="n">calc_spatial_response</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">az</span><span class="p">,</span> <span class="n">el</span><span class="p">)</span>
             <span class="n">A</span> <span class="o">=</span> <span class="n">S</span> <span class="o">*</span> <span class="n">A</span>
         <span class="c1"># Apply other perturbations</span>
-        <span class="c1"># TODO: avoid hard-coded perturbations</span>
-        <span class="k">if</span> <span class="s1">&#39;gain_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
-            <span class="n">gain_coeff</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;gain_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">A</span> <span class="o">=</span> <span class="n">gain_coeff</span> <span class="o">*</span> <span class="n">A</span>
-            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
-                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">gain_coeff</span> <span class="o">*</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;phase_errors&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
-            <span class="n">phase_coeff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;phase_errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">A</span> <span class="o">=</span> <span class="n">phase_coeff</span> <span class="o">*</span> <span class="n">A</span>
-            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
-                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">phase_coeff</span> <span class="o">*</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;mutual_coupling&#39;</span> <span class="ow">in</span> <span class="n">perturb_dict</span><span class="p">:</span>
-            <span class="n">A</span> <span class="o">=</span> <span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;mutual_coupling&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">A</span>
-            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
-                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">perturb_dict</span><span class="p">[</span><span class="s1">&#39;mutual_coupling&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">X</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">perturb_list</span><span class="p">:</span>
+            <span class="n">A</span><span class="p">,</span> <span class="n">DA</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">perturb_steering_matrix</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">DA</span><span class="p">)</span>
         <span class="c1"># Prepare for returns.</span>
         <span class="k">if</span> <span class="n">A</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">flatten</span><span class="p">:</span>
             <span class="n">A</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sources</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
-                <span class="n">DA</span> <span class="o">=</span> <span class="p">[</span><span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">sources</span><span class="o">.</span><span class="n">size</span><span class="p">))</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">DA</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">compute_derivatives</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">A</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">DA</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -740,7 +780,7 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../../index.html">DoaTools</a></h1>
+<h1 class="logo"><a href="../../../index.html">DOATools</a></h1>
 
 
 
@@ -753,7 +793,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.model.html">Modeling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.estimation.html">Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.performance.html">Performance Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.plotting.html">Plotting</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../references/doatools.misc.html">Miscellaneous</a></li>
 </ul>
