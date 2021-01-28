@@ -44,13 +44,10 @@ class ComplexStochasticSignal(SignalGenerator):
             Default value is `1.0`.
     """
 
-    def __init__(self, dim, C=1.0, amplitudes=None):
+    def __init__(self, dim, C=1.0):
         self._dim = dim
         # returns input as a tuple if it isnt already
         self._forceTuple = lambda x: x if type(x) is tuple else (x,)
-        print(type(dim), dim)
-        if amplitudes is not None:
-            C = amplitudes ** 2
         if np.isscalar(C):
             # Scalar
             self._C2 = np.sqrt(C)
