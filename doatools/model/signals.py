@@ -4,7 +4,7 @@ from scipy.linalg import sqrtm
 from ..utils.math import randcn
 
 class SignalGenerator(ABC):
-    """Abstrace base class for all signal generators.
+    """Abstract base class for all signal generators.
     
     Extend this class to create your own signal generators.
     """
@@ -40,28 +40,30 @@ class ComplexStochasticSignal(SignalGenerator):
             3. A scalar if the covariance matrix is diagonal and all
                diagonal elements share the same value. In this case,
                parameter n must be specified.
-            
+
             Default value is `1.0`.
     """
 
     def __init__(self, dim, C=1.0):
         self._dim = dim
+        # returns input as a tuple if it isnt already
+        self._forceTuple = lambda x: x if type(x) is tuple else (x,)
         if np.isscalar(C):
             # Scalar
             self._C2 = np.sqrt(C)
-            self._generator = lambda n: self._C2 * randcn((self._dim, n))
+            self._generator = lambda n: self._C2 * randcn(self._forceTuple(self._dim) + (n,))
         elif C.ndim == 1:
             # Vector
             if C.size != dim:
                 raise ValueError('The size of C must be {0}.'.format(dim))
             self._C2 = np.sqrt(C).reshape((-1, 1))
-            self._generator = lambda n: self._C2 * randcn((self._dim, n))
+            self._generator = lambda n: self._C2 * randcn(self._forceTuple(self._dim) + (n,))
         elif C.ndim == 2:
             # Matrix
             if C.shape[0] != dim or C.shape[1] != dim:
                 raise ValueError('The shape of C must be ({0}, {0}).'.format(dim))
             self._C2 = sqrtm(C)
-            self._generator = lambda n: self._C2 @ randcn((self._dim, n))
+            self._generator = lambda n: self._C2 @ randcn((self._dim,) + n)
         else:
             raise ValueError(
                 'The covariance must be specified by a scalar, a vector of'
